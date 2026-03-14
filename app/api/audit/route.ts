@@ -36,7 +36,8 @@ export async function POST(req: NextRequest) {
       try {
         const anthropicStream = client.messages.stream({
           model: 'claude-sonnet-4-6',
-          max_tokens: 2048,
+          max_tokens: 8192,
+          temperature: 0,
           system: agent.systemPrompt,
           messages: [{ role: 'user', content: input }],
         });
