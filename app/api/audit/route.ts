@@ -107,22 +107,26 @@ function makeStream(
         }
         log('info', 'audit_complete', logMeta);
 
-        // Save completed audit to DB (fire-and-forget)
+        // DB-001/DB-021: Save completed audit with result truncation and proper error logging
         if (auditRecord) {
+          const MAX_RESULT_CHARS = 100_000;
           const fullResult = chunks.join('');
           const scoreMatch = fullResult.match(/(\d{1,3})\s*\/\s*100/);
           const score = scoreMatch ? parseInt(scoreMatch[1], 10) : null;
-          db.update(auditTable)
-            .set({
-              result: fullResult,
-              status: 'completed',
-              score: score && score >= 0 && score <= 100 ? score : null,
-              durationMs: Date.now() - auditRecord.startedAt,
-              updatedAt: new Date(),
-            })
-            .where(eq(auditTable.id, auditRecord.id))
-            .then(() => log('info', 'audit_saved', { requestId: logMeta.requestId, auditId: auditRecord.id }))
-            .catch((err) => log('error', 'audit_save_failed', { requestId: logMeta.requestId, error: String(err) }));
+          try {
+            await db.update(auditTable)
+              .set({
+                result: fullResult.slice(0, MAX_RESULT_CHARS),
+                status: 'completed',
+                score: score && score >= 0 && score <= 100 ? score : null,
+                durationMs: Date.now() - auditRecord.startedAt,
+                updatedAt: new Date(),
+              })
+              .where(eq(auditTable.id, auditRecord.id));
+            log('info', 'audit_saved', { requestId: logMeta.requestId, auditId: auditRecord.id });
+          } catch (err) {
+            log('error', 'audit_save_failed', { requestId: logMeta.requestId, auditId: auditRecord.id, error: String(err) });
+          }
         }
       } catch (err) {
         const isTimeout = err instanceof Error && err.name === 'TimeoutError';
@@ -132,10 +136,13 @@ function makeStream(
         });
         // Mark audit as failed in DB
         if (auditRecord) {
-          db.update(auditTable)
-            .set({ status: 'failed', durationMs: Date.now() - auditRecord.startedAt, updatedAt: new Date() })
-            .where(eq(auditTable.id, auditRecord.id))
-            .catch(() => {});
+          try {
+            await db.update(auditTable)
+              .set({ status: 'failed', durationMs: Date.now() - auditRecord.startedAt, updatedAt: new Date() })
+              .where(eq(auditTable.id, auditRecord.id));
+          } catch (dbErr) {
+            log('error', 'audit_fail_update_failed', { requestId: logMeta.requestId, auditId: auditRecord.id, error: String(dbErr) });
+          }
         }
         try {
           controller.enqueue(

@@ -43,8 +43,9 @@ export default function SignupPage() {
         router.push('/');
         router.refresh();
       }
-    } catch {
-      setError('Unable to create account. Please try again.');
+    } catch (err) {
+      console.error('[signup] error:', err);
+      setError(err instanceof Error ? err.message : 'Unable to create account. Please try again.');
       setLoading(false);
     }
   }
