@@ -1,7 +1,14 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getAgent } from '@/lib/agents';
+import { agents, getAgent } from '@/lib/agents';
 import AuditPageClient from '@/components/AuditPageClient';
+import SystemPromptViewer from '@/components/SystemPromptViewer';
+
+// VULN-002: Constrains [agent] to only the 4 valid IDs at build time.
+// Requests for any other segment hit notFound() below without running server logic.
+export function generateStaticParams() {
+  return agents.map((a) => ({ agent: a.id }));
+}
 
 interface Props {
   params: Promise<{ agent: string }>;
@@ -13,11 +20,11 @@ export default async function AgentPage({ params }: Props) {
   if (!agent) notFound();
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100 px-6 py-12">
+    <main className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 px-6 py-12">
       <div className="max-w-4xl mx-auto">
         <Link
           href="/"
-          className="text-zinc-500 hover:text-zinc-300 text-sm mb-8 inline-flex items-center gap-1 transition-colors"
+          className="text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 text-sm mb-8 inline-flex items-center gap-1 transition-colors"
         >
           ← All agents
         </Link>
@@ -27,7 +34,8 @@ export default async function AgentPage({ params }: Props) {
             Audit Agent
           </div>
           <h1 className="text-3xl font-bold mb-2">{agent.name}</h1>
-          <p className="text-zinc-400">{agent.description}</p>
+          <p className="text-gray-600 dark:text-zinc-400">{agent.description}</p>
+          <SystemPromptViewer prompt={agent.systemPrompt} />
         </div>
 
         <AuditPageClient agent={agent} />
