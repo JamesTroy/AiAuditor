@@ -1,17 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import { getHistory, deleteAudit, AuditEntry } from '@/lib/history';
-import { markdownComponents } from '@/lib/markdownComponents';
+import { markdownComponents } from '@/components/markdownComponents';
 
 interface Props {
   agentId: string;
-  refreshTrigger?: number;
+  // ARCH-003: Parent passes a MutableRefObject; HistoryPanel writes its load
+  // function into it so the parent can trigger a refresh without a counter.
+  reloadRef?: React.MutableRefObject<(() => void) | null>;
 }
 
-export default function HistoryPanel({ agentId, refreshTrigger }: Props) {
+export default function HistoryPanel({ agentId, reloadRef }: Props) {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -20,9 +22,14 @@ export default function HistoryPanel({ agentId, refreshTrigger }: Props) {
     setEntries(getHistory(agentId));
   }, [agentId]);
 
+  // Keep the ref target current so the parent always calls the latest closure.
+  useEffect(() => {
+    if (reloadRef) reloadRef.current = load;
+  }, [load, reloadRef]);
+
   useEffect(() => {
     load();
-  }, [load, refreshTrigger]);
+  }, [load]);
 
   if (entries.length === 0) return null;
 

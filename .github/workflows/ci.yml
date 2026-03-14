@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Type check & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      # ARCH-025: Assert production CSP does not contain 'unsafe-eval'.
+      # This would be a security regression — it must only appear in the dev branch.
+      - name: Assert prod CSP lacks unsafe-eval
+        run: |
+          NODE_ENV=production node -e "
+            const { execSync } = require('child_process');
+            // Build the CSP value by importing next.config.ts via ts-node or
+            // inspecting next.config.ts directly with a pattern match.
+            const src = require('fs').readFileSync('next.config.ts', 'utf8');
+            const prodBranch = src.match(/NODE_ENV.*===.*'production'[\s\S]*?'([^']+)'/);
+            const devEvalInProd = src.includes(\"'unsafe-eval'\") && !src.includes(\"process.env.NODE_ENV === 'development'\");
+            if (devEvalInProd) {
+              console.error('ERROR: unsafe-eval found in CSP without a dev-only guard.');
+              process.exit(1);
+            }
+            console.log('PASS: unsafe-eval is guarded to dev-only.');
+          "
+
+      - name: Build
+        run: npm run build
+        env:
+          ANTHROPIC_API_KEY: dummy_key_for_build

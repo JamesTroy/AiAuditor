@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import {
   getHistory, deleteAudit, clearHistory, starAudit, unstarAudit, setAuditNote, AuditEntry,
 } from '@/lib/history';
-import { markdownComponents } from '@/lib/markdownComponents';
+import { markdownComponents } from '@/components/markdownComponents';
 
 export default function HistoryPage() {
   const [entries, setEntries] = useState<AuditEntry[]>([]);

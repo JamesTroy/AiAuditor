@@ -1,15 +1,9 @@
 import { NextRequest } from 'next/server';
+import { isAllowedUrl, ALLOWED_URL_DESCRIPTION } from '@/lib/config/urlAllowlist';
 
 export const runtime = 'nodejs';
 
 const MAX_BYTES = 30_000;
-
-// Only allow fetching from trusted raw-content hosts
-const ALLOWED_PATTERNS = [
-  /^https:\/\/raw\.githubusercontent\.com\//,
-  /^https:\/\/gist\.githubusercontent\.com\//,
-  /^https:\/\/gist\.github\.com\/[^/]+\/[^/]+\/raw\//,
-];
 
 export async function POST(req: NextRequest) {
   let body: { url?: unknown };
@@ -25,10 +19,9 @@ export async function POST(req: NextRequest) {
   }
 
   const trimmed = url.trim();
-  const allowed = ALLOWED_PATTERNS.some((p) => p.test(trimmed));
-  if (!allowed) {
+  if (!isAllowedUrl(trimmed)) {
     return new Response(
-      'Only raw GitHub and Gist URLs are supported (raw.githubusercontent.com, gist.githubusercontent.com, gist.github.com/.../raw/)',
+      `Only raw GitHub and Gist URLs are supported (${ALLOWED_URL_DESCRIPTION})`,
       { status: 400 },
     );
   }

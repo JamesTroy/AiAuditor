@@ -10,6 +10,10 @@ export function generateStaticParams() {
   return agents.map((a) => ({ agent: a.id }));
 }
 
+// ARCH-019: ISR — revalidate every hour so custom-agent edits are reflected
+// without a full redeploy. Static pages remain fast but stay reasonably fresh.
+export const revalidate = 3600;
+
 interface Props {
   params: Promise<{ agent: string }>;
 }

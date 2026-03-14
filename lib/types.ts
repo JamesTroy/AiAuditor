@@ -1,18 +1,9 @@
-export type AgentType =
-  | 'code-quality'
-  | 'security'
-  | 'seo-performance'
-  | 'accessibility'
-  | 'sql'
-  | 'api-design'
-  | 'devops'
-  | 'performance'
-  | 'privacy'
-  | 'test-quality'
-  | 'architecture';
+// ARCH-013: AgentType is derived from the Zod schema to avoid duplication.
+export type { AgentTypeValue as AgentType } from '@/lib/schemas/auditRequest';
 
+// Keep these interfaces for any consumers that reference them directly.
 export interface AuditRequestBody {
-  agentType: AgentType;
+  agentType: import('@/lib/schemas/auditRequest').AgentTypeValue;
   input: string;
 }
 
@@ -24,6 +15,9 @@ export interface CustomAuditRequestBody {
 
 export interface AgentConfig {
   id: string; // built-in AgentType values or custom UUID
+  // ARCH-014: Discriminator so callers can branch on agent origin without
+  // duplicating the built-in ID allowlist or doing set lookups.
+  kind: 'builtin' | 'custom';
   name: string;
   description: string;
   category: string;

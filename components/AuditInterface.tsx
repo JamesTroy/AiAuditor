@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import { AgentConfig } from '@/lib/types';
-import { saveAudit } from '@/lib/history';
-import { markdownComponents } from '@/lib/markdownComponents';
+import { markdownComponents } from '@/components/markdownComponents';
 import { agents } from '@/lib/agents';
 import { setChainInput, consumeChainInput } from '@/lib/session';
+import { ALLOWED_URL_DESCRIPTION } from '@/lib/config/urlAllowlist';
+import { useAuditSession } from '@/lib/hooks/useAuditSession';
 
 const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure'] as const;
 
@@ -28,9 +29,6 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
   const router = useRouter();
   const [input, setInput] = useState('');
   const [files, setFiles] = useState<FileEntry[]>([]);
-  const [result, setResult] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [urlValue, setUrlValue] = useState('');
   const [urlLoading, setUrlLoading] = useState(false);
@@ -38,9 +36,11 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
   const [showUrl, setShowUrl] = useState(false);
   const [chainOpen, setChainOpen] = useState(false);
   const [canPaste, setCanPaste] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chainRef = useRef<HTMLDivElement>(null);
+
+  // ARCH-002: Streaming audit state lives in the hook.
+  const { result, loading, error, runAudit, handleStop } = useAuditSession(agent, onAuditSaved);
 
   // Detect clipboard API after mount — keeps SSR/client render identical
   useEffect(() => {
@@ -68,84 +68,17 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape' && loading) {
-        abortRef.current?.abort();
-        setLoading(false);
+        handleStop();
       }
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [loading]);
-
-  const runAudit = useCallback(async () => {
-    if (!input.trim() || loading) return;
-
-    abortRef.current?.abort();
-    abortRef.current = new AbortController();
-
-    setLoading(true);
-    setResult('');
-    setError('');
-
-    const BUILT_IN_IDS = new Set([
-      'code-quality', 'security', 'seo-performance', 'accessibility',
-      'sql', 'api-design', 'devops', 'performance', 'privacy', 'test-quality', 'architecture',
-    ]);
-    const requestBody = BUILT_IN_IDS.has(agent.id)
-      ? JSON.stringify({ agentType: agent.id, input })
-      : JSON.stringify({ agentType: 'custom', systemPrompt: agent.systemPrompt, input });
-
-    try {
-      const res = await fetch('/api/audit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: requestBody,
-        signal: abortRef.current.signal,
-      });
-
-      if (!res.ok || !res.body) {
-        const text = await res.text();
-        setError(text || `Error ${res.status}`);
-        return;
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let fullResult = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        fullResult += chunk;
-        setResult(fullResult);
-      }
-
-      saveAudit({
-        agentId: agent.id,
-        agentName: agent.name,
-        inputSnippet: input.slice(0, 100) + (input.length > 100 ? '…' : ''),
-        result: fullResult,
-        timestamp: Date.now(),
-      });
-      onAuditSaved?.();
-    } catch (err: unknown) {
-      if (err instanceof Error && err.name !== 'AbortError') {
-        setError(err.message);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [input, loading, agent, onAuditSaved]);
-
-  function handleStop() {
-    abortRef.current?.abort();
-    setLoading(false);
-  }
+  }, [loading, handleStop]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      runAudit();
+      runAudit(input);
     }
   }
 
@@ -291,7 +224,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
               value={urlValue}
               onChange={(e) => setUrlValue(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleFetchUrl(); }}
-              placeholder="https://raw.githubusercontent.com/..."
+              placeholder={`https:// — allowed: ${ALLOWED_URL_DESCRIPTION}`}
               className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500"
             />
             <button
@@ -323,7 +256,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <button
-          onClick={runAudit}
+          onClick={() => runAudit(input)}
           disabled={loading || !input.trim()}
           className={`px-6 py-2.5 rounded-lg font-semibold text-sm text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${agent.buttonClass}`}
         >
@@ -423,7 +356,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
             {!loading && result && (
               <div className="flex items-center gap-2">
                 <button
-                  onClick={runAudit}
+                  onClick={() => runAudit(input)}
                   className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
                 >
                   Re-audit

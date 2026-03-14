@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
 import { getAgent } from '@/lib/agents';
 import { checkRateLimit } from '@/lib/rateLimit';
-import { AgentType } from '@/lib/types';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
+import { auditRequestSchema } from '@/lib/schemas/auditRequest';
 
 // ARCH-022: Fail fast at module init if the API key is missing rather than
 // surfacing a cryptic SDK error on the first real user request.
@@ -15,25 +15,9 @@ if (!process.env.ANTHROPIC_API_KEY) {
 
 export const runtime = 'nodejs';
 
-// VULN-006: Strict allowlist — must match AgentType union in lib/types.ts exactly.
-const VALID_AGENT_TYPES: ReadonlySet<string> = new Set([
-  'code-quality',
-  'security',
-  'seo-performance',
-  'accessibility',
-  'sql',
-  'api-design',
-  'devops',
-  'performance',
-  'privacy',
-  'test-quality',
-  'architecture',
-]);
-
-// VULN-008: Server-side size ceilings.
+// VULN-008: Server-side size ceiling on raw content-length (advisory; actual
+// field lengths are enforced by the Zod schema in lib/schemas/auditRequest.ts).
 const MAX_CONTENT_LENGTH = 120_000; // ~120 KB; accounts for JSON overhead
-const MAX_INPUT_CHARS = 30_000;
-const MAX_SYSTEM_PROMPT_CHARS = 10_000;
 
 // ARCH-016: Hard server-side timeout on the Anthropic stream.
 // Prevents a hung upstream connection from holding the worker indefinitely.
@@ -147,9 +131,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Parse body.
-  let body: { agentType?: unknown; input?: unknown; systemPrompt?: unknown };
+  let rawBody: unknown;
   try {
-    body = await req.json();
+    rawBody = await req.json();
   } catch {
     log('warn', 'invalid_json', { requestId, ip });
     return new Response('Invalid JSON', {
@@ -158,78 +142,44 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const { agentType, input, systemPrompt } = body;
+  // ARCH-013: Validate with shared Zod schema — single source of truth for
+  // field constraints (lengths, allowed values) used by both server and client.
+  const parsed = auditRequestSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? 'Invalid request';
+    log('warn', 'schema_validation_failed', {
+      requestId,
+      ip,
+      issues: parsed.error.issues,
+    });
+    return new Response(message, {
+      status: 400,
+      headers: { 'X-Request-Id': requestId },
+    });
+  }
 
-  // --- Custom agent branch ---
-  if (agentType === 'custom') {
-    if (typeof systemPrompt !== 'string' || !systemPrompt.trim()) {
-      log('warn', 'custom_missing_system_prompt', { requestId, ip });
-      return new Response('Missing system prompt', {
-        status: 400,
-        headers: { 'X-Request-Id': requestId },
-      });
-    }
-    if (systemPrompt.length > MAX_SYSTEM_PROMPT_CHARS) {
-      log('warn', 'custom_system_prompt_too_long', { requestId, ip, length: systemPrompt.length });
-      return new Response(
-        `System prompt too long (max ${MAX_SYSTEM_PROMPT_CHARS.toLocaleString()} characters)`,
-        { status: 400, headers: { 'X-Request-Id': requestId } },
-      );
-    }
-    if (typeof input !== 'string' || !input.trim()) {
-      log('warn', 'missing_input', { requestId, ip });
-      return new Response('Missing input', {
-        status: 400,
-        headers: { 'X-Request-Id': requestId },
-      });
-    }
-    if (input.length > MAX_INPUT_CHARS) {
-      log('warn', 'input_too_long', { requestId, ip, length: input.length });
-      return new Response(
-        `Input too long (max ${MAX_INPUT_CHARS.toLocaleString()} characters)`,
-        { status: 400, headers: { 'X-Request-Id': requestId } },
-      );
-    }
-    const safeInput = `<user_content>\n${input}\n</user_content>`;
+  const data = parsed.data;
+
+  if (data.agentType === 'custom') {
+    // VULN-005: XML delimiters separate user content from instructions.
+    const safeInput = `<user_content>\n${data.input}\n</user_content>`;
     log('info', 'custom_audit_start', {
-      requestId, ip, promptLength: systemPrompt.length, inputLength: input.length, remaining,
+      requestId,
+      ip,
+      promptLength: data.systemPrompt.length,
+      inputLength: data.input.length,
+      remaining,
     });
     return new Response(
-      makeStream(systemPrompt.trim(), safeInput, { requestId, ip, agentType: 'custom' }),
+      makeStream(data.systemPrompt.trim(), safeInput, { requestId, ip, agentType: 'custom' }),
       { headers: { ...STREAM_HEADERS, 'X-Request-Id': requestId } },
     );
   }
 
-  // --- Built-in agent branch ---
-  // VULN-006: Strict allowlist check before getAgent.
-  if (typeof agentType !== 'string' || !VALID_AGENT_TYPES.has(agentType)) {
-    log('warn', 'invalid_agent_type', { requestId, ip, agentType });
-    return new Response('Invalid agent type', {
-      status: 400,
-      headers: { 'X-Request-Id': requestId },
-    });
-  }
-
-  if (typeof input !== 'string' || !input.trim()) {
-    log('warn', 'missing_input', { requestId, ip });
-    return new Response('Missing input', {
-      status: 400,
-      headers: { 'X-Request-Id': requestId },
-    });
-  }
-
-  // VULN-008: Server-side character length check.
-  if (input.length > MAX_INPUT_CHARS) {
-    log('warn', 'input_too_long', { requestId, ip, length: input.length });
-    return new Response(
-      `Input too long (max ${MAX_INPUT_CHARS.toLocaleString()} characters)`,
-      { status: 400, headers: { 'X-Request-Id': requestId } },
-    );
-  }
-
-  const agent = getAgent(agentType as AgentType);
+  // Built-in agent — agentType is already validated by the schema enum.
+  const agent = getAgent(data.agentType);
   if (!agent) {
-    log('error', 'agent_not_found_after_allowlist', { requestId, ip, agentType });
+    log('error', 'agent_not_found_after_allowlist', { requestId, ip, agentType: data.agentType });
     return new Response('Unknown agent type', {
       status: 400,
       headers: { 'X-Request-Id': requestId },
@@ -238,10 +188,16 @@ export async function POST(req: NextRequest) {
 
   // VULN-005: XML delimiters separate user content from instructions.
   // VULN-014: Stream integrity relies on TLS + HSTS (configured in next.config.ts).
-  const safeInput = `<user_content>\n${input}\n</user_content>`;
-  log('info', 'audit_start', { requestId, ip, agentType, inputLength: input.length, remaining });
+  const safeInput = `<user_content>\n${data.input}\n</user_content>`;
+  log('info', 'audit_start', {
+    requestId,
+    ip,
+    agentType: data.agentType,
+    inputLength: data.input.length,
+    remaining,
+  });
   return new Response(
-    makeStream(agent.systemPrompt, safeInput, { requestId, ip, agentType }),
+    makeStream(agent.systemPrompt, safeInput, { requestId, ip, agentType: data.agentType }),
     { headers: { ...STREAM_HEADERS, 'X-Request-Id': requestId } },
   );
 }

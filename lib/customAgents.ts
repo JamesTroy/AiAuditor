@@ -118,6 +118,7 @@ export function importCustomAgents(json: string): number {
 export function toAgentConfig(agent: CustomAgent): AgentConfig {
   return {
     id: agent.id,
+    kind: 'custom' as const,
     name: agent.name,
     description: agent.description,
     category: 'Custom',
