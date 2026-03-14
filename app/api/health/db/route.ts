@@ -14,8 +14,14 @@ export async function GET() {
       tables: tables.map((r: Record<string, unknown>) => r.tablename),
     });
   } catch (err) {
+    const e = err instanceof Error ? err : new Error(String(err));
     return Response.json(
-      { db: 'error', message: err instanceof Error ? err.message : String(err) },
+      {
+        db: 'error',
+        message: e.message,
+        code: 'code' in e ? (e as Record<string, unknown>).code : undefined,
+        dbHost: (process.env.DATABASE_URL ?? '').replace(/\/\/.*:.*@/, '//***:***@'),
+      },
       { status: 500 }
     );
   }
