@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
   // but an explicit origin check is defense-in-depth.
   const origin = req.headers.get('origin');
   if (origin && !ALLOWED_ORIGINS.has(origin)) {
-    log('warn', 'csrf_origin_rejected', { requestId, origin });
+    log('warn', 'csrf_origin_rejected', { requestId, origin, allowedOrigins: [...ALLOWED_ORIGINS] });
     return new Response('Forbidden', {
       status: 403,
       headers: { 'X-Request-Id': requestId },
