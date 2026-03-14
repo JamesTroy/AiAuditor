@@ -21,7 +21,8 @@ const MAX_CONTENT_LENGTH = 120_000; // ~120 KB; accounts for JSON overhead
 
 // ARCH-016: Hard server-side timeout on the Anthropic stream.
 // Prevents a hung upstream connection from holding the worker indefinitely.
-const STREAM_TIMEOUT_MS = 120_000; // 2 minutes
+// 5 minutes: security/architecture audits on large inputs routinely exceed 2 min.
+const STREAM_TIMEOUT_MS = 300_000; // 5 minutes
 
 // ARCH-020: Structured JSON logging with request ID for correlation.
 function log(
