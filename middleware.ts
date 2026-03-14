@@ -59,7 +59,7 @@ export function middleware(request: NextRequest) {
     ].join(' '),
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https://avatars.githubusercontent.com https://lh3.googleusercontent.com",
     "connect-src 'self'",
     "frame-ancestors 'none'",
     "object-src 'none'",

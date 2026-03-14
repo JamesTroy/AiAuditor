@@ -24,6 +24,14 @@ async function sendEmail(to: string, subject: string, html: string) {
 export const auth = betterAuth({
   appName: 'Claudit',
 
+  // Trusted origins for CSRF validation on OAuth callbacks and API requests.
+  trustedOrigins: [
+    process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
+    ...(process.env.RAILWAY_PUBLIC_DOMAIN
+      ? [`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`]
+      : []),
+  ],
+
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: { ...schema },
