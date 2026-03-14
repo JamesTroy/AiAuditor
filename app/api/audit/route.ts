@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { headers as nextHeaders } from 'next/headers';
 import { getAgent } from '@/lib/agents';
-import { auditLimiter } from '@/lib/rateLimit';
+import { auditLimiter, dailyAuditBudget } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { auditRequestSchema } from '@/lib/schemas/auditRequest';
 import { auth } from '@/lib/auth';
@@ -209,6 +209,16 @@ export async function POST(req: NextRequest) {
     return new Response('Too many requests. Please wait a moment.', {
       status: 429,
       headers: { ...rl.headers, 'X-Request-Id': requestId },
+    });
+  }
+
+  // RL-010: Global daily audit call budget (500 calls/day across all users).
+  const dailyBudget = dailyAuditBudget.check('global');
+  if (!dailyBudget.allowed) {
+    log('warn', 'daily_audit_budget_exceeded', { requestId, ip: anonIp });
+    return new Response('Daily audit limit reached. Please try again tomorrow.', {
+      status: 429,
+      headers: { ...dailyBudget.headers, 'X-Request-Id': requestId },
     });
   }
 

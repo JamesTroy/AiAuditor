@@ -161,3 +161,41 @@ export const fetchUrlLimiter = new RateLimiter({
   windowMs: 60_000,
   maxRequests: 30,
 });
+
+// RL-001: Login brute-force protection — 5 attempts per 15 min per IP.
+export const authLoginLimiter = new RateLimiter({
+  windowMs: 15 * 60_000,
+  maxRequests: 5,
+});
+
+// RL-002: Account creation spam — 3 sign-ups per hour per IP.
+export const authSignupLimiter = new RateLimiter({
+  windowMs: 60 * 60_000,
+  maxRequests: 3,
+});
+
+// RL-003: Password reset email bomb — 3 resets per hour per IP.
+export const authResetLimiter = new RateLimiter({
+  windowMs: 60 * 60_000,
+  maxRequests: 3,
+});
+
+// RL-004: 2FA OTP brute-force — 5 attempts per 15 min per IP.
+export const auth2faLimiter = new RateLimiter({
+  windowMs: 15 * 60_000,
+  maxRequests: 5,
+});
+
+// General auth fallback — 30 req/min for all other auth routes.
+export const authGeneralLimiter = new RateLimiter({
+  windowMs: 60_000,
+  maxRequests: 30,
+});
+
+// RL-010: Global daily audit call budget (in-memory; replace with Redis for multi-instance).
+export const dailyAuditBudget = new RateLimiter({
+  windowMs: 24 * 60 * 60_000,
+  maxRequests: 500,
+  maxEntries: 1, // single "global" key
+  cleanupIntervalMs: 60 * 60_000,
+});

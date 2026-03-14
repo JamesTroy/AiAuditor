@@ -5,12 +5,13 @@ const MODEL = 'claude-sonnet-4-6';
 const MAX_TOKENS = 8192;
 const TEMPERATURE = 0;
 
-// ARCH-018: Retry parameters for transient Anthropic API errors (429, 529, 5xx).
-// Exponential back-off: attempt 1 → 1 s, attempt 2 → 2 s, attempt 3 → 4 s.
+// ARCH-018: Retry parameters for transient Anthropic API server errors.
+// RL-014: Do NOT retry on 429 — retrying a rate limit worsens cost and delays.
+// Only retry on genuine server errors (500, 502, 503, 529).
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 1_000;
 
-const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 529]);
+const RETRYABLE_STATUS = new Set([500, 502, 503, 529]);
 
 // PERF-012: Hoist TextEncoder to module scope — it's stateless and reusable.
 const encoder = new TextEncoder();
