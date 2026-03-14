@@ -1,6 +1,13 @@
 // In-memory sliding window rate limiter.
-// Safe for a single-process personal tool (Next.js dev or `next start`).
-// Restarts clear the window — acceptable for a personal tool with no persistence needs.
+//
+// ARCH-001 KNOWN LIMITATION: This counter is process-scoped (Node.js module memory).
+// In any multi-worker, multi-instance, or serverless deployment (Vercel, AWS Lambda, etc.)
+// each process starts with a fresh counter, making this limiter trivially bypassable.
+//
+// For production with untrusted traffic, replace with a Redis- or Upstash-backed
+// atomic counter (e.g. INCR + EXPIRE) so the window is shared across all workers.
+//
+// Current scope: acceptable for a single-process `next start` or local dev server.
 
 const WINDOW_MS = 60_000; // 1 minute
 const MAX_REQUESTS = 10;  // requests per IP per window

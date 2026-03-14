@@ -7,6 +7,7 @@ import { AgentConfig } from '@/lib/types';
 import { saveAudit } from '@/lib/history';
 import { markdownComponents } from '@/lib/markdownComponents';
 import { agents } from '@/lib/agents';
+import { setChainInput, consumeChainInput } from '@/lib/session';
 
 const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure'] as const;
 
@@ -46,17 +47,10 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
     setCanPaste(!!navigator.clipboard?.readText);
   }, []);
 
-  // Pre-fill input from cross-agent chain
+  // Pre-fill input from cross-agent chain (ARCH-011: via lib/session.ts)
   useEffect(() => {
-    try {
-      const chained = sessionStorage.getItem('ai-audit-chain-input');
-      if (chained) {
-        setInput(chained);
-        sessionStorage.removeItem('ai-audit-chain-input');
-      }
-    } catch {
-      // sessionStorage unavailable
-    }
+    const chained = consumeChainInput();
+    if (chained) setInput(chained);
   }, []);
 
   // Close chain dropdown on outside click
@@ -266,11 +260,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
   }
 
   function handleChainTo(targetId: string) {
-    try {
-      sessionStorage.setItem('ai-audit-chain-input', input);
-    } catch {
-      // sessionStorage unavailable
-    }
+    setChainInput(input); // ARCH-011: via lib/session.ts
     setChainOpen(false);
     router.push(`/audit/${targetId}`);
   }
