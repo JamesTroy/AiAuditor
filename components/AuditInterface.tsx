@@ -10,7 +10,7 @@ import { setChainInput, consumeChainInput } from '@/lib/session';
 import { ALLOWED_URL_DESCRIPTION } from '@/lib/config/urlAllowlist';
 import { useAuditSession } from '@/lib/hooks/useAuditSession';
 
-const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure'] as const;
+const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure', 'Design'] as const;
 
 const ACCEPTED_EXTENSIONS = '.js,.ts,.tsx,.jsx,.html,.css,.py,.go,.java,.rb,.php,.md,.txt';
 const MAX_CHARS = 30_000;
@@ -36,6 +36,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
   const [showUrl, setShowUrl] = useState(false);
   const [chainOpen, setChainOpen] = useState(false);
   const [canPaste, setCanPaste] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chainRef = useRef<HTMLDivElement>(null);
 
@@ -46,6 +47,14 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
   useEffect(() => {
     setCanPaste(!!navigator.clipboard?.readText);
   }, []);
+
+  // Elapsed timer while loading
+  useEffect(() => {
+    if (!loading) { setElapsed(0); return; }
+    setElapsed(0);
+    const id = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [loading]);
 
   // Pre-fill input from cross-agent chain (ARCH-011: via lib/session.ts)
   useEffect(() => {
@@ -242,7 +251,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
       {/* Textarea */}
       <div className="relative">
         <textarea
-          className="w-full h-64 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg p-4 font-mono text-sm text-gray-900 dark:text-zinc-100 resize-y focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500 placeholder-gray-400 dark:placeholder-zinc-600"
+          className="w-full h-64 sm:h-80 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg p-4 font-mono text-sm text-gray-900 dark:text-zinc-100 resize-y focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-50 dark:focus-visible:ring-offset-zinc-950 placeholder-gray-400 dark:placeholder-zinc-600"
           placeholder={`${agent.placeholder}\n\nTip: Press ⌘+Enter to run · Esc to stop`}
           value={input}
           onChange={(e) => { setInput(e.target.value); if (files.length > 0) setFiles([]); }}
@@ -258,15 +267,21 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
         <button
           onClick={() => runAudit(input)}
           disabled={loading || !input.trim()}
-          className={`px-6 py-2.5 rounded-lg font-semibold text-sm text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${agent.buttonClass}`}
+          className={`inline-flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-lg font-semibold text-sm text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-ring ${agent.buttonClass}`}
         >
-          {loading ? 'Auditing...' : 'Run Audit'}
+          {loading && (
+            <svg className="animate-spin h-4 w-4 text-white/80" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          )}
+          {loading ? `Auditing… ${elapsed}s` : 'Run Audit'}
         </button>
 
         {loading && (
           <button
             onClick={handleStop}
-            className="px-4 py-2.5 rounded-lg text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors"
+            className="px-4 py-2.5 min-h-[44px] rounded-lg text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors focus-ring"
           >
             Stop
           </button>
@@ -277,7 +292,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
           <button
             onClick={handlePaste}
             disabled={loading}
-            className="px-4 py-2.5 rounded-lg text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 py-2.5 min-h-[44px] rounded-lg text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
           >
             Paste
           </button>
@@ -287,7 +302,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={loading}
-          className="px-4 py-2.5 rounded-lg text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-4 py-2.5 min-h-[44px] rounded-lg text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
         >
           Upload file{files.length > 1 ? 's' : ''}
         </button>
@@ -314,11 +329,9 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
               >✕</button>
             </span>
           ))}
-          {input.length > 0 && (
-            <span className="text-xs text-gray-400 dark:text-zinc-600">
-              {input.length.toLocaleString()} / {MAX_CHARS.toLocaleString()} · ~{tokenEstimate.toLocaleString()} tokens
-            </span>
-          )}
+          <span className="text-xs text-gray-400 dark:text-zinc-600" aria-live="polite" aria-atomic="true">
+            {input.length.toLocaleString()} / {MAX_CHARS.toLocaleString()} · ~{tokenEstimate.toLocaleString()} tokens
+          </span>
         </div>
       </div>
 
@@ -339,9 +352,13 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
 
       {/* Result panel */}
       {(result || loading) && (
-        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg overflow-hidden transition-opacity duration-300">
+        <div
+          className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg overflow-hidden animate-fade-up"
+          aria-live="polite"
+          aria-label="Audit result"
+        >
           {/* Result header with export buttons */}
-          <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-zinc-800">
+          <div className="flex items-center justify-between flex-wrap gap-2 px-4 py-2 border-b border-gray-200 dark:border-zinc-800">
             <span className="text-xs text-gray-500 dark:text-zinc-500 font-mono uppercase tracking-widest">
               {loading ? (
                 <span className="flex items-center gap-1.5">
@@ -354,28 +371,28 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
               ) : 'Result'}
             </span>
             {!loading && result && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => runAudit(input)}
-                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[32px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                 >
                   Re-audit
                 </button>
                 <button
                   onClick={handleCopy}
-                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[32px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                 >
                   {copied ? '✓ Copied' : 'Copy'}
                 </button>
                 <button
                   onClick={handleDownload}
-                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[32px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                 >
                   Download .md
                 </button>
                 <button
                   onClick={handleDownloadJson}
-                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[32px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                 >
                   Download .json
                 </button>
@@ -384,7 +401,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
                   <div ref={chainRef} className="relative">
                     <button
                       onClick={() => setChainOpen((v) => !v)}
-                      className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+                      className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[32px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                     >
                       Try with… ▾
                     </button>

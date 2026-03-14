@@ -25,7 +25,7 @@ export default async function AgentPage({ params }: Props) {
   if (!agent) notFound();
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 px-6 py-12">
+    <main id="main-content" tabIndex={-1} className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 px-6 py-12">
       <div className="max-w-4xl mx-auto">
         <Link
           href="/"
@@ -35,7 +35,7 @@ export default async function AgentPage({ params }: Props) {
         </Link>
 
         <div className="mb-8">
-          <div className={`text-xs font-mono uppercase tracking-widest mb-3 ${agent.accentClass.split(' ')[1]}`}>
+          <div className={`text-xs font-mono uppercase tracking-widest mb-3 ${agent.accentClass.split(' ').find((c) => c.startsWith('text-')) ?? ''}`}>
             Audit Agent
           </div>
           <h1 className="text-3xl font-bold mb-2">{agent.name}</h1>

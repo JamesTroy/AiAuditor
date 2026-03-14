@@ -12,6 +12,30 @@ const BUILT_IN_ICONS: Record<string, string> = {
   'privacy': '🔐',
   'test-quality': '🧪',
   'architecture': '🏗️',
+  'ux-review': '🎨',
+  'design-system': '🧩',
+  'responsive-design': '📐',
+  'color-typography': '🎭',
+  'motion-interaction': '✨',
+};
+
+const BUILT_IN_ICON_LABELS: Record<string, string> = {
+  'code-quality': 'hexagon',
+  'security': 'lock',
+  'seo-performance': 'chart',
+  'accessibility': 'accessibility symbol',
+  'sql': 'database',
+  'api-design': 'plug',
+  'devops': 'whale',
+  'performance': 'lightning bolt',
+  'privacy': 'lock with key',
+  'test-quality': 'test tube',
+  'architecture': 'construction',
+  'ux-review': 'palette',
+  'design-system': 'puzzle piece',
+  'responsive-design': 'ruler',
+  'color-typography': 'masks',
+  'motion-interaction': 'sparkles',
 };
 
 const DEFAULT_CUSTOM_ICON = '✦';
@@ -26,20 +50,25 @@ interface Props {
 
 export default function AgentCard({ agent, onEdit, onDelete, onToggleFavorite, isFavorite }: Props) {
   const icon = BUILT_IN_ICONS[agent.id] ?? DEFAULT_CUSTOM_ICON;
+  const iconLabel = BUILT_IN_ICON_LABELS[agent.id] ?? 'custom agent';
   const isCustom = !(agent.id in BUILT_IN_ICONS);
 
+  // Robust text-color extraction — don't rely on positional splitting
+  const accentTextClass = agent.accentClass.split(' ').find((c) => c.startsWith('text-')) ?? '';
+
   return (
-    <div
-      className={`group border rounded-xl p-6 bg-white dark:bg-zinc-900 transition-all duration-200 cursor-pointer hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 dark:hover:shadow-black/40 ${agent.accentClass}`}
+    <article
+      className={`group border rounded-xl p-6 bg-white dark:bg-zinc-900 transition-[transform,box-shadow,opacity] duration-200 cursor-pointer motion-safe:hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 dark:hover:shadow-black/40 ${agent.accentClass}`}
     >
       <div className="flex items-start justify-between mb-3">
-        <div className="text-3xl">{icon}</div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <span role="img" aria-label={iconLabel} className="text-3xl">{icon}</span>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
           {onToggleFavorite && (
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(); }}
-              className={`text-sm px-1.5 py-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-zinc-700 ${isFavorite ? 'text-yellow-400' : 'text-gray-400 dark:text-zinc-600 hover:text-yellow-400'}`}
+              className={`text-sm px-1.5 py-1 min-h-[32px] min-w-[32px] rounded transition-colors hover:bg-gray-200 dark:hover:bg-zinc-700 focus-ring ${isFavorite ? 'text-yellow-400' : 'text-gray-400 dark:text-zinc-600 hover:text-yellow-400'}`}
               aria-label={isFavorite ? `Unpin ${agent.name}` : `Pin ${agent.name}`}
+              aria-pressed={isFavorite ?? false}
             >
               {isFavorite ? '⭐' : '☆'}
             </button>
@@ -47,7 +76,7 @@ export default function AgentCard({ agent, onEdit, onDelete, onToggleFavorite, i
           {isCustom && onEdit && (
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(); }}
-              className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+              className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[32px] rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus-ring"
               aria-label={`Edit ${agent.name}`}
             >
               Edit
@@ -56,7 +85,7 @@ export default function AgentCard({ agent, onEdit, onDelete, onToggleFavorite, i
           {isCustom && onDelete && (
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }}
-              className="text-xs text-gray-500 dark:text-zinc-500 hover:text-red-400 px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+              className="text-xs text-gray-500 dark:text-zinc-500 hover:text-red-400 px-2 py-1 min-h-[32px] rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus-ring"
               aria-label={`Delete ${agent.name}`}
             >
               Delete
@@ -64,13 +93,13 @@ export default function AgentCard({ agent, onEdit, onDelete, onToggleFavorite, i
           )}
         </div>
       </div>
-      <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-zinc-100 group-hover:text-black dark:group-hover:text-white transition-colors">
+      <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-zinc-100 group-hover:text-black dark:group-hover:text-white transition-colors">
         {agent.name}
-      </h2>
+      </h3>
       <p className="text-gray-600 dark:text-zinc-400 text-sm leading-relaxed">{agent.description}</p>
-      <div className={`mt-4 text-xs font-medium uppercase tracking-widest ${agent.accentClass.split(' ')[1]}`}>
+      <div className={`mt-4 text-xs font-medium uppercase tracking-widest ${accentTextClass}`}>
         Start audit →
       </div>
-    </div>
+    </article>
   );
 }

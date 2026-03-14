@@ -9,7 +9,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import KeyboardShortcutsModal from '@/components/KeyboardShortcutsModal';
 import { getFavorites, toggleFavorite } from '@/lib/favorites';
 
-const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure'] as const;
+const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure', 'Design'] as const;
 
 export default function Home() {
   const [search, setSearch] = useState('');
@@ -50,7 +50,15 @@ export default function Home() {
   const pinnedAgents = agents.filter((a) => favorites.has(a.id));
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 px-6 py-20">
+    <>
+      {/* WCAG 2.4.1 — bypass block for keyboard users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-violet-600 focus:text-white focus:rounded-lg focus:text-sm focus:font-medium"
+      >
+        Skip to content
+      </a>
+    <main id="main-content" tabIndex={-1} className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 px-6 py-20">
       <div className="max-w-5xl mx-auto">
         {/* Header row */}
         <div className="flex items-center justify-end gap-2 mb-8">
@@ -76,8 +84,8 @@ export default function Home() {
             className="absolute inset-0 -z-10 mx-auto w-96 h-32 blur-3xl opacity-20 rounded-full"
             style={{ background: 'radial-gradient(ellipse, #6366f1 0%, #3b82f6 50%, transparent 100%)' }}
           />
-          <h1 className="text-5xl font-bold mb-4 tracking-tight">AI Audit</h1>
-          <p className="text-gray-600 dark:text-zinc-400 text-lg max-w-xl mx-auto">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight">AI Audit</h1>
+          <p className="text-gray-600 dark:text-zinc-300 text-lg max-w-xl mx-auto">
             Instant AI-powered audits for code quality, security, SEO, and accessibility.
             Powered by Claude.
           </p>
@@ -101,7 +109,7 @@ export default function Home() {
         {/* Agent grid */}
         {hasSearch ? (
           filteredAgents.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
               {filteredAgents.map((agent) => (
                 <Link key={agent.id} href={`/audit/${agent.id}`} className="block">
                   <AgentCard
@@ -121,7 +129,7 @@ export default function Home() {
             {pinnedAgents.length > 0 && (
               <section className="mb-10">
                 <h2 className="text-xs font-semibold uppercase tracking-widest text-yellow-500 mb-4">⭐ Pinned</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {pinnedAgents.map((agent) => (
                     <Link key={agent.id} href={`/audit/${agent.id}`} className="block">
                       <AgentCard
@@ -142,7 +150,7 @@ export default function Home() {
               return (
                 <section key={cat} className="mb-10">
                   <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-4">{cat}</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {group.map((agent) => (
                       <Link key={agent.id} href={`/audit/${agent.id}`} className="block">
                         <AgentCard
@@ -164,5 +172,6 @@ export default function Home() {
 
       {shortcutsOpen && <KeyboardShortcutsModal onClose={() => setShortcutsOpen(false)} />}
     </main>
+    </>
   );
 }
