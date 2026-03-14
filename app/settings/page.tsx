@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useSession, authClient } from '@/lib/auth-client';
 
 export default function SettingsPage() {
@@ -24,9 +23,9 @@ export default function SettingsPage() {
 
   if (isPending) {
     return (
-      <main className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center">
         <div className="animate-pulse text-gray-400">Loading...</div>
-      </main>
+      </div>
     );
   }
 
@@ -77,16 +76,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 px-6 py-12">
+    <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8">
           <h1 className="text-2xl font-bold">Settings</h1>
-          <Link
-            href="/"
-            className="text-sm text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-          >
-            ← Back
-          </Link>
         </div>
 
         {/* Profile */}
@@ -203,6 +196,6 @@ export default function SettingsPage() {
           </button>
         </section>
       </div>
-    </main>
+    </div>
   );
 }

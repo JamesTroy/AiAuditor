@@ -21,35 +21,27 @@ export default async function DashboardPage() {
     .limit(20);
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 px-6 py-12">
+    <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-            <p className="text-sm text-gray-500 dark:text-zinc-500 mt-1">
-              Welcome back, {session.user.name}
-            </p>
-          </div>
-          <Link
-            href="/"
-            className="text-sm text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-          >
-            ← Back to audits
-          </Link>
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-sm text-gray-500 dark:text-zinc-500 mt-1">
+            Welcome back, {session.user.name}
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5">
+          <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 border-l-2 border-l-violet-500 rounded-xl p-5">
             <p className="text-2xl font-bold">{audits.length}</p>
             <p className="text-xs text-gray-500 dark:text-zinc-500 mt-1">Total audits</p>
           </div>
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5">
+          <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 border-l-2 border-l-emerald-500 rounded-xl p-5">
             <p className="text-2xl font-bold">
               {audits.filter((a) => a.status === 'completed').length}
             </p>
             <p className="text-xs text-gray-500 dark:text-zinc-500 mt-1">Completed</p>
           </div>
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5">
+          <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 border-l-2 border-l-blue-500 rounded-xl p-5">
             <p className="text-2xl font-bold">
               {audits.filter((a) => a.score != null).length > 0
                 ? Math.round(
@@ -111,6 +103,6 @@ export default async function DashboardPage() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }

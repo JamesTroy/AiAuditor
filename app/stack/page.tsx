@@ -1,19 +1,10 @@
-import Link from 'next/link';
-
 const CHECK = '✓';
 const X = '✗';
 
 export default function StackPage() {
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 px-6 py-12">
+    <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
       <div className="max-w-4xl mx-auto">
-        <Link
-          href="/"
-          className="text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 text-sm mb-8 inline-flex items-center gap-1 transition-colors"
-        >
-          ← Back to audits
-        </Link>
-
         {/* Hero */}
         <div className="mb-12">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
@@ -335,11 +326,8 @@ export default function StackPage() {
           </div>
         </section>
 
-        <footer className="text-center text-sm text-gray-400 dark:text-zinc-600 py-8 border-t border-gray-200 dark:border-zinc-800">
-          Built with the stack above. View the source code to see exactly how it all fits together.
-        </footer>
       </div>
-    </main>
+    </div>
   );
 }
 

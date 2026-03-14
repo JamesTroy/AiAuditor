@@ -21,34 +21,39 @@ export default function CustomAgentPage() {
 
   if (agent === 'loading') {
     return (
-      <main className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center text-gray-900 dark:text-zinc-100">
         <span className="text-gray-500 dark:text-zinc-500 animate-pulse text-sm">Loading...</span>
-      </main>
+      </div>
     );
   }
 
   if (agent === null) {
     return (
-      <main className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 px-6 py-12">
+      <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
         <div className="max-w-4xl mx-auto">
-          <Link href="/" className="text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 text-sm mb-8 inline-flex items-center gap-1 transition-colors">
-            ← All agents
-          </Link>
           <div className="mt-16 text-center">
-            <p className="text-gray-600 dark:text-gray-600 dark:text-zinc-400 text-lg mb-2">Agent not found.</p>
+            <p className="text-gray-600 dark:text-zinc-400 text-lg mb-2">Agent not found.</p>
             <p className="text-gray-500 dark:text-zinc-600 text-sm">This custom agent may have been deleted or the URL is incorrect.</p>
+            <Link href="/" className="inline-flex items-center gap-1 text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-500 mt-4">
+              Browse agents →
+            </Link>
           </div>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100 px-6 py-12">
+    <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
       <div className="max-w-4xl mx-auto">
-        <Link href="/" className="text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 text-sm mb-8 inline-flex items-center gap-1 transition-colors">
-          ← All agents
-        </Link>
+        {/* Breadcrumb */}
+        <nav className="text-xs text-gray-400 dark:text-zinc-600 mb-6 flex items-center gap-1.5">
+          <Link href="/" className="hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">Agents</Link>
+          <span>/</span>
+          <span className="text-purple-400">Custom</span>
+          <span>/</span>
+          <span className="text-gray-600 dark:text-zinc-400">{agent.name}</span>
+        </nav>
         <div className="mb-8">
           <div className="text-xs font-mono uppercase tracking-widest mb-3 text-purple-400">
             Custom Audit Agent
@@ -59,6 +64,6 @@ export default function CustomAgentPage() {
         </div>
         <AuditPageClient agent={agent} />
       </div>
-    </main>
+    </div>
   );
 }

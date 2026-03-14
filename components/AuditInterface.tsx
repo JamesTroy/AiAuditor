@@ -349,7 +349,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
       {/* Streaming indicator (no result yet) */}
       {loading && !result && (
         <div className="flex items-center gap-2 text-gray-500 dark:text-zinc-500 text-sm">
-          <span className="animate-pulse">●</span>
+          <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
           <span>Analyzing...</span>
         </div>
       )}
@@ -357,16 +357,16 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
       {/* Result panel */}
       {(result || loading) && (
         <div
-          className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg overflow-hidden animate-fade-up"
+          className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 border-t-2 border-t-violet-500/50 rounded-lg overflow-hidden animate-fade-up"
           aria-live="polite"
           aria-label="Audit result"
         >
           {/* Result header with export buttons */}
           <div className="flex items-center justify-between flex-wrap gap-2 px-4 py-2 border-b border-gray-200 dark:border-zinc-800">
-            <span className="text-xs text-gray-500 dark:text-zinc-500 font-mono uppercase tracking-widest">
+            <span className="text-xs font-mono uppercase tracking-widest">
               {loading ? (
-                <span className="flex items-center gap-1.5">
-                  <span className="animate-pulse">●</span>
+                <span className="flex items-center gap-1.5 text-violet-400">
+                  <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
                   Streaming
                   {wordCount > 0 && (
                     <span className="text-gray-400 dark:text-zinc-600 normal-case">· {wordCount.toLocaleString()} words</span>
@@ -442,7 +442,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
             {/* PERF-011: Render plain text while streaming to avoid re-parsing
                 markdown on every RAF tick. SafeMarkdown only on completion. */}
             {loading ? (
-              <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-zinc-200 m-0 p-0 bg-transparent">{result} ▍</pre>
+              <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-zinc-200 m-0 p-0 bg-transparent">{result}<span className="animate-blink"> ▍</span></pre>
             ) : (
               <SafeMarkdown>{result}</SafeMarkdown>
             )}

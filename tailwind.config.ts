@@ -54,6 +54,9 @@ const config: Config = {
         "fade-up": "fade-up 0.3s ease-out both",
         "star-pop": "star-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both",
         "blink": "blink 1s step-end infinite",
+        "pulse-slow": "pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "shimmer": "shimmer 2s linear infinite",
+        "slide-in": "slide-in 0.2s ease-out both",
       },
       keyframes: {
         "fade-up": {
@@ -67,6 +70,14 @@ const config: Config = {
         "blink": {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0" },
+        },
+        "shimmer": {
+          from: { backgroundPosition: "-200% 0" },
+          to: { backgroundPosition: "200% 0" },
+        },
+        "slide-in": {
+          from: { opacity: "0", transform: "translateY(-4px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
         },
       },
     },

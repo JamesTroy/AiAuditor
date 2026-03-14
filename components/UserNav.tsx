@@ -58,7 +58,7 @@ export default function UserNav() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-lg py-1 z-50">
+        <div className="absolute right-0 mt-2 w-56 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-gray-200 dark:border-zinc-800 rounded-xl shadow-lg py-1 z-50 animate-slide-in">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-800">
             <p className="text-sm font-medium text-gray-900 dark:text-zinc-100 truncate">
               {session.user.name}

@@ -78,10 +78,15 @@ export default memo(function AgentCard({ agent, onEdit, onDelete, onToggleFavori
 
   return (
     <article
-      className={`group border rounded-xl p-6 bg-white dark:bg-zinc-900 transition-[transform,box-shadow,opacity] duration-200 cursor-pointer motion-safe:hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 dark:hover:shadow-black/40 ${agent.accentClass}`}
+      className={`group relative overflow-hidden border rounded-xl p-6 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-200 cursor-pointer motion-safe:hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 dark:hover:shadow-black/40 hover:border-violet-500/30 dark:hover:border-violet-500/20 ${agent.accentClass}`}
     >
+      {/* Gradient top-edge shine */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
       <div className="flex items-start justify-between mb-3">
-        <span role="img" aria-label={iconLabel} className="text-3xl">{icon}</span>
+        <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-zinc-800/80 flex items-center justify-center">
+          <span role="img" aria-label={iconLabel} className="text-xl">{icon}</span>
+        </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
           {onToggleFavorite && (
             <button
@@ -117,8 +122,8 @@ export default memo(function AgentCard({ agent, onEdit, onDelete, onToggleFavori
         {agent.name}
       </h3>
       <p className="text-gray-600 dark:text-zinc-400 text-sm leading-relaxed">{agent.description}</p>
-      <div className={`mt-4 text-xs font-medium uppercase tracking-widest ${accentTextClass}`}>
-        Start audit →
+      <div className={`mt-4 text-xs font-medium uppercase tracking-widest ${accentTextClass} flex items-center gap-1`}>
+        Start audit <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
       </div>
     </article>
   );

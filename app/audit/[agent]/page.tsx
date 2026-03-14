@@ -25,14 +25,16 @@ export default async function AgentPage({ params }: Props) {
   if (!agent) notFound();
 
   return (
-    <main id="main-content" tabIndex={-1} className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 px-6 py-12">
+    <div id="main-content" tabIndex={-1} className="text-gray-900 dark:text-zinc-100 px-6 py-12">
       <div className="max-w-4xl mx-auto">
-        <Link
-          href="/"
-          className="text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 text-sm mb-8 inline-flex items-center gap-1 transition-colors"
-        >
-          ← All agents
-        </Link>
+        {/* Breadcrumb */}
+        <nav className="text-xs text-gray-400 dark:text-zinc-600 mb-6 flex items-center gap-1.5">
+          <Link href="/" className="hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">Agents</Link>
+          <span>/</span>
+          <span className={agent.accentClass.split(' ').find((c) => c.startsWith('text-')) ?? ''}>{agent.category}</span>
+          <span>/</span>
+          <span className="text-gray-600 dark:text-zinc-400">{agent.name}</span>
+        </nav>
 
         <div className="mb-8">
           <div className={`text-xs font-mono uppercase tracking-widest mb-3 ${agent.accentClass.split(' ').find((c) => c.startsWith('text-')) ?? ''}`}>
@@ -46,6 +48,6 @@ export default async function AgentPage({ params }: Props) {
 
         <AuditPageClient agent={agent} />
       </div>
-    </main>
+    </div>
   );
 }
