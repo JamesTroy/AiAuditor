@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import ThemeProvider from '@/components/ThemeProvider';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import SmoothScroll from '@/components/SmoothScroll';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -26,6 +27,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en" className="dark" {...(nonce ? { 'data-nonce': nonce } : {})}>
       <body className={`${inter.className} bg-gray-50 dark:bg-zinc-950 transition-colors duration-200`}>
         <ThemeProvider>
+          <SmoothScroll />
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <main className="flex-1">{children}</main>
