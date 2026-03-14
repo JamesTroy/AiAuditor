@@ -30,6 +30,7 @@ const STREAM_TIMEOUT_MS = 300_000;
 const ALLOWED_ORIGINS: ReadonlySet<string> = new Set(
   [
     process.env.NEXT_PUBLIC_APP_URL,
+    process.env.RAILWAY_PUBLIC_DOMAIN && `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`,
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:3002',
