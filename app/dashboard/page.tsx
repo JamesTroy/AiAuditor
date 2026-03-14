@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -5,6 +6,11 @@ import Link from 'next/link';
 import { db } from '@/lib/db';
 import { audit } from '@/lib/auth-schema';
 import { eq, desc } from 'drizzle-orm';
+
+export const metadata: Metadata = {
+  title: 'Dashboard',
+  description: 'View your audit history, scores, and trends.',
+};
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({

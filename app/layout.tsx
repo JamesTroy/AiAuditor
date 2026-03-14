@@ -9,10 +9,35 @@ import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://claudit.dev';
+
 export const metadata: Metadata = {
-  title: 'Claudit',
-  description: 'Instant AI-powered audits for code quality, security, and performance. Powered by Claude.',
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: 'Claudit — AI-Powered Code Audits',
+    template: '%s | Claudit',
+  },
+  description:
+    'Instant AI-powered audits for code quality, security, and performance. 50 specialized agents powered by Claude.',
   icons: { icon: '/logo.svg' },
+  openGraph: {
+    type: 'website',
+    siteName: 'Claudit',
+    title: 'Claudit — AI-Powered Code Audits',
+    description:
+      'Instant AI-powered audits for code quality, security, and performance. 50 specialized agents powered by Claude.',
+    url: BASE_URL,
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Claudit — AI-Powered Code Audits',
+    description:
+      'Instant AI-powered audits for code quality, security, and performance. 50 specialized agents powered by Claude.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -30,7 +55,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <SmoothScroll />
           <div className="flex flex-col min-h-screen">
             <Navbar />
-            <main className="flex-1">{children}</main>
+            <main id="main-content" className="flex-1">{children}</main>
             <Footer />
           </div>
         </ThemeProvider>

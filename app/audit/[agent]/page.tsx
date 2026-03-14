@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { agents, getAgent } from '@/lib/agents';
@@ -9,6 +10,20 @@ import PrepPromptBox from '@/components/PrepPromptBox';
 // Requests for any other segment hit notFound() below without running server logic.
 export function generateStaticParams() {
   return agents.map((a) => ({ agent: a.id }));
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { agent: agentId } = await params;
+  const agent = getAgent(agentId);
+  if (!agent) return {};
+  return {
+    title: `${agent.name} Audit`,
+    description: agent.description,
+    openGraph: {
+      title: `${agent.name} — Claudit`,
+      description: agent.description,
+    },
+  };
 }
 
 // ARCH-019: ISR — revalidate every hour so custom-agent edits are reflected

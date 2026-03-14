@@ -1,3 +1,10 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Tech Stack',
+  description: 'The full technology stack behind Claudit — Next.js 15, React 19, Claude Sonnet 4.6, Better Auth, Drizzle ORM, and Tailwind CSS.',
+};
+
 const CHECK = '✓';
 const X = '✗';
 
