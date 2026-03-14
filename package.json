@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.39.0",
-    "@neondatabase/serverless": "^1.0.2",
     "better-auth": "^1.5.5",
     "drizzle-orm": "^0.45.1",
-    "next": "15.2.3",
+    "next": "^15.5.12",
+    "postgres": "^3.4.8",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "9.1.0",

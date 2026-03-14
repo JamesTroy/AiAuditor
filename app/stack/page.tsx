@@ -36,8 +36,8 @@ export default function StackPage() {
             />
             <StackCard
               layer="Database"
-              choice="PostgreSQL on Neon"
-              description="Serverless Postgres that scales to zero. EU regions for GDPR compliance, database branching for dev workflows, and a native serverless driver."
+              choice="PostgreSQL on Supabase"
+              description="Managed Postgres with built-in auth, storage, and realtime. Generous free tier, EU regions for GDPR, and a full REST/GraphQL API alongside direct SQL access."
               color="blue"
             />
             <StackCard
@@ -215,7 +215,7 @@ export default function StackPage() {
 
         {/* Cost breakdown */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Cost: ~$39/mo</h2>
+          <h2 className="text-2xl font-bold mb-6">Cost: ~$30/mo</h2>
           <p className="text-gray-600 dark:text-zinc-400 mb-6">
             A production-ready stack with auth, database, hosting, and email — for less than a Netflix subscription.
           </p>
@@ -230,8 +230,8 @@ export default function StackPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
-                <CostRow service="Neon PostgreSQL" plan="Launch (scale-to-zero, EU region)" cost="$19" />
-                <CostRow service="Vercel" plan="Pro (hosting, edge functions, analytics)" cost="$20" />
+                <CostRow service="Supabase" plan="Pro (8GB DB, daily backups, EU region)" cost="$25" />
+                <CostRow service="Railway" plan="Pro (hosting, usage-based)" cost="$5" />
                 <CostRow service="Better Auth" plan="Open source — forever free" cost="$0" />
                 <CostRow service="Drizzle ORM" plan="Open source — forever free" cost="$0" />
                 <CostRow service="Resend" plan="Free tier (3,000 emails/day)" cost="$0" />
@@ -239,7 +239,7 @@ export default function StackPage() {
               <tfoot>
                 <tr className="border-t-2 border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900/50">
                   <td colSpan={2} className="px-5 py-3 font-bold text-gray-900 dark:text-zinc-100">Total</td>
-                  <td className="text-right px-5 py-3 font-bold text-violet-600 dark:text-violet-400 text-lg">~$39/mo</td>
+                  <td className="text-right px-5 py-3 font-bold text-violet-600 dark:text-violet-400 text-lg">~$30/mo</td>
                 </tr>
               </tfoot>
             </table>
@@ -262,10 +262,10 @@ export default function StackPage() {
                 This stack at scale
               </p>
               <div className="space-y-1 text-sm text-gray-600 dark:text-zinc-400">
-                <p>10K users: <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">~$39/mo</span></p>
-                <p>50K users: <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">~$59/mo</span></p>
-                <p>100K users: <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">~$99/mo</span></p>
-                <p>1M users: <span className="font-mono font-bold text-green-600 dark:text-green-400">~$299/mo</span></p>
+                <p>10K users: <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">~$30/mo</span></p>
+                <p>50K users: <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">~$50/mo</span></p>
+                <p>100K users: <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">~$80/mo</span></p>
+                <p>1M users: <span className="font-mono font-bold text-green-600 dark:text-green-400">~$200/mo</span></p>
               </div>
             </div>
           </div>
@@ -278,8 +278,8 @@ export default function StackPage() {
             <ol className="space-y-4 text-sm">
               <StepItem
                 number={1}
-                title="Create a Neon database"
-                description="Sign up at neon.tech, create a project in the EU region, and copy the connection string."
+                title="Get your Supabase connection string"
+                description="Go to your Supabase project → Settings → Database → Connection string (URI). Copy it and use it as DATABASE_URL."
               />
               <StepItem
                 number={2}
@@ -289,7 +289,7 @@ export default function StackPage() {
               <StepItem
                 number={3}
                 title="Push the database schema"
-                description="Run `npx drizzle-kit push` to create all tables in your Neon database. This creates user, session, account, verification, twoFactor, and audit tables."
+                description="Run `npx drizzle-kit push` to create all tables in your Supabase database. This creates user, session, account, verification, twoFactor, and audit tables."
               />
               <StepItem
                 number={4}
@@ -330,7 +330,7 @@ export default function StackPage() {
 ├─────────────────────────────────────────────────┤
 │  Drizzle ORM (7KB, no codegen)                  │
 ├─────────────────────────────────────────────────┤
-│  Neon PostgreSQL (EU region, scale-to-zero)     │
+│  Supabase PostgreSQL (managed, EU region)        │
 └─────────────────────────────────────────────────┘`}</pre>
           </div>
         </section>
