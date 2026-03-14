@@ -42,6 +42,19 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ─── Scroll compensation for sticky navbar ─────────────────── */
+html {
+  scroll-padding-top: 4rem;
+}
+
+/* ─── Touch-device overrides ────────────────────────────────── */
+@media (hover: none) and (pointer: coarse) {
+  /* Make hover-only action buttons visible on touch devices */
+  .touch-show {
+    opacity: 1 !important;
+  }
+}
+
 /* ─── Reduced-motion overrides ───────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,

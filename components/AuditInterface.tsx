@@ -39,6 +39,8 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
   const [elapsed, setElapsed] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chainRef = useRef<HTMLDivElement>(null);
+  const resultEndRef = useRef<HTMLDivElement>(null);
+  const userScrolledUp = useRef(false);
 
   // ARCH-002: Streaming audit state lives in the hook.
   const { result, loading, error, runAudit, handleStop } = useAuditSession(agent, onAuditSaved);
@@ -72,6 +74,30 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
     if (chainOpen) document.addEventListener('mousedown', onClickOutside);
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, [chainOpen]);
+
+  // Auto-scroll to bottom while streaming. Pauses if user scrolls up.
+  useEffect(() => {
+    if (!loading) {
+      userScrolledUp.current = false;
+      return;
+    }
+    // Reset on new audit
+    userScrolledUp.current = false;
+
+    function onScroll() {
+      const distFromBottom = document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
+      // If user scrolled more than 150px from bottom, they're reading — stop auto-scroll
+      userScrolledUp.current = distFromBottom > 150;
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [loading]);
+
+  useEffect(() => {
+    if (loading && result && !userScrolledUp.current) {
+      resultEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [loading, result]);
 
   // Esc to stop streaming
   useEffect(() => {
@@ -378,25 +404,25 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => runAudit(input)}
-                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[32px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
+                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[44px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                 >
                   Re-audit
                 </button>
                 <button
                   onClick={handleCopy}
-                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[32px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
+                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[44px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                 >
                   {copied ? '✓ Copied' : 'Copy'}
                 </button>
                 <button
                   onClick={handleDownload}
-                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[32px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
+                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[44px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                 >
                   Download .md
                 </button>
                 <button
                   onClick={handleDownloadJson}
-                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[32px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
+                  className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[44px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                 >
                   Download .json
                 </button>
@@ -405,7 +431,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
                   <div ref={chainRef} className="relative">
                     <button
                       onClick={() => setChainOpen((v) => !v)}
-                      className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[32px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
+                      className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[44px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                     >
                       Try with… ▾
                     </button>
@@ -446,6 +472,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
             ) : (
               <SafeMarkdown>{result}</SafeMarkdown>
             )}
+            <div ref={resultEndRef} />
           </div>
         </div>
       )}

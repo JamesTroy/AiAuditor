@@ -47,11 +47,11 @@ export default function UserNav() {
     <div ref={menuRef} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="w-8 h-8 rounded-full bg-violet-600 text-white text-xs font-bold flex items-center justify-center hover:bg-violet-500 transition-colors"
+        className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-full bg-violet-600 text-white text-xs font-bold flex items-center justify-center hover:bg-violet-500 transition-colors focus-ring"
         aria-label="User menu"
       >
         {session.user.image ? (
-          <img src={session.user.image} alt="" className="w-8 h-8 rounded-full" />
+          <img src={session.user.image} alt="" className="w-10 h-10 rounded-full" />
         ) : (
           initials
         )}

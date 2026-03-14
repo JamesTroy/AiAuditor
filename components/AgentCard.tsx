@@ -146,11 +146,11 @@ export default memo(function AgentCard({ agent, index = 0, onEdit, onDelete, onT
         <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-zinc-800/80 flex items-center justify-center">
           <span role="img" aria-label={iconLabel} className="text-xl">{icon}</span>
         </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch-show transition-opacity">
           {onToggleFavorite && (
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(); }}
-              className={`text-sm px-1.5 py-1 min-h-[32px] min-w-[32px] rounded transition-colors hover:bg-gray-200 dark:hover:bg-zinc-700 focus-ring ${isFavorite ? 'text-yellow-400' : 'text-gray-400 dark:text-zinc-600 hover:text-yellow-400'}`}
+              className={`text-sm px-1.5 py-1 min-h-[44px] min-w-[44px] rounded transition-colors hover:bg-gray-200 dark:hover:bg-zinc-700 focus-ring ${isFavorite ? 'text-yellow-400' : 'text-gray-400 dark:text-zinc-600 hover:text-yellow-400'}`}
               aria-label={isFavorite ? `Unpin ${agent.name}` : `Pin ${agent.name}`}
               aria-pressed={isFavorite ?? false}
             >
@@ -160,7 +160,7 @@ export default memo(function AgentCard({ agent, index = 0, onEdit, onDelete, onT
           {isCustom && onEdit && (
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(); }}
-              className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[32px] rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus-ring"
+              className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[44px] rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus-ring"
               aria-label={`Edit ${agent.name}`}
             >
               Edit
@@ -169,7 +169,7 @@ export default memo(function AgentCard({ agent, index = 0, onEdit, onDelete, onT
           {isCustom && onDelete && (
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }}
-              className="text-xs text-gray-500 dark:text-zinc-500 hover:text-red-400 px-2 py-1 min-h-[32px] rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus-ring"
+              className="text-xs text-gray-500 dark:text-zinc-500 hover:text-red-400 px-2 py-1 min-h-[44px] rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus-ring"
               aria-label={`Delete ${agent.name}`}
             >
               Delete

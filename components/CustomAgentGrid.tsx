@@ -104,14 +104,14 @@ export default function CustomAgentGrid() {
 
   return (
     <>
-      <div className="mt-12 mb-6 flex items-center justify-between">
+      <div className="mt-12 mb-6 flex flex-col xs:flex-row xs:items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">Custom Agents</h2>
           {agents.length === 0 && (
             <p className="text-sm text-gray-500 dark:text-zinc-500 mt-0.5">Build your own audit agent with a custom system prompt.</p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {agents.length > 0 && (
             <button
               onClick={handleExport}
