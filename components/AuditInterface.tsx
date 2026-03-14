@@ -36,9 +36,15 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
   const [urlError, setUrlError] = useState('');
   const [showUrl, setShowUrl] = useState(false);
   const [chainOpen, setChainOpen] = useState(false);
+  const [canPaste, setCanPaste] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chainRef = useRef<HTMLDivElement>(null);
+
+  // Detect clipboard API after mount — keeps SSR/client render identical
+  useEffect(() => {
+    setCanPaste(!!navigator.clipboard?.readText);
+  }, []);
 
   // Pre-fill input from cross-agent chain
   useEffect(() => {
@@ -269,7 +275,6 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
     router.push(`/audit/${targetId}`);
   }
 
-  const canPaste = typeof navigator !== 'undefined' && !!navigator.clipboard?.readText;
   const wordCount = result.trim() ? result.trim().split(/\s+/).filter(Boolean).length : 0;
   const tokenEstimate = Math.ceil(input.length / 4);
   const otherAgents = agents.filter((a) => a.id !== agent.id);
