@@ -2249,6 +2249,553 @@ Format each file:
 
 Keep total under 30,000 characters.`,
   },
+  {
+    id: 'error-handling',
+    name: 'Error Handling',
+    description: 'Finds swallowed errors, missing catch blocks, unhandled rejections, and poor recovery patterns.',
+    category: 'Code Quality',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-700 hover:bg-orange-600',
+    placeholder: 'Paste your code with try/catch blocks, error boundaries, or async error handling...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['error-handling'],
+    prepPrompt: `I'm preparing code for an **Error Handling** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Language / framework: [e.g. TypeScript + Next.js, Python + FastAPI, Go]
+- Error handling approach: [e.g. "try/catch everywhere", "Result types", "no consistent pattern"]
+- Known concerns: [e.g. "silent failures in production", "users see raw stack traces", "missing error boundaries"]
+
+## Files to gather
+
+### 1. Error-prone code paths
+- API route handlers — show all try/catch blocks and error responses
+- Database query code — how are query failures handled?
+- External API calls — what happens when third-party services fail?
+- File I/O operations — upload, download, parse operations
+
+### 2. Error handling infrastructure
+- Global error handler / middleware (Express errorHandler, Next.js error.tsx)
+- React Error Boundaries (if applicable)
+- Logging configuration — how are errors logged?
+- Custom error classes or error factory functions
+
+### 3. Async code
+- Promise chains — are .catch() handlers present?
+- async/await blocks — are they wrapped in try/catch?
+- Event handlers and callbacks — what happens on error?
+- Stream/WebSocket error handlers
+
+### 4. User-facing error handling
+- Error pages (404, 500, custom error pages)
+- Form validation error display
+- Toast/notification error messages
+- Loading/error state components
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- api/route.ts (API error handling) ---
+--- components/ErrorBoundary.tsx ---
+--- lib/api-client.ts (external API calls) ---
+--- middleware/errorHandler.ts ---
+\`\`\`
+
+## Don't forget
+- [ ] Include ALL catch blocks, even empty ones — especially empty ones
+- [ ] Show what error messages users actually see
+- [ ] Include any retry logic or circuit breaker patterns
+- [ ] Check for unhandled promise rejections in event handlers
+- [ ] Look for \`catch (e) {}\` or \`catch (e) { console.log(e) }\` patterns
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'typescript-strictness',
+    name: 'TypeScript Strictness',
+    description: 'Finds unsafe any types, missing strict flags, weak generics, and type assertion risks.',
+    category: 'Code Quality',
+    accentClass: 'text-blue-400 hover:bg-blue-500/10',
+    buttonClass: 'bg-blue-700 hover:bg-blue-600',
+    placeholder: 'Paste your TypeScript code, tsconfig.json, or type definitions...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['typescript-strictness'],
+    prepPrompt: `I'm preparing TypeScript code for a **TypeScript Strictness** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- TypeScript version: [e.g. 5.9, 5.5, 4.9]
+- Framework: [e.g. Next.js 15, Express, NestJS, plain Node]
+- Strict mode status: [e.g. "strict: true", "partial strict flags", "no strict mode"]
+- Known concerns: [e.g. "lots of any types", "migrated from JS recently", "type assertions everywhere"]
+
+## Files to gather
+
+### 1. TypeScript configuration
+- tsconfig.json — the FULL file with all compiler options
+- Any extended tsconfig files (tsconfig.base.json, tsconfig.node.json)
+
+### 2. Source files with type concerns
+- Files with the most \`any\` usage
+- Files with type assertions (\`as\`, \`!\`, \`<Type>\`)
+- Files with \`@ts-ignore\` or \`@ts-expect-error\`
+- Complex generic functions or utility types
+
+### 3. Type definitions
+- Shared type files (types.ts, interfaces.ts)
+- API response types — are they validated at runtime?
+- Database model types — do they match the actual schema?
+- Third-party type augmentations (*.d.ts files)
+
+### 4. API boundaries
+- Code that receives external data (API responses, user input, env vars)
+- Runtime validation (Zod schemas, io-ts codecs)
+- Serialization/deserialization code
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- tsconfig.json ---
+--- lib/types.ts ---
+--- api/handlers.ts ---
+--- lib/validation.ts ---
+\`\`\`
+
+## Don't forget
+- [ ] Include the FULL tsconfig.json — strict flag settings are critical
+- [ ] Search for \`any\` across the codebase and include the worst offenders
+- [ ] Include runtime validation code (Zod, io-ts) at API boundaries
+- [ ] Check for \`as unknown as X\` double-assertion patterns
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'react-patterns',
+    name: 'React Patterns',
+    description: 'Reviews hooks, component design, state management, re-renders, and Server Component boundaries.',
+    category: 'Code Quality',
+    accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-800 hover:bg-cyan-700',
+    placeholder: 'Paste your React components, hooks, or state management code...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['react-patterns'],
+    prepPrompt: `I'm preparing React code for a **React Patterns** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- React version: [e.g. 19.2, 18.3]
+- Framework: [e.g. Next.js 15 App Router, Vite + React, Remix]
+- State management: [e.g. "React Context only", "Zustand", "Redux Toolkit", "React Query"]
+- Known concerns: [e.g. "slow renders", "prop drilling", "useEffect soup", "unclear client/server boundary"]
+
+## Files to gather
+
+### 1. Component tree
+- Root layout / App component
+- The largest or most complex component
+- Components with many useEffect hooks
+- Components with many useState calls
+- Any components wrapped in React.memo
+
+### 2. Hooks
+- Custom hooks (useAuth, useFetch, useDebounce, etc.)
+- Components with complex useEffect dependency arrays
+- useMemo / useCallback usage — include surrounding context
+- useRef usage
+
+### 3. State management
+- Context providers and their value objects
+- Global state stores (Zustand, Redux, Jotai)
+- Data fetching patterns (React Query, SWR, useEffect + fetch)
+- Form state handling
+
+### 4. Server/Client boundary (Next.js / RSC)
+- All files with \`'use client'\` directive
+- Server Components that fetch data
+- Components that could be server components but are marked client
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- components/Dashboard.tsx (largest component) ---
+--- hooks/useAuth.ts (custom hook) ---
+--- providers/ThemeProvider.tsx (context) ---
+--- app/layout.tsx (server component) ---
+\`\`\`
+
+## Don't forget
+- [ ] Include ALL useEffect hooks with their dependency arrays
+- [ ] Include components that re-render frequently (parent state changes)
+- [ ] Show the component hierarchy / import tree for the main page
+- [ ] Include any React.memo, useMemo, or useCallback usage with context
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'i18n',
+    name: 'Internationalization',
+    description: 'Finds hardcoded strings, locale-dependent formatting, RTL issues, and i18n architecture gaps.',
+    category: 'Design',
+    accentClass: 'text-indigo-400 hover:bg-indigo-500/10',
+    buttonClass: 'bg-indigo-700 hover:bg-indigo-600',
+    placeholder: 'Paste your UI components, translation files, or locale configuration...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['i18n'],
+    prepPrompt: `I'm preparing code for an **Internationalization (i18n)** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js 15, React + Vite, Vue 3]
+- Current i18n status: [e.g. "not started", "partially translated", "using next-intl"]
+- Target languages: [e.g. "English + Spanish + French", "English only for now", "30+ languages"]
+- RTL support needed: [yes / no / future]
+- Known concerns: [e.g. "hundreds of hardcoded strings", "dates formatted inconsistently"]
+
+## Files to gather
+
+### 1. UI components with user-facing text
+- Navigation / header / footer
+- Forms (labels, placeholders, validation messages, error text)
+- Modals and dialogs
+- Empty states, loading states, error pages
+- Email templates
+
+### 2. i18n configuration (if it exists)
+- i18n library setup (next-intl, react-intl, i18next config)
+- Translation files (en.json, es.json, etc.)
+- Locale detection / routing configuration
+- Language switcher component
+
+### 3. Date, number, and currency formatting
+- All date formatting code (toLocaleDateString, dayjs, date-fns)
+- Number formatting (toLocaleString, Intl.NumberFormat)
+- Currency display code
+- Relative time display ("2 hours ago")
+
+### 4. Layout and styling
+- CSS that uses left/right (vs logical properties)
+- Fixed-width elements that contain text
+- Text truncation patterns
+- Icon-only buttons (need aria-labels)
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- components/Navbar.tsx (user-facing strings) ---
+--- lib/i18n.ts (i18n config) ---
+--- locales/en.json (translation file) ---
+--- components/DateDisplay.tsx (date formatting) ---
+\`\`\`
+
+## Don't forget
+- [ ] Include EVERY component with user-facing strings
+- [ ] Check for string concatenation used to build messages (breaks in other languages)
+- [ ] Include plural handling code (if any)
+- [ ] Look for text in images or SVGs
+- [ ] Check that error messages are externalized too
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'rate-limiting',
+    name: 'Rate Limiting',
+    description: 'Audits API throttling, abuse prevention, DDoS surface, and cost-based endpoint protection.',
+    category: 'Security & Privacy',
+    accentClass: 'text-red-400 hover:bg-red-500/10',
+    buttonClass: 'bg-red-700 hover:bg-red-600',
+    placeholder: 'Paste your API routes, middleware, rate limiting config, or WAF rules...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['rate-limiting'],
+    prepPrompt: `I'm preparing code for a **Rate Limiting** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js API routes, Express, FastAPI]
+- Current rate limiting: [e.g. "none", "express-rate-limit on /api", "Cloudflare WAF"]
+- Traffic volume: [e.g. "100 RPM", "10K RPM", "unknown"]
+- Cost-sensitive endpoints: [e.g. "AI API calls at $0.01/request", "email sends"]
+- Known concerns: [e.g. "login brute force possible", "no limits on AI endpoint", "scraping risk"]
+
+## Files to gather
+
+### 1. All API endpoints / route handlers
+- Every route file — the audit needs the FULL endpoint inventory
+- Include HTTP method, authentication requirement, and purpose
+
+### 2. Rate limiting configuration
+- Rate limiting middleware (express-rate-limit, custom middleware)
+- WAF / CDN rate limit rules
+- Application-level throttling code
+- Per-user or per-IP limit configuration
+
+### 3. Authentication endpoints
+- Login / signup handlers
+- Password reset flow
+- 2FA / OTP verification
+- OAuth callback handlers
+
+### 4. Cost-incurring endpoints
+- AI / LLM API call handlers
+- Email / SMS sending code
+- External API call handlers
+- File upload handlers
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- app/api/audit/route.ts (AI endpoint) ---
+--- middleware/rateLimit.ts ---
+--- app/api/auth/[...all]/route.ts ---
+\`\`\`
+
+## Don't forget
+- [ ] Include ALL endpoints, not just the ones you think need rate limiting
+- [ ] Show how rate limit state is stored (memory, Redis, database)
+- [ ] Include any WAF or CDN configuration
+- [ ] Note which endpoints are public (no auth required)
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'logging',
+    name: 'Logging & Monitoring',
+    description: 'Reviews structured logging, log levels, PII exposure in logs, and audit trail completeness.',
+    category: 'Infrastructure',
+    accentClass: 'text-teal-400 hover:bg-teal-500/10',
+    buttonClass: 'bg-teal-700 hover:bg-teal-600',
+    placeholder: 'Paste your logging configuration, error handlers, or code with console/logger calls...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['logging'],
+    prepPrompt: `I'm preparing code for a **Logging & Monitoring** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js 15, Express, NestJS]
+- Logging library: [e.g. "console.log only", "pino", "winston", "Datadog APM"]
+- Log aggregation: [e.g. "none", "CloudWatch", "Datadog", "ELK stack"]
+- Compliance requirements: [e.g. "SOC 2 audit trail needed", "HIPAA logging", "none"]
+- Known concerns: [e.g. "PII in logs", "no structured logging", "can't debug production issues"]
+
+## Files to gather
+
+### 1. Logging setup
+- Logger configuration / initialization
+- Log formatting (JSON structured, plain text)
+- Log transport / output configuration
+- Environment-specific log level settings
+
+### 2. Error handling with logging
+- Global error handlers / middleware
+- try/catch blocks that log errors
+- Unhandled rejection / exception handlers
+
+### 3. Business logic logging
+- Authentication event logging (login, logout, failed attempts)
+- API request/response logging
+- Database query logging
+- Payment or sensitive operation logging
+
+### 4. Code with console.* calls
+- All console.log, console.error, console.warn usage
+- Debug output that might be left in production
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- lib/logger.ts (logger setup) ---
+--- middleware/requestLogger.ts ---
+--- api/auth/route.ts (auth event logging) ---
+\`\`\`
+
+## Don't forget
+- [ ] Search for ALL console.log/console.error calls in the codebase
+- [ ] Include error handlers — are errors logged with enough context?
+- [ ] Check for PII in log output (emails, IPs, tokens, passwords)
+- [ ] Include any log rotation or retention configuration
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'database-migrations',
+    name: 'Database Migrations',
+    description: 'Reviews migration safety, lock risks, rollback plans, and zero-downtime schema changes.',
+    category: 'Infrastructure',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-700 hover:bg-emerald-600',
+    placeholder: 'Paste your migration files, schema definitions, or Drizzle/Prisma migration output...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['database-migrations'],
+    prepPrompt: `I'm preparing database migrations for a **Migration Safety** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Database: [e.g. PostgreSQL 16, MySQL 8, SQLite]
+- Migration tool: [e.g. Drizzle Kit, Prisma Migrate, Flyway, Knex, Rails migrations]
+- Table sizes: [e.g. "users: 50K rows", "orders: 2M rows", "small DB < 10K rows"]
+- Deployment strategy: [e.g. "zero-downtime required", "maintenance window OK", "single server"]
+- Known concerns: [e.g. "adding NOT NULL column to large table", "need to rename columns", "first migration"]
+
+## Files to gather
+
+### 1. Migration files
+- ALL migration files in order (drizzle/, prisma/migrations/, db/migrate/)
+- The current schema definition file
+- Any seed or data migration scripts
+
+### 2. Schema definition
+- Drizzle schema (schema.ts) or Prisma schema (schema.prisma)
+- Any raw SQL migration scripts
+- Index definitions
+
+### 3. Migration configuration
+- drizzle.config.ts / prisma configuration
+- Migration run scripts in package.json
+- CI/CD pipeline steps that run migrations
+
+### 4. Database connection
+- Connection pool configuration
+- Environment-specific database URLs (.env.example)
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- drizzle/0001_create_users.sql ---
+--- lib/auth-schema.ts (Drizzle schema) ---
+--- drizzle.config.ts ---
+\`\`\`
+
+## Don't forget
+- [ ] Include ALL migration files, not just the latest
+- [ ] Include the schema file that generates migrations
+- [ ] Note the approximate row count for tables being altered
+- [ ] Include the deployment process for running migrations
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'concurrency',
+    name: 'Concurrency & Async',
+    description: 'Finds race conditions, deadlocks, resource leaks, and unsafe async patterns.',
+    category: 'Performance',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-700 hover:bg-pink-600',
+    placeholder: 'Paste your async code, database transactions, queue consumers, or connection pool setup...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['concurrency'],
+    prepPrompt: `I'm preparing code for a **Concurrency & Async** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Language / runtime: [e.g. Node.js 20, Go 1.22, Python 3.12 + asyncio]
+- Concurrency model: [e.g. "single-threaded event loop", "goroutines", "thread pool"]
+- Database: [e.g. PostgreSQL with connection pool, Redis, MongoDB]
+- Known concerns: [e.g. "race condition on user balance", "connection pool exhaustion", "fire-and-forget promises"]
+
+## Files to gather
+
+### 1. Async operations
+- All async/await code with complex flows (parallel, sequential, conditional)
+- Promise.all / Promise.allSettled / Promise.race usage
+- Fire-and-forget operations (async without await)
+- Stream processing code
+
+### 2. Shared state
+- In-memory caches or singletons modified by multiple requests
+- Global variables accessed concurrently
+- Rate limiter / counter implementations
+- Session or user state management
+
+### 3. Database transactions
+- Transaction blocks (BEGIN/COMMIT/ROLLBACK)
+- Connection pool configuration
+- Optimistic locking / version columns
+- Bulk operations (batch inserts, updates)
+
+### 4. Queue / event processing
+- Message queue consumers (Bull, SQS, RabbitMQ)
+- Event emitter patterns
+- Cron jobs or scheduled tasks
+- WebSocket connection management
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- lib/db.ts (connection pool) ---
+--- api/transfer/route.ts (transaction code) ---
+--- lib/rateLimiter.ts (shared state) ---
+--- workers/emailQueue.ts (queue consumer) ---
+\`\`\`
+
+## Don't forget
+- [ ] Include ALL database transaction code
+- [ ] Show connection pool configuration (min, max, timeout)
+- [ ] Include any in-memory state shared across requests
+- [ ] Check for fire-and-forget async calls (no await, no .catch)
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'ci-cd',
+    name: 'Git & CI/CD',
+    description: 'Audits pipeline security, build performance, deployment strategy, and branch protection.',
+    category: 'Infrastructure',
+    accentClass: 'text-slate-300 hover:bg-slate-500/10',
+    buttonClass: 'bg-slate-700 hover:bg-slate-600',
+    placeholder: 'Paste your GitHub Actions workflows, CI config, Dockerfile, or deployment scripts...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['ci-cd'],
+    prepPrompt: `I'm preparing CI/CD configuration for a **Git & CI/CD** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- CI/CD platform: [e.g. GitHub Actions, GitLab CI, CircleCI, Jenkins]
+- Hosting: [e.g. Vercel, Railway, AWS ECS, self-hosted]
+- Deployment strategy: [e.g. "push to main auto-deploys", "manual deploy", "blue-green"]
+- Known concerns: [e.g. "slow builds", "no staging environment", "secrets in workflow files"]
+
+## Files to gather
+
+### 1. CI/CD configuration
+- ALL workflow/pipeline files (.github/workflows/*.yml, .gitlab-ci.yml, Jenkinsfile)
+- Build scripts in package.json (build, test, lint, deploy)
+- Dockerfile and docker-compose.yml (if containerized)
+- Any deployment scripts (deploy.sh, cdk.ts, terraform)
+
+### 2. Git configuration
+- Branch protection rules (describe or screenshot)
+- .gitignore
+- PR template (.github/pull_request_template.md)
+- CODEOWNERS file
+
+### 3. Environment & secrets
+- .env.example (NOT .env — never include real secrets)
+- How secrets are referenced in CI (secrets.*, env vars)
+- Environment-specific configuration
+
+### 4. Quality gates
+- ESLint / Prettier configuration
+- Test configuration (jest.config, vitest.config)
+- Any pre-commit hooks (husky, lint-staged)
+- Code coverage configuration
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- .github/workflows/ci.yml ---
+--- .github/workflows/deploy.yml ---
+--- Dockerfile ---
+--- .gitignore ---
+\`\`\`
+
+## Don't forget
+- [ ] Include ALL workflow files, not just the main one
+- [ ] Show how secrets are injected (env vars, secret stores)
+- [ ] Include Docker configuration if the app is containerized
+- [ ] Note the typical CI run time and any known bottlenecks
+
+Keep total under 30,000 characters.`,
+  },
 ];
 
 export function getAgent(id: string): AgentConfig | undefined {

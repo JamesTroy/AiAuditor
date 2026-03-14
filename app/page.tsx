@@ -72,7 +72,7 @@ export default function Home() {
             Instant AI-powered audits for code quality, security, and performance.
           </p>
           <p className="text-gray-500 dark:text-zinc-500 text-sm mt-3 max-w-lg mx-auto">
-            26 specialized agents powered by Claude Sonnet 4.6. Paste your code, get a severity-rated report with line references and remediation steps.
+            35 specialized agents powered by Claude Sonnet 4.6. Paste your code, get a severity-rated report with line references and remediation steps.
           </p>
         </div>
 

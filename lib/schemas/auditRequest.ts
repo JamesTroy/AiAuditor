@@ -35,6 +35,15 @@ export const VALID_AGENT_TYPES = [
   'observability',
   'database-infra',
   'data-security',
+  'error-handling',
+  'typescript-strictness',
+  'react-patterns',
+  'i18n',
+  'rate-limiting',
+  'logging',
+  'database-migrations',
+  'concurrency',
+  'ci-cd',
 ] as const;
 
 export type AgentTypeValue = (typeof VALID_AGENT_TYPES)[number];

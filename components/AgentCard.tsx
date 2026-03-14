@@ -31,6 +31,15 @@ const BUILT_IN_ICONS: Record<string, string> = {
   'observability': '📡',
   'database-infra': '🗃️',
   'data-security': '🔏',
+  'error-handling': '🚨',
+  'typescript-strictness': '🔷',
+  'react-patterns': '⚛️',
+  'i18n': '🌍',
+  'rate-limiting': '🚦',
+  'logging': '📋',
+  'database-migrations': '🔄',
+  'concurrency': '⚡',
+  'ci-cd': '🔧',
 };
 
 const BUILT_IN_ICON_LABELS: Record<string, string> = {
@@ -60,6 +69,15 @@ const BUILT_IN_ICON_LABELS: Record<string, string> = {
   'observability': 'satellite dish',
   'database-infra': 'card index dividers',
   'data-security': 'locked with pen',
+  'error-handling': 'alert',
+  'typescript-strictness': 'blue diamond',
+  'react-patterns': 'atom',
+  'i18n': 'globe',
+  'rate-limiting': 'traffic light',
+  'logging': 'clipboard',
+  'database-migrations': 'cycle arrows',
+  'concurrency': 'lightning bolt',
+  'ci-cd': 'wrench',
 };
 
 const DEFAULT_CUSTOM_ICON = '✦';

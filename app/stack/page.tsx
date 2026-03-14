@@ -50,7 +50,7 @@ export default function StackPage() {
             <StackCard
               layer="AI Engine"
               choice="Claude (Anthropic)"
-              description="Claude Sonnet 4.6 via the Anthropic SDK. Each of the 26 audit agents has a specialized system prompt with structured output, severity ratings, and scoring."
+              description="Claude Sonnet 4.6 via the Anthropic SDK. Each of the 35 audit agents has a specialized system prompt with structured output, severity ratings, and scoring."
               color="violet"
             />
             <StackCard
@@ -351,7 +351,7 @@ export default function StackPage() {
 │  │   ├── AuditInterface.tsx   ← Stream + render │
 │  │   └── 12 more components                     │
 │  ├── lib/                                       │
-│  │   ├── agents/ (registry + 26 system prompts) │
+│  │   ├── agents/ (registry + 35 system prompts) │
 │  │   ├── ai/anthropicProvider  ← Claude SDK     │
 │  │   ├── auth.ts + auth-client ← Better Auth    │
 │  │   └── db.ts + auth-schema   ← Drizzle ORM   │
