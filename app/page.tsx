@@ -92,10 +92,11 @@ export default function Home() {
         {hasSearch ? (
           filteredAgents.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-              {filteredAgents.map((agent) => (
+              {filteredAgents.map((agent, i) => (
                 <Link key={agent.id} href={`/audit/${agent.id}`} className="block">
                   <AgentCard
                     agent={agent}
+                    index={i}
                     isFavorite={favorites.has(agent.id)}
                     onToggleFavorite={() => handleToggleFavorite(agent.id)}
                   />
@@ -112,10 +113,11 @@ export default function Home() {
               <section className="mb-10">
                 <h2 className="text-xs font-semibold uppercase tracking-widest text-yellow-500 mb-4">⭐ Pinned</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {pinnedAgents.map((agent) => (
+                  {pinnedAgents.map((agent, i) => (
                     <Link key={agent.id} href={`/audit/${agent.id}`} className="block">
                       <AgentCard
                         agent={agent}
+                        index={i}
                         isFavorite={true}
                         onToggleFavorite={() => handleToggleFavorite(agent.id)}
                       />
@@ -134,9 +136,10 @@ export default function Home() {
                   <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-4 border-l-2 border-violet-500/30 pl-3">{cat}</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {group.map((agent, i) => (
-                      <Link key={agent.id} href={`/audit/${agent.id}`} className="block motion-safe:animate-fade-up" style={{ animationDelay: `${i * 50}ms` }}>
+                      <Link key={agent.id} href={`/audit/${agent.id}`} className="block">
                         <AgentCard
                           agent={agent}
+                          index={i}
                           isFavorite={favorites.has(agent.id)}
                           onToggleFavorite={() => handleToggleFavorite(agent.id)}
                         />

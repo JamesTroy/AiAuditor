@@ -1,4 +1,7 @@
+'use client';
+
 import { memo } from 'react';
+import * as m from 'motion/react-m';
 import { AgentConfig } from '@/lib/types';
 
 const BUILT_IN_ICONS: Record<string, string> = {
@@ -61,6 +64,7 @@ const DEFAULT_CUSTOM_ICON = '✦';
 
 interface Props {
   agent: AgentConfig;
+  index?: number;
   onEdit?: () => void;
   onDelete?: () => void;
   onToggleFavorite?: () => void;
@@ -68,7 +72,7 @@ interface Props {
 }
 
 // PERF-022: React.memo prevents re-render when parent state changes but this card's props haven't.
-export default memo(function AgentCard({ agent, onEdit, onDelete, onToggleFavorite, isFavorite }: Props) {
+export default memo(function AgentCard({ agent, index = 0, onEdit, onDelete, onToggleFavorite, isFavorite }: Props) {
   const icon = BUILT_IN_ICONS[agent.id] ?? DEFAULT_CUSTOM_ICON;
   const iconLabel = BUILT_IN_ICON_LABELS[agent.id] ?? 'custom agent';
   const isCustom = !(agent.id in BUILT_IN_ICONS);
@@ -77,10 +81,19 @@ export default memo(function AgentCard({ agent, onEdit, onDelete, onToggleFavori
   const accentTextClass = agent.accentClass.split(' ').find((c) => c.startsWith('text-')) ?? '';
 
   return (
-    <article
-      className={`group relative overflow-hidden border border-gray-200 dark:border-zinc-800 rounded-xl p-6 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-200 cursor-pointer motion-safe:hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 dark:hover:shadow-black/40 hover:border-violet-500/30 dark:hover:border-violet-500/20 ${agent.accentClass}`}
+    <m.article
+      className={`group relative overflow-hidden border border-gray-200 dark:border-zinc-800 rounded-xl p-6 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-sm cursor-pointer ${agent.accentClass}`}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: index * 0.05, ease: [0.25, 0.1, 0.25, 1] }}
+      whileHover={{
+        scale: 1.03,
+        borderColor: 'rgba(139, 92, 246, 0.3)',
+        boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.4)',
+        transition: { duration: 0.2, ease: 'easeOut' },
+      }}
+      whileTap={{ scale: 0.98 }}
     >
-
       <div className="flex items-start justify-between mb-3">
         <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-zinc-800/80 flex items-center justify-center">
           <span role="img" aria-label={iconLabel} className="text-xl">{icon}</span>
@@ -123,6 +136,6 @@ export default memo(function AgentCard({ agent, onEdit, onDelete, onToggleFavori
       <div className={`mt-4 text-xs font-medium uppercase tracking-widest ${accentTextClass} flex items-center gap-1`}>
         Start audit <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
       </div>
-    </article>
+    </m.article>
   );
 });
