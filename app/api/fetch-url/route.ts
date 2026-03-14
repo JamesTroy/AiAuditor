@@ -1,11 +1,25 @@
 import { NextRequest } from 'next/server';
 import { isAllowedUrl, ALLOWED_URL_DESCRIPTION } from '@/lib/config/urlAllowlist';
+import { fetchUrlLimiter } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 
 const MAX_BYTES = 30_000;
 
 export async function POST(req: NextRequest) {
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
+    req.headers.get('x-real-ip') ??
+    '127.0.0.1';
+
+  const rl = fetchUrlLimiter.check(ip);
+  if (!rl.allowed) {
+    return new Response('Too many requests. Please wait a moment.', {
+      status: 429,
+      headers: rl.headers,
+    });
+  }
+
   let body: { url?: unknown };
   try {
     body = await req.json();

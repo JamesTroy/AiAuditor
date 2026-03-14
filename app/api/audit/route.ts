@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { getAgent } from '@/lib/agents';
-import { checkRateLimit } from '@/lib/rateLimit';
+import { auditLimiter } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { auditRequestSchema } from '@/lib/schemas/auditRequest';
 
@@ -161,12 +161,12 @@ export async function POST(req: NextRequest) {
     '127.0.0.1';
   const anonIp = anonymizeIp(ip);
 
-  const { allowed, remaining } = checkRateLimit(ip);
-  if (!allowed) {
+  const rl = auditLimiter.check(ip);
+  if (!rl.allowed) {
     log('warn', 'rate_limit_exceeded', { requestId, ip: anonIp });
     return new Response('Too many requests. Please wait a moment.', {
       status: 429,
-      headers: { 'Retry-After': '60', 'X-Request-Id': requestId },
+      headers: { ...rl.headers, 'X-Request-Id': requestId },
     });
   }
 
@@ -224,11 +224,11 @@ export async function POST(req: NextRequest) {
       ip: anonIp,
       promptLength: data.systemPrompt.length,
       inputLength: data.input.length,
-      remaining,
+      remaining: rl.remaining,
     });
     return new Response(
       makeStream(guardedPrompt, safeInput, { requestId, ip: anonIp, agentType: 'custom' }),
-      { headers: { ...STREAM_HEADERS, 'X-Request-Id': requestId } },
+      { headers: { ...STREAM_HEADERS, ...rl.headers, 'X-Request-Id': requestId } },
     );
   }
 
@@ -246,10 +246,10 @@ export async function POST(req: NextRequest) {
     ip: anonIp,
     agentType: data.agentType,
     inputLength: data.input.length,
-    remaining,
+    remaining: rl.remaining,
   });
   return new Response(
     makeStream(agent.systemPrompt, safeInput, { requestId, ip: anonIp, agentType: data.agentType }),
-    { headers: { ...STREAM_HEADERS, 'X-Request-Id': requestId } },
+    { headers: { ...STREAM_HEADERS, ...rl.headers, 'X-Request-Id': requestId } },
   );
 }

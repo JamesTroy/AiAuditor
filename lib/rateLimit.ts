@@ -1,31 +1,163 @@
-// In-memory sliding window rate limiter.
+// Custom in-memory sliding-window rate limiter.
 //
-// ARCH-001 KNOWN LIMITATION: This counter is process-scoped (Node.js module memory).
-// In any multi-worker, multi-instance, or serverless deployment (Vercel, AWS Lambda, etc.)
-// each process starts with a fresh counter, making this limiter trivially bypassable.
+// Design:
+//   - Each RateLimiter instance tracks a map of key → timestamp[] where the
+//     key is typically an IP address.
+//   - A sliding window keeps only timestamps within the last `windowMs` ms,
+//     so the counter naturally decays without a hard reset boundary.
+//   - A background cleanup interval evicts entries that have no timestamps in
+//     the current window, bounding memory to active keys only.
+//   - A hard cap (`maxEntries`) prevents a memory-DoS from a flood of unique IPs.
+//     Once the cap is reached, new IPs are rejected until space opens up.
+//   - `check()` returns standard rate-limit HTTP headers ready to attach to any
+//     response, including 429s and successful responses (so clients know their
+//     remaining budget).
 //
-// For production with untrusted traffic, replace with a Redis- or Upstash-backed
-// atomic counter (e.g. INCR + EXPIRE) so the window is shared across all workers.
-//
-// Current scope: acceptable for a single-process `next start` or local dev server.
+// KNOWN LIMITATION: This store is process-scoped (Node.js module memory).
+// In multi-worker / serverless deployments each worker has its own counter,
+// making the effective limit N × maxRequests across N workers.
+// Replace with a Redis/Upstash atomic counter (INCR + EXPIRE) for
+// shared-state rate limiting across workers.
 
-const WINDOW_MS = 60_000; // 1 minute
-const MAX_REQUESTS = 10;  // requests per IP per window
-
-// Map<ip, timestamp[]>
-const requestLog = new Map<string, number[]>();
-
-export function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
-  const now = Date.now();
-  const windowStart = now - WINDOW_MS;
-
-  const timestamps = (requestLog.get(ip) ?? []).filter((t) => t > windowStart);
-  timestamps.push(now);
-  requestLog.set(ip, timestamps);
-
-  const count = timestamps.length;
-  const allowed = count <= MAX_REQUESTS;
-  const remaining = Math.max(0, MAX_REQUESTS - count);
-
-  return { allowed, remaining };
+export interface RateLimiterConfig {
+  /** Length of the sliding window in milliseconds. */
+  windowMs: number;
+  /** Maximum requests allowed per key per window. */
+  maxRequests: number;
+  /**
+   * Hard ceiling on the number of unique keys tracked simultaneously.
+   * New keys are rejected (429) once this is reached.
+   * Default: 10_000.
+   */
+  maxEntries?: number;
+  /**
+   * How often to sweep and evict idle entries (milliseconds).
+   * Default: windowMs (entries stay at most one window after going idle).
+   */
+  cleanupIntervalMs?: number;
 }
+
+export interface RateLimitResult {
+  /** Whether the request is within the limit. */
+  allowed: boolean;
+  /** Requests remaining in the current window (0 when denied). */
+  remaining: number;
+  /**
+   * Unix-ms timestamp at which the oldest counted request will fall out of
+   * the window, freeing one slot. Useful for Retry-After calculations.
+   */
+  resetAt: number;
+  /**
+   * Ready-to-use HTTP headers to attach to the response.
+   * Includes X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset,
+   * and Retry-After (only when denied).
+   */
+  headers: Record<string, string>;
+}
+
+export class RateLimiter {
+  private readonly windowMs: number;
+  private readonly maxRequests: number;
+  private readonly maxEntries: number;
+  private readonly store = new Map<string, number[]>();
+  private readonly timer: ReturnType<typeof setInterval>;
+
+  constructor(config: RateLimiterConfig) {
+    this.windowMs = config.windowMs;
+    this.maxRequests = config.maxRequests;
+    this.maxEntries = config.maxEntries ?? 10_000;
+
+    const cleanupMs = config.cleanupIntervalMs ?? config.windowMs;
+    this.timer = setInterval(() => this.cleanup(), cleanupMs);
+    // Don't hold the Node.js event loop open just for cleanup.
+    if (typeof this.timer.unref === 'function') this.timer.unref();
+  }
+
+  /**
+   * Record a request for `key` and return the rate-limit decision.
+   * Always records the request first; the caller must honour `allowed`.
+   */
+  check(key: string): RateLimitResult {
+    const now = Date.now();
+    const windowStart = now - this.windowMs;
+
+    // Evict timestamps outside the window.
+    const timestamps = (this.store.get(key) ?? []).filter((t) => t > windowStart);
+
+    // Enforce the entry cap for new keys.
+    if (!this.store.has(key) && this.store.size >= this.maxEntries) {
+      const resetAt = now + this.windowMs;
+      return {
+        allowed: false,
+        remaining: 0,
+        resetAt,
+        headers: this.buildHeaders(false, 0, resetAt),
+      };
+    }
+
+    timestamps.push(now);
+    this.store.set(key, timestamps);
+
+    const count = timestamps.length;
+    const allowed = count <= this.maxRequests;
+    const remaining = Math.max(0, this.maxRequests - count);
+
+    // Reset time: when the oldest request in the window will expire.
+    const oldestInWindow = timestamps[0] ?? now;
+    const resetAt = oldestInWindow + this.windowMs;
+
+    return { allowed, remaining, resetAt, headers: this.buildHeaders(allowed, remaining, resetAt) };
+  }
+
+  /** Stop the background cleanup timer. Call this in tests to avoid open handles. */
+  destroy(): void {
+    clearInterval(this.timer);
+  }
+
+  private cleanup(): void {
+    const windowStart = Date.now() - this.windowMs;
+    for (const [key, timestamps] of this.store) {
+      const active = timestamps.filter((t) => t > windowStart);
+      if (active.length === 0) {
+        this.store.delete(key);
+      } else {
+        this.store.set(key, active);
+      }
+    }
+  }
+
+  private buildHeaders(
+    allowed: boolean,
+    remaining: number,
+    resetAt: number,
+  ): Record<string, string> {
+    const headers: Record<string, string> = {
+      'X-RateLimit-Limit': String(this.maxRequests),
+      'X-RateLimit-Remaining': String(remaining),
+      // Seconds since epoch, matching the de-facto RateLimit-Reset convention.
+      'X-RateLimit-Reset': String(Math.ceil(resetAt / 1_000)),
+    };
+    if (!allowed) {
+      const retryAfterSecs = Math.max(1, Math.ceil((resetAt - Date.now()) / 1_000));
+      headers['Retry-After'] = String(retryAfterSecs);
+    }
+    return headers;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Named instances — one per logical endpoint.
+// Tune limits independently as traffic patterns become clearer.
+// ---------------------------------------------------------------------------
+
+/** Primary audit endpoint: 10 requests per minute per IP. */
+export const auditLimiter = new RateLimiter({
+  windowMs: 60_000,
+  maxRequests: 10,
+});
+
+/** URL-fetch endpoint: 30 requests per minute per IP (cheaper operation). */
+export const fetchUrlLimiter = new RateLimiter({
+  windowMs: 60_000,
+  maxRequests: 30,
+});
