@@ -50,15 +50,7 @@ export default function Home() {
   const pinnedAgents = agents.filter((a) => favorites.has(a.id));
 
   return (
-    <>
-      {/* WCAG 2.4.1 — bypass block for keyboard users */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-violet-600 focus:text-white focus:rounded-lg focus:text-sm focus:font-medium"
-      >
-        Skip to content
-      </a>
-    <main id="main-content" tabIndex={-1} className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 px-6 py-20">
+    <main className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 px-6 py-20">
       <div className="max-w-5xl mx-auto">
         {/* Header row */}
         <div className="flex items-center justify-end gap-2 mb-8">
@@ -172,6 +164,5 @@ export default function Home() {
 
       {shortcutsOpen && <KeyboardShortcutsModal onClose={() => setShortcutsOpen(false)} />}
     </main>
-    </>
   );
 }
