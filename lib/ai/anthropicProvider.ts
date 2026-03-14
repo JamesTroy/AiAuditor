@@ -12,6 +12,9 @@ const RETRY_BASE_MS = 1_000;
 
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 529]);
 
+// PERF-012: Hoist TextEncoder to module scope — it's stateless and reusable.
+const encoder = new TextEncoder();
+
 function isRetryable(err: unknown): boolean {
   if (err instanceof Anthropic.APIError) return RETRYABLE_STATUS.has(err.status);
   return false;
@@ -33,7 +36,6 @@ export class AnthropicProvider implements AIProvider {
     userInput: string,
     options?: { signal?: AbortSignal },
   ): ReadableStream<Uint8Array> {
-    const encoder = new TextEncoder();
     const client = this.client;
 
     return new ReadableStream<Uint8Array>({

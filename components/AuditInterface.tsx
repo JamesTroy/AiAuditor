@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { AgentConfig } from '@/lib/types';
@@ -207,9 +207,13 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
     router.push(`/audit/${targetId}`);
   }
 
-  const wordCount = result.trim() ? result.trim().split(/\s+/).filter(Boolean).length : 0;
-  const tokenEstimate = Math.ceil(input.length / 4);
-  const otherAgents = agents.filter((a) => a.id !== agent.id);
+  // PERF-003/004: Memoize derived values to avoid recalculation on every render.
+  const wordCount = useMemo(
+    () => (result.trim() ? result.trim().split(/\s+/).filter(Boolean).length : 0),
+    [result],
+  );
+  const tokenEstimate = useMemo(() => Math.ceil(input.length / 4), [input]);
+  const otherAgents = useMemo(() => agents.filter((a) => a.id !== agent.id), [agent.id]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -435,9 +439,13 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
             )}
           </div>
           <div className="p-6 prose prose-sm max-w-none dark:prose-invert">
-            <SafeMarkdown>
-              {loading ? result + ' ▍' : result}
-            </SafeMarkdown>
+            {/* PERF-011: Render plain text while streaming to avoid re-parsing
+                markdown on every RAF tick. SafeMarkdown only on completion. */}
+            {loading ? (
+              <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-zinc-200 m-0 p-0 bg-transparent">{result} ▍</pre>
+            ) : (
+              <SafeMarkdown>{result}</SafeMarkdown>
+            )}
           </div>
         </div>
       )}

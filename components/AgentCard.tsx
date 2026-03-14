@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { AgentConfig } from '@/lib/types';
 
 const BUILT_IN_ICONS: Record<string, string> = {
@@ -66,7 +67,8 @@ interface Props {
   isFavorite?: boolean;
 }
 
-export default function AgentCard({ agent, onEdit, onDelete, onToggleFavorite, isFavorite }: Props) {
+// PERF-022: React.memo prevents re-render when parent state changes but this card's props haven't.
+export default memo(function AgentCard({ agent, onEdit, onDelete, onToggleFavorite, isFavorite }: Props) {
   const icon = BUILT_IN_ICONS[agent.id] ?? DEFAULT_CUSTOM_ICON;
   const iconLabel = BUILT_IN_ICON_LABELS[agent.id] ?? 'custom agent';
   const isCustom = !(agent.id in BUILT_IN_ICONS);
@@ -120,4 +122,4 @@ export default function AgentCard({ agent, onEdit, onDelete, onToggleFavorite, i
       </div>
     </article>
   );
-}
+});

@@ -2,8 +2,12 @@
 
 // ARCH-002: Encapsulates the streaming audit session so AuditInterface stays
 // focused on rendering. All server communication and result accumulation lives here.
+//
+// PERF-001/002: Stream chunks are accumulated in an array (O(n) vs O(n²) string concat)
+// and React state updates are throttled via requestAnimationFrame (~60fps) to avoid
+// triggering a full markdown re-parse on every chunk.
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { AgentConfig } from '@/lib/types';
 import { saveAudit } from '@/lib/history';
 
@@ -23,12 +27,24 @@ export function useAuditSession(
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const abortRef = useRef<AbortController | null>(null);
+  const chunksRef = useRef<string[]>([]);
+  const rafRef = useRef<number | null>(null);
+
+  // PERF-016: Cancel pending RAF on unmount to avoid stale setResult calls.
+  useEffect(() => {
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
 
   const runAudit = useCallback(async (input: string) => {
     if (!input.trim() || loading) return;
 
     abortRef.current?.abort();
     abortRef.current = new AbortController();
+    chunksRef.current = [];
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
 
     setLoading(true);
     setResult('');
@@ -55,15 +71,29 @@ export function useAuditSession(
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let fullResult = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
-        fullResult += chunk;
-        setResult(fullResult);
+        chunksRef.current.push(chunk);
+
+        // PERF-001: Throttle React state updates to animation frame rate (~60fps).
+        if (rafRef.current === null) {
+          rafRef.current = requestAnimationFrame(() => {
+            setResult(chunksRef.current.join(''));
+            rafRef.current = null;
+          });
+        }
       }
+
+      // Flush final result immediately on stream end.
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      const fullResult = chunksRef.current.join('');
+      setResult(fullResult);
 
       saveAudit({
         agentId: agent.id,
@@ -84,6 +114,14 @@ export function useAuditSession(
 
   const handleStop = useCallback(() => {
     abortRef.current?.abort();
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    // Flush whatever we have so far.
+    if (chunksRef.current.length > 0) {
+      setResult(chunksRef.current.join(''));
+    }
     setLoading(false);
   }, []);
 

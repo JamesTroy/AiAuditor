@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { agents } from '@/lib/agents';
 import AgentCard from '@/components/AgentCard';
@@ -38,10 +38,11 @@ export default function Home() {
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
-  function handleToggleFavorite(id: string) {
+  // PERF-023: useCallback so AgentCard (React.memo) gets a stable reference.
+  const handleToggleFavorite = useCallback((id: string) => {
     toggleFavorite(id);
     setFavorites(getFavorites());
-  }
+  }, []);
 
   const query = search.toLowerCase();
   const filteredAgents = agents.filter(
