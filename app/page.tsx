@@ -71,6 +71,25 @@ export default function Home() {
           <p className="text-gray-600 dark:text-zinc-400 text-lg max-w-xl mx-auto">
             Instant AI-powered audits for code quality, security, and performance.
           </p>
+          <p className="text-gray-500 dark:text-zinc-500 text-sm mt-3 max-w-lg mx-auto">
+            26 specialized agents powered by Claude Sonnet 4.6. Paste your code, get a severity-rated report with line references and remediation steps.
+          </p>
+        </div>
+
+        {/* How it works */}
+        <div className="mb-10 max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+          <div className="px-4 py-3">
+            <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200 mb-1">1. Paste your code</p>
+            <p className="text-xs text-gray-500 dark:text-zinc-500">Drop in files, paste code, or import from a URL</p>
+          </div>
+          <div className="px-4 py-3">
+            <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200 mb-1">2. AI analyzes it</p>
+            <p className="text-xs text-gray-500 dark:text-zinc-500">Claude streams a structured report in real-time</p>
+          </div>
+          <div className="px-4 py-3">
+            <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200 mb-1">3. Get your report</p>
+            <p className="text-xs text-gray-500 dark:text-zinc-500">Severity-rated findings with scores — export as MD or JSON</p>
+          </div>
         </div>
 
         {/* Search */}

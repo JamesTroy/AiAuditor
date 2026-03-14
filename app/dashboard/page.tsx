@@ -26,7 +26,7 @@ export default async function DashboardPage() {
         <div className="mb-8">
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-sm text-gray-500 dark:text-zinc-500 mt-1">
-            Welcome back, {session.user.name}
+            Welcome back, {session.user.name}. Your server-side audit history is tracked here — powered by Claude Sonnet 4.6 and stored in PostgreSQL via Drizzle ORM.
           </p>
         </div>
 

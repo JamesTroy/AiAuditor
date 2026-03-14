@@ -38,10 +38,13 @@ export default async function AgentPage({ params }: Props) {
 
         <div className="mb-8">
           <div className={`text-xs font-mono uppercase tracking-widest mb-3 ${agent.accentClass.split(' ').find((c) => c.startsWith('text-')) ?? ''}`}>
-            Audit Agent
+            Audit Agent · Claude Sonnet 4.6
           </div>
           <h1 className="text-3xl font-bold mb-2">{agent.name}</h1>
           <p className="text-gray-600 dark:text-zinc-400">{agent.description}</p>
+          <p className="text-gray-500 dark:text-zinc-500 text-xs mt-2">
+            This agent uses a specialized system prompt to analyze your code via the Anthropic API. Results stream in real-time and can be exported as Markdown or JSON.
+          </p>
           {agent.prepPrompt && <PrepPromptBox prompt={agent.prepPrompt} />}
           <SystemPromptViewer prompt={agent.systemPrompt} />
         </div>

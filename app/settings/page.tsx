@@ -80,6 +80,9 @@ export default function SettingsPage() {
       <div className="max-w-2xl mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-bold">Settings</h1>
+          <p className="text-sm text-gray-500 dark:text-zinc-500 mt-1">
+            Manage your account. Authentication is handled by Better Auth with sessions stored in PostgreSQL.
+          </p>
         </div>
 
         {/* Profile */}

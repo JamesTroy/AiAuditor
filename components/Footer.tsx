@@ -11,7 +11,7 @@ export default function Footer() {
         </Link>
 
         <p className="text-xs text-gray-400 dark:text-zinc-600">
-          Built with Claude
+          Next.js 15 · React 19 · Claude Sonnet 4.6 · Better Auth · Drizzle · Tailwind
         </p>
 
         <div className="flex items-center gap-4">
