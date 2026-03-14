@@ -34,6 +34,7 @@ export const VALID_AGENT_TYPES = [
   'cloud-infra',
   'observability',
   'database-infra',
+  'data-security',
 ] as const;
 
 export type AgentTypeValue = (typeof VALID_AGENT_TYPES)[number];

@@ -2156,6 +2156,99 @@ Format each file:
 
 Keep total under 30,000 characters.`,
   },
+  {
+    id: 'data-security',
+    name: 'Data Security',
+    description: 'Audits encryption, key management, secrets handling, DLP, and secure data lifecycle.',
+    category: 'Security & Privacy',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-800 hover:bg-amber-700',
+    placeholder: 'Paste your database config, encryption code, secrets management setup, or data flow architecture...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['data-security'],
+    prepPrompt: `I'm preparing code and configuration for a **Data Security** audit. Please help me collect the relevant files.
+
+## Data security context (fill in)
+- Application type: [e.g. SaaS platform, fintech API, healthcare portal, e-commerce]
+- Data sensitivity: [e.g. "handles payment data (PCI)", "stores PHI (HIPAA)", "user PII only"]
+- Cloud provider: [e.g. AWS, GCP, Azure, self-hosted]
+- Database(s): [e.g. PostgreSQL, MongoDB, DynamoDB, Redis]
+- Compliance requirements: [e.g. SOC 2, ISO 27001, PCI DSS, HIPAA, none yet]
+- Known concerns: [e.g. "secrets in env vars", "no field-level encryption", "logging PII"]
+
+## Files to gather
+
+### 1. Encryption configuration
+- Database connection setup (connection strings, SSL/TLS config)
+- Any field-level or column-level encryption code
+- TLS/SSL certificate configuration
+- File encryption for uploads or exports
+- Any custom encryption utilities or wrappers
+
+### 2. Key & secrets management
+- Environment variable files (.env.example — NEVER the real .env)
+- Vault/KMS configuration (AWS KMS, GCP KMS, HashiCorp Vault setup)
+- Secret injection in CI/CD (GitHub Actions secrets, Docker secrets)
+- Key rotation scripts or automation
+- Any hardcoded keys, tokens, or credentials in source code
+
+### 3. Authentication & credential storage
+- Password hashing configuration (bcrypt rounds, argon2 params)
+- JWT signing key management
+- OAuth client secret storage
+- API key generation and storage logic
+- Session token management
+
+### 4. Database security
+- Database user permissions and roles
+- Row-level security (RLS) policies
+- Database migration files that handle sensitive columns
+- Backup configuration and encryption settings
+- Connection pooling with credential management
+
+### 5. Data flow & access controls
+- API middleware that handles sensitive data
+- Authorization logic for data access
+- Data serialization — what fields are exposed in API responses
+- Logging configuration — what gets logged and what's redacted
+- Error handling — what data appears in error messages/stack traces
+
+### 6. Data lifecycle
+- Data retention policies (code or config)
+- Deletion/anonymization scripts
+- Audit logging implementation
+- Data export functionality (GDPR data portability)
+- Backup retention and encryption
+
+### 7. Infrastructure security config
+- Docker/container security (secrets mounting, no-root user)
+- Network policies, firewall rules, security groups
+- WAF or API gateway configuration
+- CDN security headers configuration
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- lib/db.ts (database connection) ---
+--- lib/encryption.ts (encryption utilities) ---
+--- .env.example (environment variables template) ---
+--- middleware/auth.ts (authentication) ---
+--- docker-compose.yml (container config) ---
+\`\`\`
+
+## Don't forget
+- [ ] NEVER include real secrets, passwords, or API keys — use .env.example or redact them
+- [ ] Include ALL database connection configurations (main DB, Redis, message queues)
+- [ ] Show how secrets are injected in production vs development
+- [ ] Include logging config — this is where PII commonly leaks
+- [ ] Check for hardcoded credentials in test files and seed scripts
+- [ ] Include error handling code — stack traces can expose sensitive data
+- [ ] Show backup and disaster recovery configuration
+- [ ] Note which compliance frameworks apply (SOC 2, PCI DSS, HIPAA, etc.)
+
+Keep total under 30,000 characters.`,
+  },
 ];
 
 export function getAgent(id: string): AgentConfig | undefined {

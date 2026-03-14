@@ -30,6 +30,7 @@ const BUILT_IN_ICONS: Record<string, string> = {
   'cloud-infra': '☁️',
   'observability': '📡',
   'database-infra': '🗃️',
+  'data-security': '🔏',
 };
 
 const BUILT_IN_ICON_LABELS: Record<string, string> = {
@@ -58,6 +59,7 @@ const BUILT_IN_ICON_LABELS: Record<string, string> = {
   'cloud-infra': 'cloud',
   'observability': 'satellite dish',
   'database-infra': 'card index dividers',
+  'data-security': 'locked with pen',
 };
 
 const DEFAULT_CUSTOM_ICON = '✦';
