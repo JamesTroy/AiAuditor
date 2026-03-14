@@ -25,4 +25,7 @@ export interface AgentConfig {
   buttonClass: string;
   placeholder: string;
   systemPrompt: string;
+  /** Optional prompt users can copy into their AI workspace to structure their
+   *  code/content into the ideal format for this audit type. */
+  prepPrompt?: string;
 }

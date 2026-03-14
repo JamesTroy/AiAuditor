@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { agents, getAgent } from '@/lib/agents';
 import AuditPageClient from '@/components/AuditPageClient';
 import SystemPromptViewer from '@/components/SystemPromptViewer';
+import PrepPromptBox from '@/components/PrepPromptBox';
 
 // VULN-002: Constrains [agent] to only the 4 valid IDs at build time.
 // Requests for any other segment hit notFound() below without running server logic.
@@ -39,6 +40,7 @@ export default async function AgentPage({ params }: Props) {
           </div>
           <h1 className="text-3xl font-bold mb-2">{agent.name}</h1>
           <p className="text-gray-600 dark:text-zinc-400">{agent.description}</p>
+          {agent.prepPrompt && <PrepPromptBox prompt={agent.prepPrompt} />}
           <SystemPromptViewer prompt={agent.systemPrompt} />
         </div>
 
