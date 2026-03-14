@@ -44,6 +44,21 @@ export const VALID_AGENT_TYPES = [
   'database-migrations',
   'concurrency',
   'ci-cd',
+  'regex-review',
+  'monorepo',
+  'graphql',
+  'websocket',
+  'container-security',
+  'cors-headers',
+  'seo-technical',
+  'bundle-size',
+  'forms-validation',
+  'dark-mode',
+  'email-templates',
+  'env-config',
+  'openapi',
+  'state-machines',
+  'pagination',
 ] as const;
 
 export type AgentTypeValue = (typeof VALID_AGENT_TYPES)[number];

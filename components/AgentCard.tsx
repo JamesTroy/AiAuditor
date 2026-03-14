@@ -40,6 +40,21 @@ const BUILT_IN_ICONS: Record<string, string> = {
   'database-migrations': '🔄',
   'concurrency': '⚡',
   'ci-cd': '🔧',
+  'regex-review': '🔣',
+  'monorepo': '📦',
+  'graphql': '◈',
+  'websocket': '🔌',
+  'container-security': '🐳',
+  'cors-headers': '🌐',
+  'seo-technical': '🔍',
+  'bundle-size': '📊',
+  'forms-validation': '📝',
+  'dark-mode': '🌗',
+  'email-templates': '✉️',
+  'env-config': '⚙️',
+  'openapi': '📄',
+  'state-machines': '🔀',
+  'pagination': '📑',
 };
 
 const BUILT_IN_ICON_LABELS: Record<string, string> = {
@@ -78,6 +93,21 @@ const BUILT_IN_ICON_LABELS: Record<string, string> = {
   'database-migrations': 'cycle arrows',
   'concurrency': 'lightning bolt',
   'ci-cd': 'wrench',
+  'regex-review': 'input symbols',
+  'monorepo': 'package',
+  'graphql': 'diamond',
+  'websocket': 'plug',
+  'container-security': 'whale',
+  'cors-headers': 'globe with meridians',
+  'seo-technical': 'magnifying glass',
+  'bundle-size': 'bar chart',
+  'forms-validation': 'memo',
+  'dark-mode': 'last quarter moon',
+  'email-templates': 'envelope',
+  'env-config': 'gear',
+  'openapi': 'page',
+  'state-machines': 'shuffle',
+  'pagination': 'bookmarks',
 };
 
 const DEFAULT_CUSTOM_ICON = '✦';

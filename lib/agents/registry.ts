@@ -2796,6 +2796,498 @@ Format each file:
 
 Keep total under 30,000 characters.`,
   },
+  {
+    id: 'regex-review',
+    name: 'Regex Review',
+    description: 'Detects ReDoS vulnerabilities, incorrect matches, and unreadable patterns.',
+    category: 'Code Quality',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-700 hover:bg-orange-600',
+    placeholder: 'Paste code containing regular expressions...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['regex-review'],
+    prepPrompt: `I'm preparing code for a **Regex Review** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Language: [e.g. JavaScript, Python, Go, Java]
+- Regex engine: [e.g. V8 (JS), PCRE (PHP), RE2 (Go), re (Python)]
+- Where regex is used: [e.g. input validation, URL routing, log parsing, search]
+- Known concerns: [e.g. "slow regex on large input", "email validation not working", "unsure about security"]
+
+## Files to gather
+- ALL files containing regex patterns (search for /.../ or new RegExp or re.compile)
+- Input validation code that uses regex
+- URL routing or path matching
+- Log parsing or text extraction code
+- Any regex utility functions
+
+## Don't forget
+- [ ] Include the INPUT that each regex processes — is it user-controlled?
+- [ ] Note which regexes run on every request (performance-critical)
+- [ ] Include any regex that has been "working but we're not sure why"
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'monorepo',
+    name: 'Monorepo Structure',
+    description: 'Reviews package boundaries, dependency graphs, build config, and shared code organization.',
+    category: 'Code Quality',
+    accentClass: 'text-purple-400 hover:bg-purple-500/10',
+    buttonClass: 'bg-purple-700 hover:bg-purple-600',
+    placeholder: 'Paste your package.json files, workspace config, turborepo/nx config, or project structure...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['monorepo'],
+    prepPrompt: `I'm preparing a monorepo for a **Structure** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Build system: [e.g. Turborepo, Nx, Lerna, pnpm workspaces, Bazel]
+- Package count: [e.g. 5 packages, 20 packages]
+- Known concerns: [e.g. "slow builds", "circular deps", "unclear package boundaries"]
+
+## Files to gather
+- Root package.json and workspace config (pnpm-workspace.yaml, turbo.json, nx.json)
+- Every package's package.json
+- Shared tsconfig files
+- Build configuration (turbo.json pipelines, nx.json targets)
+- Any shared eslint/prettier configs
+
+## Don't forget
+- [ ] Run \`ls packages/*/package.json\` to list all packages
+- [ ] Include the dependency graph if your tool can generate one
+- [ ] Note which packages are publishable vs internal
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'graphql',
+    name: 'GraphQL',
+    description: 'Audits schema design, resolver performance, N+1 queries, field authorization, and depth limiting.',
+    category: 'Infrastructure',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-700 hover:bg-pink-600',
+    placeholder: 'Paste your GraphQL schema, resolvers, or query code...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['graphql'],
+    prepPrompt: `I'm preparing a GraphQL API for an audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- GraphQL framework: [e.g. Apollo Server, Yoga, Pothos, Nexus, gqlgen]
+- Schema approach: [schema-first / code-first]
+- Known concerns: [e.g. "N+1 queries", "no auth on fields", "slow queries"]
+
+## Files to gather
+- Full GraphQL schema (SDL or generated)
+- ALL resolver files
+- DataLoader setup (if any)
+- Auth/permission middleware for GraphQL
+- Query depth/complexity limiting config
+- Any custom scalars or directives
+
+## Don't forget
+- [ ] Include the FULL schema, not just a sample
+- [ ] Show how auth is applied per field/type
+- [ ] Include any persisted query configuration
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'websocket',
+    name: 'WebSocket & Realtime',
+    description: 'Reviews connection lifecycle, reconnection, auth on persistent connections, and backpressure.',
+    category: 'Infrastructure',
+    accentClass: 'text-violet-400 hover:bg-violet-500/10',
+    buttonClass: 'bg-violet-700 hover:bg-violet-600',
+    placeholder: 'Paste your WebSocket server/client code, Socket.IO config, or SSE implementation...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['websocket'],
+    prepPrompt: `I'm preparing real-time code for a **WebSocket & Realtime** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Library: [e.g. ws, Socket.IO, Pusher, Ably, Server-Sent Events, WebSocket API]
+- Use case: [e.g. chat, live dashboard, notifications, collaborative editing]
+- Known concerns: [e.g. "connections drop randomly", "no reconnection logic", "memory leaks"]
+
+## Files to gather
+- WebSocket server setup and handlers
+- Client-side connection/reconnection code
+- Authentication for WebSocket connections
+- Message type definitions and handlers
+- Any pub/sub or room management code
+- Connection monitoring/health checks
+
+## Don't forget
+- [ ] Include both server AND client code
+- [ ] Show how authentication works on the WebSocket connection
+- [ ] Include reconnection logic (or note its absence)
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'container-security',
+    name: 'Container Security',
+    description: 'Audits Dockerfiles for root users, image provenance, secret leaks, and runtime hardening.',
+    category: 'Security & Privacy',
+    accentClass: 'text-red-400 hover:bg-red-500/10',
+    buttonClass: 'bg-red-700 hover:bg-red-600',
+    placeholder: 'Paste your Dockerfile, docker-compose.yml, or Kubernetes manifests...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['container-security'],
+    prepPrompt: `I'm preparing container configuration for a **Container Security** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Container runtime: [e.g. Docker, Podman, containerd]
+- Orchestration: [e.g. Kubernetes, Docker Compose, ECS, none]
+- Registry: [e.g. Docker Hub, ECR, GCR, GHCR]
+- Known concerns: [e.g. "running as root", "large image", "secrets in build args"]
+
+## Files to gather
+- ALL Dockerfiles
+- docker-compose.yml / docker-compose.prod.yml
+- .dockerignore
+- Kubernetes manifests (deployments, services, ingress, network policies)
+- Any image scanning configuration (Trivy, Snyk)
+- Entrypoint/startup scripts
+
+## Don't forget
+- [ ] Include ALL Dockerfiles (dev, prod, CI)
+- [ ] Note the base image and its tag/digest
+- [ ] Include any secret mounting or env injection patterns
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'cors-headers',
+    name: 'CORS & Headers',
+    description: 'Audits CORS policy, security headers, cookie settings, and origin-based access control.',
+    category: 'Security & Privacy',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-800 hover:bg-amber-700',
+    placeholder: 'Paste your CORS configuration, middleware, security headers, or server config...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['cors-headers'],
+    prepPrompt: `I'm preparing server configuration for a **CORS & Headers** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js, Express, Fastify, Nginx]
+- Deployment: [e.g. Vercel, AWS, self-hosted behind Nginx]
+- API consumers: [e.g. same-origin SPA, mobile app, third-party integrations]
+- Known concerns: [e.g. "CORS errors in production", "missing security headers", "cross-origin cookie issues"]
+
+## Files to gather
+- CORS middleware or configuration
+- next.config.ts headers section
+- middleware.ts (if it sets headers)
+- nginx.conf / Caddyfile / reverse proxy config
+- Cookie setting code
+- Any helmet.js or security header middleware
+
+## Don't forget
+- [ ] Include ALL places where headers are set (can be multiple)
+- [ ] Show cookie attributes (Secure, HttpOnly, SameSite)
+- [ ] Include any CSP configuration
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-technical',
+    name: 'SEO Technical',
+    description: 'Reviews meta tags, structured data, canonical URLs, sitemap, and crawlability.',
+    category: 'Performance',
+    accentClass: 'text-green-400 hover:bg-green-500/10',
+    buttonClass: 'bg-green-700 hover:bg-green-600',
+    placeholder: 'Paste your page components, layout files, head configuration, or robots.txt...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-technical'],
+    prepPrompt: `I'm preparing my site for a **Technical SEO** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js 15, Nuxt 3, Astro, static HTML]
+- Rendering: [SSR / SSG / CSR / hybrid]
+- Current SEO status: [e.g. "basic meta tags only", "no sitemap", "good but want to improve"]
+- Known concerns: [e.g. "not indexed on Google", "duplicate content", "missing structured data"]
+
+## Files to gather
+- Root layout with \`<head>\` / metadata config
+- All page-level metadata (title, description, OG tags)
+- robots.txt
+- XML sitemap (or generation config)
+- Structured data / JSON-LD
+- Any SEO utility components or libraries
+
+## Don't forget
+- [ ] Include the HTML \`<head>\` output for your most important pages
+- [ ] Check that every page has a unique title and description
+- [ ] Include any canonical URL configuration
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'bundle-size',
+    name: 'Bundle Size',
+    description: 'Finds heavy dependencies, missing code splitting, tree-shaking failures, and optimization gaps.',
+    category: 'Performance',
+    accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
+    buttonClass: 'bg-yellow-800 hover:bg-yellow-700',
+    placeholder: 'Paste your build output, package.json, import statements, or bundle analysis report...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['bundle-size'],
+    prepPrompt: `I'm preparing my frontend for a **Bundle Size** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Bundler: [e.g. webpack, Vite/Rollup, esbuild, Turbopack]
+- Framework: [e.g. Next.js 15, React + Vite, Vue + Nuxt]
+- Current bundle size: [e.g. "180KB shared JS", "don't know", "2MB total"]
+- Known concerns: [e.g. "slow initial load", "huge node_modules", "not sure what's in the bundle"]
+
+## Files to gather and measurements to run
+- package.json (full dependencies list)
+- Build output (\`npm run build\` page size table)
+- Import statements from the largest page components
+- next.config.ts / vite.config.ts (any bundle optimization settings)
+- Any dynamic import usage
+
+### Run these commands:
+\`\`\`bash
+npm run build 2>&1 | tail -50
+# or for more detail:
+npx @next/bundle-analyzer  # if using Next.js
+\`\`\`
+
+## Don't forget
+- [ ] Include the build output showing chunk/page sizes
+- [ ] List ALL dependencies from package.json
+- [ ] Note any dependencies you suspect are heavy
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'forms-validation',
+    name: 'Forms & Validation',
+    description: 'Reviews form UX, input validation, error messaging, accessibility, and mobile usability.',
+    category: 'Design',
+    accentClass: 'text-fuchsia-400 hover:bg-fuchsia-500/10',
+    buttonClass: 'bg-fuchsia-700 hover:bg-fuchsia-600',
+    placeholder: 'Paste your form components, validation logic, or error handling UI...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['forms-validation'],
+    prepPrompt: `I'm preparing forms for a **Forms & Validation** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Form library: [e.g. React Hook Form, Formik, native forms, Zod + server actions]
+- Validation approach: [client-only / server-only / both]
+- Known concerns: [e.g. "error messages confuse users", "forms not accessible", "no mobile optimization"]
+
+## Files to gather
+- ALL form components (login, signup, settings, checkout, etc.)
+- Validation schemas (Zod, Yup, custom validation functions)
+- Error display components
+- Server-side validation / API route validation
+- Any form utility components (Input, Select, DatePicker wrappers)
+
+## Don't forget
+- [ ] Include EVERY form in the application
+- [ ] Show how errors are displayed to users
+- [ ] Include both client and server validation code
+- [ ] Note any multi-step or complex forms
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'dark-mode',
+    name: 'Dark Mode',
+    description: 'Audits color contrast in both themes, flash prevention, token usage, and system preference detection.',
+    category: 'Design',
+    accentClass: 'text-violet-400 hover:bg-violet-500/10',
+    buttonClass: 'bg-violet-700 hover:bg-violet-600',
+    placeholder: 'Paste your theme provider, CSS variables, Tailwind config, or component styles...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['dark-mode'],
+    prepPrompt: `I'm preparing my theming code for a **Dark Mode** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Theming approach: [e.g. Tailwind dark: classes, CSS variables, styled-components ThemeProvider]
+- Current status: [e.g. "dark mode only", "both themes", "adding dark mode"]
+- Known concerns: [e.g. "flash of white on load", "some text invisible in dark mode", "inconsistent colors"]
+
+## Files to gather
+- Theme provider / toggle component
+- Tailwind config (darkMode setting, color definitions)
+- Global CSS with color variables or theme values
+- Components with color-related classes/styles
+- Layout component (where theme class is applied)
+
+## Don't forget
+- [ ] Include how the theme is determined on first load
+- [ ] Show components that have different styles per theme
+- [ ] Include any hardcoded colors (#333, rgb(255,255,255))
+- [ ] Check images/icons that should change per theme
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'email-templates',
+    name: 'Email Templates',
+    description: 'Reviews email rendering across clients, inline CSS, accessibility, and deliverability.',
+    category: 'Design',
+    accentClass: 'text-rose-400 hover:bg-rose-500/10',
+    buttonClass: 'bg-rose-700 hover:bg-rose-600',
+    placeholder: 'Paste your email HTML templates, React Email components, or email sending config...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['email-templates'],
+    prepPrompt: `I'm preparing email templates for an audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Email framework: [e.g. React Email, MJML, raw HTML, Handlebars]
+- Email service: [e.g. Resend, SendGrid, SES, Postmark]
+- Email types: [e.g. verification, password reset, welcome, notifications, marketing]
+- Known concerns: [e.g. "looks broken in Outlook", "going to spam", "not accessible"]
+
+## Files to gather
+- ALL email template files
+- Email sending configuration / setup
+- Any shared email components (header, footer, button)
+- SPF/DKIM/DMARC configuration (DNS records or provider settings)
+
+## Don't forget
+- [ ] Include EVERY email template
+- [ ] Show the actual rendered HTML (not just the template source)
+- [ ] Include plain-text alternatives if they exist
+- [ ] Note your current inbox/spam delivery rate if known
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'env-config',
+    name: 'Environment Config',
+    description: 'Audits env var hygiene, config validation, .env management, and 12-factor compliance.',
+    category: 'Infrastructure',
+    accentClass: 'text-teal-400 hover:bg-teal-500/10',
+    buttonClass: 'bg-teal-700 hover:bg-teal-600',
+    placeholder: 'Paste your .env.example, config validation code, or environment setup...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['env-config'],
+    prepPrompt: `I'm preparing environment configuration for an audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js, Express, Django]
+- Environments: [e.g. local, staging, production]
+- Config management: [e.g. ".env files only", "Vault", "AWS Parameter Store"]
+- Known concerns: [e.g. "no validation", "secrets in repo history", "different behavior per env"]
+
+## Files to gather
+- .env.example (NEVER the real .env file)
+- Config validation code (Zod schema, envalid, custom validation)
+- Any centralized config module
+- .gitignore (to verify .env is ignored)
+- CI/CD environment variable setup
+- docker-compose env configuration
+
+## Don't forget
+- [ ] NEVER include real .env files with actual secrets
+- [ ] Search for process.env / import.meta.env across the codebase
+- [ ] Note which variables are required vs optional
+- [ ] Include how secrets differ between environments
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'openapi',
+    name: 'OpenAPI Spec',
+    description: 'Reviews spec completeness, schema accuracy, error documentation, and API consumer usability.',
+    category: 'Infrastructure',
+    accentClass: 'text-green-400 hover:bg-green-500/10',
+    buttonClass: 'bg-green-700 hover:bg-green-600',
+    placeholder: 'Paste your OpenAPI/Swagger spec (YAML or JSON), or your API route handlers...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['openapi'],
+    prepPrompt: `I'm preparing my API specification for an **OpenAPI Spec** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- OpenAPI version: [e.g. 3.1, 3.0, Swagger 2.0, "no spec yet"]
+- API framework: [e.g. Next.js API routes, Express, FastAPI, NestJS]
+- Audience: [e.g. internal team, public developers, mobile app]
+- Known concerns: [e.g. "spec is outdated", "no error documentation", "missing examples"]
+
+## Files to gather
+- The full OpenAPI spec (openapi.yaml / openapi.json)
+- ALL API route handlers (to compare against spec)
+- Request/response type definitions
+- API documentation pages or config
+
+## Don't forget
+- [ ] Include the FULL spec, not just a sample
+- [ ] Include the actual route handlers to verify spec accuracy
+- [ ] Note if the spec is auto-generated or manually maintained
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'state-machines',
+    name: 'State Machines',
+    description: 'Finds impossible states, missing transitions, deadlocks, and implicit state logic.',
+    category: 'Code Quality',
+    accentClass: 'text-indigo-400 hover:bg-indigo-500/10',
+    buttonClass: 'bg-indigo-700 hover:bg-indigo-600',
+    placeholder: 'Paste components or modules with complex state (multi-step forms, payment flows, status tracking)...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['state-machines'],
+    prepPrompt: `I'm preparing code with complex state for a **State Machine** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- State management: [e.g. useState/useReducer, XState, Zustand, Redux]
+- Complex flows: [e.g. checkout process, document editing, approval workflow]
+- Known concerns: [e.g. "impossible states reachable", "users get stuck", "hard to add new states"]
+
+## Files to gather
+- Components/modules with complex state transitions
+- useReducer implementations with action types
+- XState machine definitions (if using)
+- Multi-step form or wizard components
+- Status/lifecycle management code
+- Any state diagrams or documentation
+
+## Don't forget
+- [ ] Include ALL state variables that interact with each other
+- [ ] Show how error states are recovered from
+- [ ] Include any boolean flag combinations (isLoading, isError, isSuccess)
+- [ ] Note flows where users report getting "stuck"
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'pagination',
+    name: 'Pagination & Filtering',
+    description: 'Reviews cursor vs offset strategy, query performance, filter injection, and deep pagination safety.',
+    category: 'Performance',
+    accentClass: 'text-sky-400 hover:bg-sky-500/10',
+    buttonClass: 'bg-sky-700 hover:bg-sky-600',
+    placeholder: 'Paste your paginated API endpoints, database queries, or list components...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['pagination'],
+    prepPrompt: `I'm preparing paginated endpoints for an audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Database: [e.g. PostgreSQL, MySQL, MongoDB]
+- ORM: [e.g. Drizzle, Prisma, Sequelize, raw SQL]
+- Table sizes: [e.g. "10K rows", "1M+ rows", "growing fast"]
+- Known concerns: [e.g. "slow page 100+", "inconsistent results during updates", "no cursor pagination"]
+
+## Files to gather
+- ALL API endpoints that return lists/collections
+- Database queries with LIMIT/OFFSET or cursor logic
+- Filter/search parameter handling
+- Frontend pagination/infinite scroll components
+- Any index definitions on filtered/sorted columns
+
+## Don't forget
+- [ ] Include the actual SQL queries (or ORM queries)
+- [ ] Note the table size for each paginated query
+- [ ] Show how filter/sort parameters flow from URL to query
+- [ ] Include any search endpoint implementations
+
+Keep total under 30,000 characters.`,
+  },
 ];
 
 export function getAgent(id: string): AgentConfig | undefined {
