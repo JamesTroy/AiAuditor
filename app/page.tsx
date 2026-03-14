@@ -6,7 +6,11 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100 px-6 py-20">
       <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 relative">
+          <div
+            className="absolute inset-0 -z-10 mx-auto w-96 h-32 blur-3xl opacity-20 rounded-full"
+            style={{ background: 'radial-gradient(ellipse, #6366f1 0%, #3b82f6 50%, transparent 100%)' }}
+          />
           <h1 className="text-5xl font-bold mb-4 tracking-tight">AI Audit</h1>
           <p className="text-zinc-400 text-lg max-w-xl mx-auto">
             Instant AI-powered audits for code quality, security, SEO, and accessibility.

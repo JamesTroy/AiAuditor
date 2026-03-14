@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAgent } from '@/lib/agents';
-import AuditInterface from '@/components/AuditInterface';
+import AuditPageClient from '@/components/AuditPageClient';
 
 interface Props {
   params: Promise<{ agent: string }>;
@@ -30,7 +30,7 @@ export default async function AgentPage({ params }: Props) {
           <p className="text-zinc-400">{agent.description}</p>
         </div>
 
-        <AuditInterface agent={agent} />
+        <AuditPageClient agent={agent} />
       </div>
     </main>
   );

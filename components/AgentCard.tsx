@@ -10,7 +10,7 @@ const icons: Record<string, string> = {
 export default function AgentCard({ agent }: { agent: AgentConfig }) {
   return (
     <div
-      className={`group border rounded-xl p-6 bg-zinc-900 transition-all cursor-pointer ${agent.accentClass}`}
+      className={`group border rounded-xl p-6 bg-zinc-900 transition-all duration-200 cursor-pointer hover:scale-[1.02] hover:shadow-lg hover:shadow-black/40 ${agent.accentClass}`}
     >
       <div className="text-3xl mb-3">{icons[agent.id]}</div>
       <h2 className="text-xl font-semibold mb-2 text-zinc-100 group-hover:text-white transition-colors">
