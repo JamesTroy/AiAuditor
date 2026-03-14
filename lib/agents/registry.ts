@@ -302,6 +302,135 @@ Format:
 
 Keep total under 30,000 characters; prefer breadth over depth.`,
   },
+  {
+    id: 'ux-review',
+    name: 'UX Review',
+    description: 'Evaluates user flows, interaction patterns, cognitive load, and usability heuristics.',
+    category: 'Design',
+    accentClass: 'border-violet-500 text-violet-400 hover:bg-violet-500/10',
+    buttonClass: 'bg-violet-600 hover:bg-violet-500',
+    placeholder: 'Paste your component HTML/JSX, describe a user flow, or paste a screen description...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['ux-review'],
+    prepPrompt: `I'm preparing a UI for a UX Review. Please help me collect the relevant markup and context.
+
+Gather:
+- The rendered HTML or JSX of the component, page, or flow being reviewed
+- Any state-dependent variations (error state, empty state, loading state, success state)
+- Interactive elements with their associated labels, hints, and error messages
+- A brief description of the user's goal when they land on this screen
+
+Format each section:
+--- Component: [Name] ---
+--- State: [normal / error / empty / loading] ---
+--- User goal: [one sentence] ---
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'design-system',
+    name: 'Design System',
+    description: 'Audits design tokens, component APIs, variant coverage, and documentation completeness.',
+    category: 'Design',
+    accentClass: 'border-fuchsia-500 text-fuchsia-400 hover:bg-fuchsia-500/10',
+    buttonClass: 'bg-fuchsia-600 hover:bg-fuchsia-500',
+    placeholder: 'Paste your design tokens, component code, Storybook stories, or token JSON...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['design-system'],
+    prepPrompt: `I'm preparing a design system for an audit. Please help me collect the relevant files.
+
+Gather:
+- Token definitions: CSS custom properties, Tailwind config, or tokens.json
+- One or two representative component files showing prop interfaces and styling
+- Any Storybook stories (*.stories.tsx) for those components
+- Component index file (shows the full exported surface area)
+- Any existing documentation (README, contributing guide, changelog)
+
+Format each file:
+--- tokens/colors.css ---
+--- components/Button/Button.tsx ---
+--- components/Button/Button.stories.tsx ---
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'responsive-design',
+    name: 'Responsive Design',
+    description: 'Reviews breakpoints, fluid layouts, touch targets, and cross-device behaviour.',
+    category: 'Design',
+    accentClass: 'border-sky-500 text-sky-400 hover:bg-sky-500/10',
+    buttonClass: 'bg-sky-600 hover:bg-sky-500',
+    placeholder: 'Paste your CSS, Tailwind classes, or component code for responsive analysis...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['responsive-design'],
+    prepPrompt: `I'm preparing CSS and layout code for a Responsive Design audit. Please help me collect the relevant files.
+
+Gather:
+- The CSS or Tailwind classes responsible for layout (grid, flex, breakpoint utilities)
+- The HTML/JSX structure of the component or page being reviewed
+- Any CSS media queries or container queries in use
+- The Tailwind config (tailwind.config.ts) if Tailwind is used — especially the screens object
+- Any viewport meta tag from the HTML head
+
+Format each section:
+--- tailwind.config.ts ---
+--- components/Layout.tsx ---
+--- styles/layout.css (if applicable) ---
+
+Note the target device categories (mobile-only, mobile+desktop, all devices). Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'color-typography',
+    name: 'Color & Typography',
+    description: 'Checks contrast ratios, type scales, palette harmony, and WCAG color compliance.',
+    category: 'Design',
+    accentClass: 'border-rose-500 text-rose-400 hover:bg-rose-500/10',
+    buttonClass: 'bg-rose-600 hover:bg-rose-500',
+    placeholder: 'Paste your color tokens, CSS variables, Tailwind config, or typography definitions...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['color-typography'],
+    prepPrompt: `I'm preparing design tokens for a Color & Typography audit. Please help me collect the relevant definitions.
+
+Gather:
+- Color tokens: CSS custom properties (:root variables), tailwind.config.ts colors section, or tokens.json
+- Typography tokens: font-family, font-size scale, line-height, letter-spacing definitions
+- Examples of text-on-background combinations actually used in the UI (e.g. white text on blue-600 button)
+- Any dark-mode color overrides
+
+Format each section:
+--- Color tokens (CSS / config) ---
+--- Typography tokens ---
+--- Text-on-background examples ---
+--- Dark mode overrides (if any) ---
+
+List at least 5–10 real color combinations used in the product. Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'motion-interaction',
+    name: 'Motion & Interaction',
+    description: 'Reviews animations, transitions, micro-interactions, and reduced-motion accessibility.',
+    category: 'Design',
+    accentClass: 'border-lime-500 text-lime-400 hover:bg-lime-500/10',
+    buttonClass: 'bg-lime-600 hover:bg-lime-500',
+    placeholder: 'Paste your CSS animations, Framer Motion code, or JavaScript animation logic...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['motion-interaction'],
+    prepPrompt: `I'm preparing animation and transition code for a Motion & Interaction audit. Please help me collect the relevant files.
+
+Gather:
+- CSS keyframes and transition definitions
+- JavaScript/TypeScript animation code (Framer Motion variants, GSAP timelines, Web Animations API)
+- Any \`@media (prefers-reduced-motion)\` overrides
+- Loading state components (spinners, skeletons, progress bars)
+- Page/route transition logic if it exists
+
+Format each file:
+--- styles/animations.css ---
+--- components/PageTransition.tsx ---
+--- components/Spinner.tsx ---
+
+Note which animation library is in use (Framer Motion, GSAP, CSS-only, etc.). Keep total under 30,000 characters.`,
+  },
 ];
 
 export function getAgent(id: string): AgentConfig | undefined {

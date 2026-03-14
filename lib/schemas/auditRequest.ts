@@ -20,6 +20,11 @@ export const VALID_AGENT_TYPES = [
   'privacy',
   'test-quality',
   'architecture',
+  'ux-review',
+  'design-system',
+  'responsive-design',
+  'color-typography',
+  'motion-interaction',
 ] as const;
 
 export type AgentTypeValue = (typeof VALID_AGENT_TYPES)[number];
