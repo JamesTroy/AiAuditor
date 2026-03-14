@@ -24,21 +24,25 @@ jobs:
         run: npx tsc --noEmit
 
       # ARCH-025: Assert production CSP does not contain 'unsafe-eval'.
-      # This would be a security regression — it must only appear in the dev branch.
+      # CSP is generated in middleware.ts (VULN-007 nonce-based policy); the
+      # 'unsafe-eval' directive must only appear inside the isDev guard.
       - name: Assert prod CSP lacks unsafe-eval
         run: |
-          NODE_ENV=production node -e "
-            const { execSync } = require('child_process');
-            // Build the CSP value by importing next.config.ts via ts-node or
-            // inspecting next.config.ts directly with a pattern match.
-            const src = require('fs').readFileSync('next.config.ts', 'utf8');
-            const prodBranch = src.match(/NODE_ENV.*===.*'production'[\s\S]*?'([^']+)'/);
-            const devEvalInProd = src.includes(\"'unsafe-eval'\") && !src.includes(\"process.env.NODE_ENV === 'development'\");
-            if (devEvalInProd) {
-              console.error('ERROR: unsafe-eval found in CSP without a dev-only guard.');
+          node -e "
+            const src = require('fs').readFileSync('middleware.ts', 'utf8');
+            // 'unsafe-eval' must only appear inside an isDev conditional spread.
+            // A bare occurrence (outside the spread) would mean it applies in prod.
+            const bareEval = src.match(/'unsafe-eval'(?![^\n]*isDev)/);
+            // The only allowed occurrence is:  ...(isDev ? [\"'unsafe-eval'\"] : [])
+            // Check that every unsafe-eval line references isDev on the same line.
+            const lines = src.split('\n').filter(l => l.includes(\"'unsafe-eval'\"));
+            const unguarded = lines.filter(l => !l.includes('isDev'));
+            if (unguarded.length > 0) {
+              console.error('ERROR: unsafe-eval found outside isDev guard in middleware.ts:');
+              unguarded.forEach(l => console.error(' ', l.trim()));
               process.exit(1);
             }
-            console.log('PASS: unsafe-eval is guarded to dev-only.');
+            console.log('PASS: unsafe-eval is guarded to dev-only in middleware.ts.');
           "
 
       - name: Build
