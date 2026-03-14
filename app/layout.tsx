@@ -5,6 +5,7 @@ import ThemeProvider from '@/components/ThemeProvider';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SmoothScroll from '@/components/SmoothScroll';
+import { GlobalJsonLd } from '@/components/JsonLd';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -14,25 +15,30 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://claudit.dev';
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: 'Claudit — AI-Powered Code Audits',
+    default: 'AI Code Audit Tool — Claudit',
     template: '%s | Claudit',
   },
   description:
-    'Instant AI-powered audits for code quality, security, and performance. 50 specialized agents powered by Claude.',
-  icons: { icon: '/logo.svg' },
+    'Run instant AI code audits across security, quality, and performance — 50 specialized agents, results in seconds. Try it free.',
+  manifest: '/site.webmanifest',
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     type: 'website',
     siteName: 'Claudit',
-    title: 'Claudit — AI-Powered Code Audits',
+    title: 'AI Code Audit Tool — Claudit',
     description:
-      'Instant AI-powered audits for code quality, security, and performance. 50 specialized agents powered by Claude.',
+      'Run instant AI code audits across security, quality, and performance — 50 specialized agents, results in seconds. Try it free.',
     url: BASE_URL,
+    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'Claudit — AI Code Audit Tool' }],
   },
   twitter: {
-    card: 'summary',
-    title: 'Claudit — AI-Powered Code Audits',
+    card: 'summary_large_image',
+    title: 'AI Code Audit Tool — Claudit',
     description:
-      'Instant AI-powered audits for code quality, security, and performance. 50 specialized agents powered by Claude.',
+      'Run instant AI code audits across security, quality, and performance — 50 specialized agents, results in seconds.',
+    images: ['/og-default.png'],
   },
   robots: {
     index: true,
@@ -50,6 +56,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" className="dark" {...(nonce ? { 'data-nonce': nonce } : {})}>
+      <head>
+        <GlobalJsonLd />
+      </head>
       <body className={`${inter.className} bg-gray-50 dark:bg-zinc-950 transition-colors duration-200`}>
         <ThemeProvider>
           <SmoothScroll />
