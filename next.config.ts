@@ -20,7 +20,11 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      // 'unsafe-eval' is required in dev mode for Next.js webpack eval-source-maps.
+      // In production, Next.js does not use eval, so this is omitted for a tighter policy.
+      process.env.NODE_ENV === 'development'
+        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+        : "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
       "font-src 'self'",
       "img-src 'self' data: blob:", // blob: required for Download button (URL.createObjectURL)

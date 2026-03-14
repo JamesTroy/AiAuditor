@@ -15,32 +15,39 @@ import {
   CustomAgent,
 } from '@/lib/customAgents';
 
+// Discriminated union — makes simultaneous modals structurally impossible.
+type ModalState =
+  | { mode: 'closed' }
+  | { mode: 'create' }
+  | { mode: 'edit'; agent: CustomAgent };
+
 export default function CustomAgentGrid() {
   const [agents, setAgents] = useState<CustomAgent[]>([]);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<CustomAgent | null>(null);
+  const [modal, setModal] = useState<ModalState>({ mode: 'closed' });
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [importError, setImportError] = useState('');
   const importRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(() => {
     setAgents(getCustomAgents());
   }, []);
 
-  // Load after mount to avoid SSR/localStorage mismatch
   useEffect(() => {
     load();
   }, [load]);
 
+  const closeModal = useCallback(() => setModal({ mode: 'closed' }), []);
+
   function handleCreate(data: { name: string; description: string; systemPrompt: string }) {
     saveCustomAgent(data);
-    setModalOpen(false);
+    setModal({ mode: 'closed' });
     load();
   }
 
   function handleEdit(data: { name: string; description: string; systemPrompt: string }) {
-    if (!editing) return;
-    updateCustomAgent(editing.id, data);
-    setEditing(null);
+    if (modal.mode !== 'edit') return;
+    updateCustomAgent(modal.agent.id, data);
+    setModal({ mode: 'closed' });
     load();
   }
 
@@ -51,29 +58,48 @@ export default function CustomAgentGrid() {
   }
 
   function handleExport() {
-    const json = exportCustomAgents();
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'custom-agents.json';
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const json = exportCustomAgents();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'custom-agents.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Export failed. Please try again.');
+    }
+  }
+
+  function handleImportClick() {
+    if (!importRef.current) return;
+    setImportError('');
+    importRef.current.click();
   }
 
   function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    // Reset so the same file can be re-selected after an error
+    e.target.value = '';
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = (ev.target?.result as string) ?? '';
-      const count = importCustomAgents(text);
-      load();
-      if (count === 0) alert('No new agents were imported. File may be invalid or all agents already exist.');
-      else alert(`${count} agent${count === 1 ? '' : 's'} imported.`);
+      try {
+        const count = importCustomAgents(text);
+        load();
+        if (count === 0) {
+          setImportError('No new agents imported — file may be invalid or all agents already exist.');
+        } else {
+          setImportError('');
+        }
+      } catch {
+        setImportError('Invalid file format. Please upload a valid agent JSON.');
+      }
     };
     reader.readAsText(file);
-    e.target.value = '';
   }
 
   return (
@@ -95,28 +121,33 @@ export default function CustomAgentGrid() {
             </button>
           )}
           <button
-            onClick={() => importRef.current?.click()}
+            onClick={handleImportClick}
             className="px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-zinc-400 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 hover:text-gray-900 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
           >
             Import
           </button>
+          {/* sr-only keeps the input in the accessibility tree; hidden removes it entirely */}
           <input
             ref={importRef}
             type="file"
             accept=".json"
             onChange={handleImportFile}
-            className="hidden"
+            className="sr-only"
             aria-label="Import agents from JSON"
           />
           <button
-            onClick={() => setModalOpen(true)}
+            onClick={() => setModal({ mode: 'create' })}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-zinc-300 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
           >
-            <span className="text-base leading-none">+</span>
+            <span aria-hidden="true" className="text-base leading-none">+</span>
             New agent
           </button>
         </div>
       </div>
+
+      {importError && (
+        <p className="mb-4 text-sm text-red-500 dark:text-red-400">{importError}</p>
+      )}
 
       {agents.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -124,7 +155,7 @@ export default function CustomAgentGrid() {
             <Link key={agent.id} href={`/audit/custom/${agent.id}`} className="block">
               <AgentCard
                 agent={toAgentConfig(agent)}
-                onEdit={() => setEditing(agent)}
+                onEdit={() => setModal({ mode: 'edit', agent })}
                 onDelete={() => setDeleteConfirm(agent.id)}
               />
             </Link>
@@ -154,19 +185,12 @@ export default function CustomAgentGrid() {
         </div>
       )}
 
-      {modalOpen && (
+      {/* Single modal render site — mode discriminates create vs edit, making dual-render impossible */}
+      {modal.mode !== 'closed' && (
         <CreateAgentModal
-          editing={null}
-          onSave={handleCreate}
-          onClose={() => setModalOpen(false)}
-        />
-      )}
-
-      {editing && (
-        <CreateAgentModal
-          editing={editing}
-          onSave={handleEdit}
-          onClose={() => setEditing(null)}
+          editing={modal.mode === 'edit' ? modal.agent : null}
+          onSave={modal.mode === 'edit' ? handleEdit : handleCreate}
+          onClose={closeModal}
         />
       )}
     </>
