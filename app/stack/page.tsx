@@ -11,36 +11,70 @@ export default function StackPage() {
             The Stack Behind Claudit
           </h1>
           <p className="text-lg text-gray-600 dark:text-zinc-400 max-w-2xl">
-            A production-ready, GDPR-compliant auth and database setup for Next.js — designed for developers who want to ship fast without cutting corners on security.
+            A full-stack AI audit platform built on Next.js 15, React 19, and Claude — designed for developers who want to ship fast without cutting corners on security.
           </p>
         </div>
 
-        {/* Recommended Stack */}
+        {/* How it works */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Recommended Stack</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <h2 className="text-2xl font-bold mb-6">How Claudit Works</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <HowItWorksCard
+              step={1}
+              title="Paste your code"
+              description="Drop in source files, paste code, upload files, or import from a URL. Each agent has a prep prompt to help you gather the right files."
+            />
+            <HowItWorksCard
+              step={2}
+              title="AI analyzes it"
+              description="Your code is sent to Claude (Anthropic's API) with a specialized system prompt. Results stream back in real-time — typically under 30 seconds."
+            />
+            <HowItWorksCard
+              step={3}
+              title="Get a structured report"
+              description="Every audit produces a severity-rated report with specific line references, remediation steps, and a composite score. Export as Markdown or JSON."
+            />
+          </div>
+        </section>
+
+        {/* Framework overview */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold mb-6">The Full Stack</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <StackCard
-              layer="Authentication"
-              choice="Better Auth"
-              description="Open-source, self-hosted auth with plugins for admin roles, 2FA, and organizations. The successor to NextAuth.js — built by the same team."
+              layer="Framework"
+              choice="Next.js 15"
+              description="React 19 with App Router, Server Components, and ISR. Pages that need auth are server-rendered; audit pages are statically generated at build time."
+              color="zinc"
+            />
+            <StackCard
+              layer="AI Engine"
+              choice="Claude (Anthropic)"
+              description="Claude Sonnet 4.6 via the Anthropic SDK. Each of the 26 audit agents has a specialized system prompt with structured output, severity ratings, and scoring."
               color="violet"
             />
             <StackCard
-              layer="Database"
-              choice="PostgreSQL on Supabase"
-              description="Managed Postgres with built-in auth, storage, and realtime. Generous free tier, EU regions for GDPR, and a full REST/GraphQL API alongside direct SQL access."
-              color="blue"
+              layer="Styling"
+              choice="Tailwind CSS 3.4"
+              description="Utility-first CSS with dark mode, responsive breakpoints, and the typography plugin. Motion library for hover/tap animations. Lenis for smooth scrolling."
+              color="cyan"
             />
             <StackCard
-              layer="ORM"
-              choice="Drizzle ORM"
-              description="7KB bundle (vs Prisma's 2MB). No codegen step, native edge runtime support, and SQL-like syntax with full TypeScript type safety."
+              layer="Authentication"
+              choice="Better Auth"
+              description="Self-hosted auth with email/password, GitHub & Google OAuth, admin roles, 2FA, and email verification. No vendor lock-in, free at any scale."
               color="emerald"
             />
             <StackCard
-              layer="Email"
-              choice="Resend"
-              description="Modern email API for transactional emails. Free up to 3,000 emails/day. Handles verification emails, password resets, and 2FA codes."
+              layer="Database"
+              choice="PostgreSQL + Drizzle"
+              description="Supabase-managed Postgres with Drizzle ORM (7KB bundle, no codegen). Stores users, sessions, and audit history with full TypeScript type safety."
+              color="blue"
+            />
+            <StackCard
+              layer="Deployment"
+              choice="Railway"
+              description="Auto-deploys on push to main. Nonce-based CSP, HSTS, and security headers via middleware. Usage-based pricing starting at $5/mo."
               color="amber"
             />
           </div>
@@ -301,20 +335,31 @@ export default function StackPage() {
           <h2 className="text-2xl font-bold mb-6">Architecture</h2>
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6">
             <pre className="text-xs sm:text-sm font-mono text-gray-700 dark:text-zinc-300 overflow-x-auto leading-relaxed">{`┌─────────────────────────────────────────────────┐
-│  Next.js 15 App Router                          │
+│  Next.js 15 · React 19 · TypeScript 5.9         │
 │  ├── app/                                       │
-│  │   ├── (auth)/login/signup/reset/             │
-│  │   ├── dashboard/  settings/  admin/          │
+│  │   ├── (auth)/login/signup/reset/2fa/         │
+│  │   ├── dashboard/  settings/  history/        │
+│  │   ├── audit/[agent]/  audit/custom/[id]/     │
+│  │   ├── stack/                                 │
 │  │   ├── api/                                   │
 │  │   │   ├── auth/[...all]/   ← Better Auth     │
-│  │   │   └── audit/           ← Claude API      │
-│  │   └── layout.tsx                             │
+│  │   │   ├── audit/           ← Claude stream   │
+│  │   │   └── fetch-url/       ← URL importer    │
+│  │   └── layout.tsx           ← Navbar + Footer │
+│  ├── components/                                │
+│  │   ├── AgentCard.tsx        ← Motion animated │
+│  │   ├── AuditInterface.tsx   ← Stream + render │
+│  │   └── 12 more components                     │
 │  ├── lib/                                       │
-│  │   ├── auth.ts        ← Better Auth config    │
-│  │   ├── auth-client.ts ← React hooks           │
-│  │   ├── auth-schema.ts ← Drizzle schema        │
-│  │   └── db.ts          ← Drizzle + Neon client │
-│  └── middleware.ts      ← CSP + auth gate       │
+│  │   ├── agents/ (registry + 26 system prompts) │
+│  │   ├── ai/anthropicProvider  ← Claude SDK     │
+│  │   ├── auth.ts + auth-client ← Better Auth    │
+│  │   └── db.ts + auth-schema   ← Drizzle ORM   │
+│  └── middleware.ts   ← Nonce CSP + auth gate    │
+├─────────────────────────────────────────────────┤
+│  Tailwind CSS 3.4 · Motion · Lenis scroll       │
+├─────────────────────────────────────────────────┤
+│  Claude Sonnet 4.6 (Anthropic API, streaming)   │
 ├─────────────────────────────────────────────────┤
 │  Better Auth (self-hosted, in-process)          │
 │  Plugins: admin, 2FA, email verification        │
@@ -322,6 +367,8 @@ export default function StackPage() {
 │  Drizzle ORM (7KB, no codegen)                  │
 ├─────────────────────────────────────────────────┤
 │  Supabase PostgreSQL (managed, EU region)        │
+├─────────────────────────────────────────────────┤
+│  Railway (auto-deploy on push to main)           │
 └─────────────────────────────────────────────────┘`}</pre>
           </div>
         </section>
@@ -344,12 +391,16 @@ function StackCard({ layer, choice, description, color }: {
     blue: 'border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-950/20',
     emerald: 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/20',
     amber: 'border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/20',
+    zinc: 'border-gray-200 dark:border-zinc-700/50 bg-gray-50 dark:bg-zinc-800/30',
+    cyan: 'border-cyan-200 dark:border-cyan-900/50 bg-cyan-50 dark:bg-cyan-950/20',
   };
   const textColors: Record<string, string> = {
     violet: 'text-violet-700 dark:text-violet-300',
     blue: 'text-blue-700 dark:text-blue-300',
     emerald: 'text-emerald-700 dark:text-emerald-300',
     amber: 'text-amber-700 dark:text-amber-300',
+    zinc: 'text-gray-700 dark:text-zinc-200',
+    cyan: 'text-cyan-700 dark:text-cyan-300',
   };
 
   return (
@@ -426,6 +477,20 @@ function CostRow({ service, plan, cost }: { service: string; plan: string; cost:
       <td className="px-5 py-3 text-gray-500 dark:text-zinc-500">{plan}</td>
       <td className="text-right px-5 py-3 font-mono font-bold text-gray-900 dark:text-zinc-100">{cost}</td>
     </tr>
+  );
+}
+
+function HowItWorksCard({ step, title, description }: { step: number; title: string; description: string }) {
+  return (
+    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 relative">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-8 h-8 rounded-full bg-violet-600 text-white text-sm font-bold flex items-center justify-center shrink-0">
+          {step}
+        </div>
+        <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{title}</p>
+      </div>
+      <p className="text-sm text-gray-600 dark:text-zinc-400">{description}</p>
+    </div>
   );
 }
 
