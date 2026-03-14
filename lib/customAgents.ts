@@ -1,6 +1,6 @@
 import { AgentConfig } from './types';
 
-const STORAGE_KEY = 'ai-audit-custom-agents';
+const STORAGE_KEY = 'claudit-custom-agents';
 
 export const CUSTOM_AGENT_ACCENT = 'border-purple-500 text-purple-400 hover:bg-purple-500/10';
 export const CUSTOM_AGENT_BUTTON = 'bg-purple-600 hover:bg-purple-500';

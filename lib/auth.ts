@@ -10,7 +10,7 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
-const FROM_EMAIL = process.env.EMAIL_FROM ?? 'AiAudit <noreply@aiaudit.dev>';
+const FROM_EMAIL = process.env.EMAIL_FROM ?? 'Claudit <noreply@claudit.dev>';
 
 async function sendEmail(to: string, subject: string, html: string) {
   if (!resend) {
@@ -22,7 +22,7 @@ async function sendEmail(to: string, subject: string, html: string) {
 }
 
 export const auth = betterAuth({
-  appName: 'AiAudit',
+  appName: 'Claudit',
 
   database: drizzleAdapter(db, {
     provider: 'pg',
@@ -35,7 +35,7 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       await sendEmail(
         user.email,
-        'Reset your AiAudit password',
+        'Reset your Claudit password',
         `<p>Hi ${user.name},</p>
          <p>Click the link below to reset your password:</p>
          <p><a href="${url}">Reset password</a></p>
@@ -48,7 +48,7 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       await sendEmail(
         user.email,
-        'Verify your AiAudit email',
+        'Verify your Claudit email',
         `<p>Hi ${user.name},</p>
          <p>Click below to verify your email address:</p>
          <p><a href="${url}">Verify email</a></p>`,
@@ -75,12 +75,12 @@ export const auth = betterAuth({
     nextCookies(),
     admin(),
     twoFactor({
-      issuer: 'AiAudit',
+      issuer: 'Claudit',
       otpOptions: {
         async sendOTP({ user, otp }) {
           await sendEmail(
             user.email,
-            'Your AiAudit verification code',
+            'Your Claudit verification code',
             `<p>Hi ${user.name},</p>
              <p>Your two-factor code is: <strong>${otp}</strong></p>
              <p>This code expires in 5 minutes.</p>`,

@@ -9,6 +9,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import KeyboardShortcutsModal from '@/components/KeyboardShortcutsModal';
 import { getFavorites, toggleFavorite } from '@/lib/favorites';
 import UserNav from '@/components/UserNav';
+import Logo from '@/components/Logo';
 
 const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure', 'Design'] as const;
 
@@ -84,9 +85,12 @@ export default function Home() {
             className="absolute inset-0 -z-10 mx-auto w-96 h-32 blur-3xl opacity-20 rounded-full"
             style={{ background: 'radial-gradient(ellipse, #6366f1 0%, #3b82f6 50%, transparent 100%)' }}
           />
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight">AI Audit</h1>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Logo size={48} />
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">Claudit</h1>
+          </div>
           <p className="text-gray-600 dark:text-zinc-300 text-lg max-w-xl mx-auto">
-            Instant AI-powered audits for code quality, security, SEO, and accessibility.
+            Instant AI-powered audits for code quality, security, and performance.
             Powered by Claude.
           </p>
         </div>

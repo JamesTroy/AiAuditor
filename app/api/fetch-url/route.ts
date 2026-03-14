@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   let fetchRes: Response;
   try {
     fetchRes = await fetch(trimmed, {
-      headers: { 'User-Agent': 'AiAudit/1.0' },
+      headers: { 'User-Agent': 'Claudit/1.0' },
       signal: AbortSignal.timeout(10_000),
       // VULN-013: Never follow redirects — a redirect could lead to an
       // internal address even if the original URL passed the allowlist.

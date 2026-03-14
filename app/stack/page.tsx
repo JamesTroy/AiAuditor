@@ -17,7 +17,7 @@ export default function StackPage() {
         {/* Hero */}
         <div className="mb-12">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
-            The Stack Behind AI Audit
+            The Stack Behind Claudit
           </h1>
           <p className="text-lg text-gray-600 dark:text-zinc-400 max-w-2xl">
             A production-ready, GDPR-compliant auth and database setup for Next.js — designed for developers who want to ship fast without cutting corners on security.
@@ -121,7 +121,7 @@ export default function StackPage() {
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-6">What Better Auth Gives You Out of the Box</h2>
           <p className="text-gray-600 dark:text-zinc-400 mb-6">
-            Better Auth uses a plugin system — you add only what you need. Here&apos;s what powers AI Audit:
+            Better Auth uses a plugin system — you add only what you need. Here&apos;s what powers Claudit:
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

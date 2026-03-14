@@ -7,8 +7,9 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'AI Audit',
-  description: 'AI-powered audits for code quality, security, SEO, and accessibility.',
+  title: 'Claudit',
+  description: 'Instant AI-powered audits for code quality, security, and performance. Powered by Claude.',
+  icons: { icon: '/logo.svg' },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

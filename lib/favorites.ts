@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'ai-audit-favorites';
+const STORAGE_KEY = 'claudit-favorites';
 
 function read(): Set<string> {
   try {

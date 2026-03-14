@@ -23,7 +23,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
 
   // Load from localStorage after mount
   useEffect(() => {
-    const stored = localStorage.getItem('ai-audit-theme') as Theme | null;
+    const stored = localStorage.getItem('claudit-theme') as Theme | null;
     const resolved = stored ?? 'dark';
     setTheme(resolved);
     document.documentElement.classList.toggle('dark', resolved === 'dark');
@@ -32,7 +32,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   function toggle() {
     setTheme((prev) => {
       const next = prev === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('ai-audit-theme', next);
+      localStorage.setItem('claudit-theme', next);
       document.documentElement.classList.toggle('dark', next === 'dark');
       return next;
     });
