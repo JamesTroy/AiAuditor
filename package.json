@@ -2,6 +2,10 @@
   "name": "claudit",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.0.0 <21.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,16 +13,16 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "0.39.0",
-    "better-auth": "^1.5.5",
-    "drizzle-orm": "^0.45.1",
-    "next": "^15.5.12",
-    "postgres": "^3.4.8",
+    "@anthropic-ai/sdk": "0.78.0",
+    "better-auth": "1.5.5",
+    "drizzle-orm": "0.45.1",
+    "next": "15.5.12",
+    "postgres": "3.4.8",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "9.1.0",
-    "resend": "^6.9.3",
-    "zod": "^4.3.6"
+    "resend": "6.9.3",
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/typography": "0.5.19",
