@@ -83,9 +83,7 @@ export default memo(function AgentCard({ agent, index = 0, onEdit, onDelete, onT
   return (
     <m.article
       className={`group relative overflow-hidden border border-gray-200 dark:border-zinc-800 rounded-xl p-6 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-sm cursor-pointer ${agent.accentClass}`}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.05, ease: [0.25, 0.1, 0.25, 1] }}
+      initial={false}
       whileHover={{
         scale: 1.03,
         borderColor: 'rgba(139, 92, 246, 0.3)',
