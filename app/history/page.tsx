@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import ReactMarkdown from 'react-markdown';
+
 import {
   getHistory, deleteAudit, clearHistory, starAudit, unstarAudit, setAuditNote, AuditEntry,
 } from '@/lib/history';
-import { markdownComponents } from '@/components/markdownComponents';
+import SafeMarkdown from '@/components/markdownComponents';
 
 export default function HistoryPage() {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
@@ -235,7 +235,7 @@ export default function HistoryPage() {
                           </Link>
                         </div>
                         <div className="prose prose-sm max-w-none dark:prose-invert mb-4">
-                          <ReactMarkdown components={markdownComponents}>{entry.result}</ReactMarkdown>
+                          <SafeMarkdown>{entry.result}</SafeMarkdown>
                         </div>
                         {/* Note */}
                         <div className="mt-4 pt-4 border-t border-gray-100 dark:border-zinc-800">

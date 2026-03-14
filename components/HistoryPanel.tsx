@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import ReactMarkdown from 'react-markdown';
+
 import { getHistory, deleteAudit, AuditEntry } from '@/lib/history';
-import { markdownComponents } from '@/components/markdownComponents';
+import SafeMarkdown from '@/components/markdownComponents';
 
 interface Props {
   agentId: string;
@@ -91,7 +91,7 @@ export default function HistoryPanel({ agentId, reloadRef }: Props) {
               {expanded === entry.id && (
                 <div className="border-t border-gray-200 dark:border-zinc-800 px-4 py-4">
                   <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <ReactMarkdown components={markdownComponents}>{entry.result}</ReactMarkdown>
+                    <SafeMarkdown>{entry.result}</SafeMarkdown>
                   </div>
                 </div>
               )}

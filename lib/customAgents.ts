@@ -100,13 +100,17 @@ export function importCustomAgents(json: string): number {
     }
     const entry = item as CustomAgent;
     if (existingIds.has(entry.id)) continue;
+    // VULN-011: Always generate a fresh ID and current timestamps rather than
+    // trusting imported values — prevents ID collision probing and timestamp
+    // manipulation (e.g. far-future dates causing sorting anomalies).
+    const now = Date.now();
     toAdd.push({
-      id: entry.id,
+      id: crypto.randomUUID(),
       name: String(entry.name).slice(0, 60),
       description: typeof entry.description === 'string' ? entry.description.slice(0, 200) : '',
       systemPrompt: String(entry.systemPrompt).slice(0, 10_000),
-      createdAt: typeof entry.createdAt === 'number' ? entry.createdAt : Date.now(),
-      updatedAt: typeof entry.updatedAt === 'number' ? entry.updatedAt : Date.now(),
+      createdAt: now,
+      updatedAt: now,
     });
     added++;
   }

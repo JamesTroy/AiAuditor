@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import ReactMarkdown from 'react-markdown';
+
 import { AgentConfig } from '@/lib/types';
-import { markdownComponents } from '@/components/markdownComponents';
+import SafeMarkdown from '@/components/markdownComponents';
 import { agents } from '@/lib/agents';
 import { setChainInput, consumeChainInput } from '@/lib/session';
 import { ALLOWED_URL_DESCRIPTION } from '@/lib/config/urlAllowlist';
@@ -418,9 +418,9 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
             )}
           </div>
           <div className="p-6 prose prose-sm max-w-none dark:prose-invert">
-            <ReactMarkdown components={markdownComponents}>
+            <SafeMarkdown>
               {loading ? result + ' ▍' : result}
-            </ReactMarkdown>
+            </SafeMarkdown>
           </div>
         </div>
       )}

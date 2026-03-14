@@ -31,6 +31,9 @@ export async function POST(req: NextRequest) {
     fetchRes = await fetch(trimmed, {
       headers: { 'User-Agent': 'AiAudit/1.0' },
       signal: AbortSignal.timeout(10_000),
+      // VULN-013: Never follow redirects — a redirect could lead to an
+      // internal address even if the original URL passed the allowlist.
+      redirect: 'error',
     });
   } catch (err) {
     return new Response(`Failed to fetch URL: ${err instanceof Error ? err.message : String(err)}`, { status: 502 });
