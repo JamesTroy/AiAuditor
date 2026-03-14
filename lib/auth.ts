@@ -27,6 +27,10 @@ export const auth = betterAuth({
   // Trusted origins for CSRF validation on OAuth callbacks and API requests.
   trustedOrigins: [
     process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
+    ...(process.env.NEXT_PUBLIC_APP_URL &&
+    process.env.NEXT_PUBLIC_APP_URL !== process.env.BETTER_AUTH_URL
+      ? [process.env.NEXT_PUBLIC_APP_URL]
+      : []),
     ...(process.env.RAILWAY_PUBLIC_DOMAIN
       ? [`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`]
       : []),

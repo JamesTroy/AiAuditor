@@ -51,10 +51,10 @@ export default function Home() {
   const pinnedAgents = agents.filter((a) => favorites.has(a.id));
 
   return (
-    <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
+    <div className="text-gray-900 dark:text-zinc-100 px-6 py-12 overflow-x-clip">
       <div className="max-w-5xl mx-auto">
         {/* Hero */}
-        <div className="text-center mb-12 relative overflow-hidden">
+        <div className="text-center mb-12 relative">
           {/* Gradient orbs — clamped to prevent horizontal overflow on narrow viewports */}
           <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[min(288px,80vw)] h-72 bg-violet-500/20 blur-3xl rounded-full -z-10 motion-safe:animate-pulse-slow" />
           <div className="absolute top-10 left-1/3 w-[min(384px,90vw)] h-64 bg-indigo-500/15 blur-3xl rounded-full -z-10 motion-safe:animate-pulse-slow" style={{ animationDelay: '3s' }} />
