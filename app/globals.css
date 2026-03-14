@@ -32,6 +32,26 @@
   }
 }
 
+/* ─── Animated border ────────────────────────────────────────── */
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes border-rotate {
+  to { --border-angle: 360deg; }
+}
+
+.animated-border {
+  --border-color: #a78bfa; /* fallback violet-400 */
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--card-bg, #18181b), var(--card-bg, #18181b)) padding-box,
+    conic-gradient(from var(--border-angle), transparent 40%, var(--border-color) 50%, transparent 60%) border-box;
+  animation: border-rotate 4s linear infinite;
+}
+
 /* ─── Additional keyframes ───────────────────────────────────── */
 @keyframes shimmer {
   from { background-position: -200% 0; }

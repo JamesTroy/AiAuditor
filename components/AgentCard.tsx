@@ -59,6 +59,15 @@ const BUILT_IN_ICON_LABELS: Record<string, string> = {
 
 const DEFAULT_CUSTOM_ICON = '✦';
 
+// Map Tailwind color names to CSS values for the animated border gradient
+const ACCENT_COLORS: Record<string, string> = {
+  blue: '#60a5fa', red: '#f87171', yellow: '#facc15', green: '#4ade80',
+  orange: '#fb923c', cyan: '#22d3ee', slate: '#cbd5e1', amber: '#fbbf24',
+  pink: '#f472b6', teal: '#2dd4bf', indigo: '#818cf8', purple: '#c084fc',
+  emerald: '#34d399', violet: '#a78bfa', lime: '#a3e635', sky: '#38bdf8',
+  fuchsia: '#e879f9', rose: '#fb7185',
+};
+
 interface Props {
   agent: AgentConfig;
   onEdit?: () => void;
@@ -75,13 +84,15 @@ export default memo(function AgentCard({ agent, onEdit, onDelete, onToggleFavori
 
   // Robust text-color extraction — don't rely on positional splitting
   const accentTextClass = agent.accentClass.split(' ').find((c) => c.startsWith('text-')) ?? '';
+  // Extract the Tailwind color name (e.g. "blue" from "text-blue-400") for the animated border
+  const colorName = accentTextClass.match(/text-(\w+)-/)?.[1] ?? 'violet';
+  const borderColor = ACCENT_COLORS[colorName] ?? '#a78bfa';
 
   return (
     <article
-      className={`group relative overflow-hidden border border-gray-200 dark:border-zinc-800 rounded-xl p-6 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-200 cursor-pointer motion-safe:hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 dark:hover:shadow-black/40 hover:border-violet-500/30 dark:hover:border-violet-500/20 ${agent.accentClass}`}
+      className={`animated-border group relative overflow-hidden rounded-xl p-6 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-sm transition-[transform,box-shadow] duration-200 cursor-pointer motion-safe:hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 dark:hover:shadow-black/40 ${agent.accentClass}`}
+      style={{ '--border-color': borderColor, '--card-bg': 'rgba(24, 24, 27, 0.5)' } as React.CSSProperties}
     >
-      {/* Gradient top-edge shine */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
       <div className="flex items-start justify-between mb-3">
         <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-zinc-800/80 flex items-center justify-center">
