@@ -61,7 +61,7 @@ export default function Home() {
           {/* Grid pattern */}
           <div className="absolute inset-0 bg-grid-pattern -z-10 opacity-50" />
 
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20 mb-4">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-violet-500/10 text-violet-400 mb-4">
             Powered by Claude
           </span>
           <div className="flex items-center justify-center gap-3 mb-4">

@@ -78,7 +78,7 @@ export default memo(function AgentCard({ agent, onEdit, onDelete, onToggleFavori
 
   return (
     <article
-      className={`group relative overflow-hidden border rounded-xl p-6 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-200 cursor-pointer motion-safe:hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 dark:hover:shadow-black/40 hover:border-violet-500/30 dark:hover:border-violet-500/20 ${agent.accentClass}`}
+      className={`group relative overflow-hidden border border-gray-200 dark:border-zinc-800 rounded-xl p-6 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-200 cursor-pointer motion-safe:hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 dark:hover:shadow-black/40 hover:border-violet-500/30 dark:hover:border-violet-500/20 ${agent.accentClass}`}
     >
       {/* Gradient top-edge shine */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
