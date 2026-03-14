@@ -25,6 +25,15 @@ export const VALID_AGENT_TYPES = [
   'responsive-design',
   'color-typography',
   'motion-interaction',
+  'documentation',
+  'dependency-security',
+  'auth-review',
+  'frontend-performance',
+  'caching',
+  'memory-profiler',
+  'cloud-infra',
+  'observability',
+  'database-infra',
 ] as const;
 
 export type AgentTypeValue = (typeof VALID_AGENT_TYPES)[number];

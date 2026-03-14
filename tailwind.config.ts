@@ -32,6 +32,8 @@ const config: Config = {
     "bg-teal-600", "bg-teal-700", "hover:bg-teal-500", "hover:bg-teal-600", "border-teal-500", "text-teal-400", "hover:bg-teal-500/10",
     // Indigo
     "bg-indigo-600", "bg-indigo-700", "hover:bg-indigo-500", "hover:bg-indigo-600", "border-indigo-500", "text-indigo-400", "hover:bg-indigo-500/10",
+    // Emerald (dependency-security)
+    "bg-emerald-600", "bg-emerald-700", "hover:bg-emerald-500", "hover:bg-emerald-600", "border-emerald-500", "text-emerald-400", "hover:bg-emerald-500/10",
     // Violet (design agents)
     "bg-violet-600", "bg-violet-700", "hover:bg-violet-500", "hover:bg-violet-600", "border-violet-500", "text-violet-400", "hover:bg-violet-500/10",
     // Fuchsia (design agents)

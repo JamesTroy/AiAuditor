@@ -303,6 +303,262 @@ Format:
 Keep total under 30,000 characters; prefer breadth over depth.`,
   },
   {
+    id: 'documentation',
+    name: 'Documentation Quality',
+    description: 'Audits inline comments, JSDoc/TSDoc, README completeness, and API reference quality.',
+    category: 'Code Quality',
+    accentClass: 'border-purple-500 text-purple-400 hover:bg-purple-500/10',
+    buttonClass: 'bg-purple-700 hover:bg-purple-600',
+    placeholder: 'Paste your source files, README, JSDoc comments, or API reference...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['documentation'],
+    prepPrompt: `I'm preparing code and documentation for a Documentation Quality audit. Please help me collect the relevant files.
+
+Gather:
+- Source files with inline comments and JSDoc/TSDoc annotations
+- README.md and any other Markdown documentation files
+- API reference files or generated docs if available
+- CHANGELOG.md and any Architecture Decision Records (ADRs)
+- Any Storybook stories or example files
+
+Format each file:
+--- README.md ---
+--- src/lib/auth.ts ---
+--- docs/api.md ---
+
+Keep total under 30,000 characters. Prioritise public API surfaces and onboarding-critical files.`,
+  },
+  {
+    id: 'dependency-security',
+    name: 'Dependency Security',
+    description: 'Scans for CVEs, outdated packages, license risks, and supply-chain vulnerabilities.',
+    category: 'Security & Privacy',
+    accentClass: 'border-emerald-500 text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-700 hover:bg-emerald-600',
+    placeholder: 'Paste your package.json, package-lock.json, requirements.txt, go.mod, or similar...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['dependency-security'],
+    prepPrompt: `I'm preparing dependency files for a Supply Chain Security audit. Please help me collect the relevant manifests.
+
+Gather:
+- package.json and package-lock.json (or yarn.lock / pnpm-lock.yaml)
+- requirements.txt and/or Pipfile.lock (Python)
+- go.mod and go.sum (Go)
+- pom.xml or build.gradle (Java/Kotlin)
+- Gemfile.lock (Ruby)
+- Any .npmrc, pip.conf, or private registry configuration
+
+Format each file:
+--- package.json ---
+--- package-lock.json ---
+
+Do NOT include node_modules or the full dependency tree dump — just the manifest and lock files. Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'auth-review',
+    name: 'Auth & Session Review',
+    description: 'Deep-dives on authentication flows, JWT/session handling, OAuth, and credential security.',
+    category: 'Security & Privacy',
+    accentClass: 'border-violet-500 text-violet-400 hover:bg-violet-500/10',
+    buttonClass: 'bg-violet-700 hover:bg-violet-600',
+    placeholder: 'Paste your authentication code, JWT logic, session handling, or OAuth implementation...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['auth-review'],
+    prepPrompt: `I'm preparing authentication code for an Auth & Session Security audit. Please help me collect the relevant files.
+
+Gather:
+- Login, signup, and password reset handlers
+- JWT creation, validation, and refresh logic
+- Session middleware and cookie configuration
+- OAuth/OIDC integration code (provider config, callback handlers)
+- Authorization middleware and role/permission checks
+- Any MFA implementation
+- Auth-related configuration (e.g. next-auth config, passport strategies)
+
+Format each file:
+--- app/api/auth/route.ts ---
+--- middleware/auth.ts ---
+--- lib/session.ts ---
+
+Replace any real secrets or credentials with [REDACTED]. Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'frontend-performance',
+    name: 'Frontend Performance',
+    description: 'Analyzes bundle size, Core Web Vitals risk, rendering bottlenecks, and resource loading.',
+    category: 'Performance',
+    accentClass: 'border-lime-500 text-lime-400 hover:bg-lime-500/10',
+    buttonClass: 'bg-lime-800 hover:bg-lime-700',
+    placeholder: 'Paste your component code, build config, HTML, or Lighthouse report...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['frontend-performance'],
+    prepPrompt: `I'm preparing frontend code for a Performance audit. Please help me collect the relevant files.
+
+Gather:
+- Key page components and their dependencies (the main layout, hero, and heaviest components)
+- Build configuration: webpack.config.js, vite.config.ts, next.config.ts
+- Any Lighthouse JSON report or Web Vitals measurements you have
+- CSS files for the critical path
+- Image tags and their attributes (src, width, height, loading, fetchpriority)
+- Third-party script tags and their loading strategy
+
+Also include:
+- Bundle size output (e.g. \`next build\` output, webpack-bundle-analyzer screenshot description)
+- A brief note on the target device profile (low-end mobile, desktop, etc.)
+
+Format each file:
+--- components/HeroSection.tsx ---
+--- next.config.ts ---
+--- public/index.html (head section) ---
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'caching',
+    name: 'Caching Strategy',
+    description: 'Reviews HTTP cache headers, CDN config, Redis patterns, and cache invalidation logic.',
+    category: 'Performance',
+    accentClass: 'border-sky-500 text-sky-400 hover:bg-sky-500/10',
+    buttonClass: 'bg-sky-700 hover:bg-sky-600',
+    placeholder: 'Paste your API routes, cache configuration, Redis code, or CDN settings...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['caching'],
+    prepPrompt: `I'm preparing caching code and configuration for a Caching Strategy audit. Please help me collect the relevant files.
+
+Gather:
+- API route handlers that set Cache-Control or other HTTP cache headers
+- CDN configuration (Cloudflare page rules, CloudFront behaviors, Fastly VCL)
+- Redis/Memcached client code: cache reads, writes, TTL settings, invalidation
+- Next.js/Nuxt/Remix caching config (revalidate, ISR settings, fetch cache options)
+- Any cache-aside, read-through, or write-through patterns
+- Background job or webhook handlers that trigger cache invalidation
+
+Format each file:
+--- app/api/products/route.ts ---
+--- lib/cache.ts ---
+--- infrastructure/cloudfront.tf ---
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'memory-profiler',
+    name: 'Memory & Leak Detection',
+    description: 'Identifies memory leaks, unbounded caches, listener accumulation, and heap growth patterns.',
+    category: 'Performance',
+    accentClass: 'border-cyan-500 text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-800 hover:bg-cyan-700',
+    placeholder: 'Paste your component code, Node.js modules, heap snapshot summary, or profiler output...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['memory-profiler'],
+    prepPrompt: `I'm preparing code for a Memory & Leak Detection audit. Please help me collect the relevant files.
+
+Gather:
+- Components or modules suspected of leaking (those with event listeners, timers, subscriptions)
+- React useEffect hooks — especially those with subscriptions, WebSocket connections, or intervals
+- Node.js EventEmitter usage or stream handling code
+- In-memory cache or store implementations (custom Maps, LRU caches)
+- Any heap snapshot text summary or memory profiler output you have
+- Long-running background processes or worker code
+
+Also describe:
+- The runtime environment (Node.js version, browser, React version)
+- Observed symptoms: memory grows over time? Crashes after N hours? High heap usage?
+
+Format each file:
+--- components/RealtimeChart.tsx ---
+--- lib/eventBus.ts ---
+--- workers/jobProcessor.ts ---
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'cloud-infra',
+    name: 'Cloud Infrastructure',
+    description: 'Reviews IAM policies, network exposure, storage security, and resilience for AWS/GCP/Azure.',
+    category: 'Infrastructure',
+    accentClass: 'border-teal-500 text-teal-400 hover:bg-teal-500/10',
+    buttonClass: 'bg-teal-700 hover:bg-teal-600',
+    placeholder: 'Paste your Terraform, CDK, CloudFormation, or cloud config files...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['cloud-infra'],
+    prepPrompt: `I'm preparing cloud infrastructure code for a security and architecture review. Please help me collect the relevant files.
+
+Gather:
+- IAM role and policy definitions (Terraform aws_iam_policy, CDK PolicyDocument, etc.)
+- VPC and security group / firewall rule configurations
+- S3 bucket / GCS bucket / Azure Storage container policies and public access settings
+- Compute resource definitions: EC2, ECS task definitions, Lambda functions, GKE node pools
+- Secrets Manager, SSM Parameter Store, or Key Vault references
+- Any CloudFront / load balancer / API Gateway configuration
+
+Format each file:
+--- terraform/iam.tf ---
+--- terraform/networking.tf ---
+--- infra/s3.tf ---
+
+Replace any real account IDs, ARNs, or secrets with placeholders like [ACCOUNT_ID], [REDACTED]. Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'observability',
+    name: 'Observability & Monitoring',
+    description: 'Audits logging structure, metrics coverage, alerting rules, tracing, and incident readiness.',
+    category: 'Infrastructure',
+    accentClass: 'border-rose-500 text-rose-400 hover:bg-rose-500/10',
+    buttonClass: 'bg-rose-700 hover:bg-rose-600',
+    placeholder: 'Paste your logging code, Prometheus rules, alert configs, or OpenTelemetry setup...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['observability'],
+    prepPrompt: `I'm preparing observability code and configuration for an audit. Please help me collect the relevant files.
+
+Gather:
+- Logging setup: logger initialization, log format, log levels, any structured logging middleware
+- Metrics: Prometheus scrape config, custom metric definitions, Datadog/CloudWatch metric code
+- Alerting rules: Prometheus alerting rules, PagerDuty/OpsGenie policies, alert thresholds
+- Tracing: OpenTelemetry setup, Jaeger/Zipkin config, span instrumentation
+- Health check endpoints and readiness probe handlers
+- Error tracking setup (Sentry, Rollbar, Bugsnag config)
+- Any existing runbooks or on-call documentation structure
+
+Format each file:
+--- lib/logger.ts ---
+--- monitoring/alerts.yaml ---
+--- app/api/health/route.ts ---
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'database-infra',
+    name: 'Database Infrastructure',
+    description: 'Reviews schema design, indexing, connection pooling, migrations, backup, and replication.',
+    category: 'Infrastructure',
+    accentClass: 'border-indigo-500 text-indigo-400 hover:bg-indigo-500/10',
+    buttonClass: 'bg-indigo-700 hover:bg-indigo-600',
+    placeholder: 'Paste your schema SQL, migration files, ORM config, or database infrastructure code...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['database-infra'],
+    prepPrompt: `I'm preparing database infrastructure code for an audit. Please help me collect the relevant files.
+
+Gather:
+- Schema definitions: CREATE TABLE statements, Prisma schema, SQLAlchemy models, ActiveRecord migrations
+- All migration files (in chronological order if possible)
+- ORM or database client configuration: connection pool settings, timeout config
+- Backup and replication configuration (RDS parameter groups, pg_dump scripts, etc.)
+- Any seed or fixture files that reveal data volume expectations
+- Query-heavy endpoints or repository files where performance matters most
+
+Also describe:
+- Database engine and version (PostgreSQL 15, MySQL 8, MongoDB 6, etc.)
+- Approximate table sizes if known (e.g. "users table: 10M rows")
+- Any known slow queries or recent performance incidents
+
+Format each file:
+--- prisma/schema.prisma ---
+--- migrations/20240101_add_indexes.sql ---
+--- lib/db.ts ---
+
+Keep total under 30,000 characters.`,
+  },
+  {
     id: 'ux-review',
     name: 'UX Review',
     description: 'Evaluates user flows, interaction patterns, cognitive load, and usability heuristics.',
