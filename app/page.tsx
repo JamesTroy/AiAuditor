@@ -8,6 +8,7 @@ import CustomAgentGrid from '@/components/CustomAgentGrid';
 import ThemeToggle from '@/components/ThemeToggle';
 import KeyboardShortcutsModal from '@/components/KeyboardShortcutsModal';
 import { getFavorites, toggleFavorite } from '@/lib/favorites';
+import UserNav from '@/components/UserNav';
 
 const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure', 'Design'] as const;
 
@@ -55,6 +56,12 @@ export default function Home() {
         {/* Header row */}
         <div className="flex items-center justify-end gap-2 mb-8">
           <Link
+            href="/stack"
+            className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+          >
+            Stack
+          </Link>
+          <Link
             href="/history"
             className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
           >
@@ -68,6 +75,7 @@ export default function Home() {
             ?
           </button>
           <ThemeToggle />
+          <UserNav />
         </div>
 
         {/* Hero */}

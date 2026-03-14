@@ -18,8 +18,33 @@
 //   removing it would require a separate style nonce — out of scope here).
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getSessionCookie } from 'better-auth/cookies';
+
+// Routes that require authentication
+const PROTECTED_PREFIXES = ['/dashboard', '/settings', '/admin'];
+
+// Routes that authenticated users should be redirected away from
+const AUTH_ROUTES = ['/login', '/signup', '/forgot-password'];
 
 export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // ── Auth gate ──────────────────────────────────────────────────
+  const sessionCookie = getSessionCookie(request);
+  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
+  const isAuthRoute = AUTH_ROUTES.some((p) => pathname.startsWith(p));
+
+  if (isProtected && !sessionCookie) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (isAuthRoute && sessionCookie) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  // ── CSP nonce ──────────────────────────────────────────────────
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const isDev = process.env.NODE_ENV === 'development';
 

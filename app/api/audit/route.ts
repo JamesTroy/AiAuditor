@@ -1,8 +1,13 @@
 import { NextRequest } from 'next/server';
+import { headers as nextHeaders } from 'next/headers';
 import { getAgent } from '@/lib/agents';
 import { auditLimiter } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { auditRequestSchema } from '@/lib/schemas/auditRequest';
+import { auth } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { audit as auditTable } from '@/lib/auth-schema';
+import { eq } from 'drizzle-orm';
 
 // ARCH-022: Fail fast at module init if the API key is missing.
 if (!process.env.ANTHROPIC_API_KEY) {
@@ -79,6 +84,7 @@ function makeStream(
   systemPrompt: string,
   safeInput: string,
   logMeta: Record<string, unknown>,
+  auditRecord?: { id: string; startedAt: number },
 ): ReadableStream {
   const timeoutSignal = AbortSignal.timeout(STREAM_TIMEOUT_MS);
   const upstream = anthropicProvider.streamAudit(systemPrompt, safeInput, {
@@ -86,22 +92,50 @@ function makeStream(
   });
 
   const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
   return new ReadableStream({
     async start(controller) {
       const reader = upstream.getReader();
+      const chunks: string[] = [];
       try {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
+          if (auditRecord && value) chunks.push(decoder.decode(value, { stream: true }));
           controller.enqueue(value);
         }
         log('info', 'audit_complete', logMeta);
+
+        // Save completed audit to DB (fire-and-forget)
+        if (auditRecord) {
+          const fullResult = chunks.join('');
+          const scoreMatch = fullResult.match(/(\d{1,3})\s*\/\s*100/);
+          const score = scoreMatch ? parseInt(scoreMatch[1], 10) : null;
+          db.update(auditTable)
+            .set({
+              result: fullResult,
+              status: 'completed',
+              score: score && score >= 0 && score <= 100 ? score : null,
+              durationMs: Date.now() - auditRecord.startedAt,
+              updatedAt: new Date(),
+            })
+            .where(eq(auditTable.id, auditRecord.id))
+            .then(() => log('info', 'audit_saved', { requestId: logMeta.requestId, auditId: auditRecord.id }))
+            .catch((err) => log('error', 'audit_save_failed', { requestId: logMeta.requestId, error: String(err) }));
+        }
       } catch (err) {
         const isTimeout = err instanceof Error && err.name === 'TimeoutError';
         log('error', isTimeout ? 'stream_timeout' : 'anthropic_stream_error', {
           ...logMeta,
           error: err instanceof Error ? err.message : String(err),
         });
+        // Mark audit as failed in DB
+        if (auditRecord) {
+          db.update(auditTable)
+            .set({ status: 'failed', durationMs: Date.now() - auditRecord.startedAt, updatedAt: new Date() })
+            .where(eq(auditTable.id, auditRecord.id))
+            .catch(() => {});
+        }
         try {
           controller.enqueue(
             encoder.encode('\n\n[Audit interrupted — please try again.]'),
@@ -216,9 +250,38 @@ export async function POST(req: NextRequest) {
   const escapedInput = escapeUserInput(data.input);
   const safeInput = `<user_content>\n${escapedInput}\n</user_content>`;
 
+  // Detect logged-in user (optional — audits work without auth)
+  let userId: string | null = null;
+  try {
+    const session = await auth.api.getSession({ headers: await nextHeaders() });
+    userId = session?.user?.id ?? null;
+  } catch { /* no session — anonymous audit */ }
+
+  // Create audit record in DB if user is logged in
+  async function createAuditRecord(agentId: string, agentName: string) {
+    if (!userId) return undefined;
+    const id = crypto.randomUUID();
+    const now = Date.now();
+    try {
+      await db.insert(auditTable).values({
+        id,
+        userId,
+        agentId,
+        agentName,
+        input: data.input.slice(0, 10_000), // store first 10K chars of input
+        status: 'running',
+      });
+      return { id, startedAt: now };
+    } catch (err) {
+      log('error', 'audit_record_create_failed', { requestId, error: String(err) });
+      return undefined;
+    }
+  }
+
   if (data.agentType === 'custom') {
     // VULN-003: Prepend meta-instruction to resist custom prompt jailbreaks.
     const guardedPrompt = CUSTOM_PROMPT_PREAMBLE + data.systemPrompt.trim();
+    const auditRecord = await createAuditRecord('custom', 'Custom Agent');
     log('info', 'custom_audit_start', {
       requestId,
       ip: anonIp,
@@ -227,7 +290,7 @@ export async function POST(req: NextRequest) {
       remaining: rl.remaining,
     });
     return new Response(
-      makeStream(guardedPrompt, safeInput, { requestId, ip: anonIp, agentType: 'custom' }),
+      makeStream(guardedPrompt, safeInput, { requestId, ip: anonIp, agentType: 'custom' }, auditRecord),
       { headers: { ...STREAM_HEADERS, ...rl.headers, 'X-Request-Id': requestId } },
     );
   }
@@ -241,6 +304,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  const auditRecord = await createAuditRecord(data.agentType, agent.name);
   log('info', 'audit_start', {
     requestId,
     ip: anonIp,
@@ -249,7 +313,7 @@ export async function POST(req: NextRequest) {
     remaining: rl.remaining,
   });
   return new Response(
-    makeStream(agent.systemPrompt, safeInput, { requestId, ip: anonIp, agentType: data.agentType }),
+    makeStream(agent.systemPrompt, safeInput, { requestId, ip: anonIp, agentType: data.agentType }, auditRecord),
     { headers: { ...STREAM_HEADERS, ...rl.headers, 'X-Request-Id': requestId } },
   );
 }
