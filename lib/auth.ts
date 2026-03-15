@@ -21,6 +21,15 @@ async function sendEmail(to: string, subject: string, html: string) {
   await resend.emails.send({ from: FROM_EMAIL, to, subject, html });
 }
 
+// TOKEN-002: Fail fast if auth secret is missing or too short.
+const authSecret = process.env.BETTER_AUTH_SECRET;
+if (!authSecret || authSecret.length < 32) {
+  throw new Error(
+    'BETTER_AUTH_SECRET must be at least 32 characters. ' +
+    'Generate one with: openssl rand -base64 32',
+  );
+}
+
 export const auth = betterAuth({
   appName: 'Claudit',
 
@@ -41,9 +50,22 @@ export const auth = betterAuth({
     schema: { ...schema },
   }),
 
+  // SESS-001: Explicit session expiry — don't rely on library defaults.
+  session: {
+    expiresIn: 60 * 60 * 24 * 7,   // 7-day absolute expiry
+    updateAge: 60 * 60 * 24,        // Renew if used within 24h (sliding window)
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60,               // Re-validate from DB every 5 minutes
+    },
+  },
+
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // start permissive, tighten later
+    // AUTH-005: Server-side password length enforcement.
+    minPasswordLength: 8,
+    maxPasswordLength: 128,
+    requireEmailVerification: false, // AUTH-004: Enable when Resend is confirmed in prod
     sendResetPassword: async ({ user, url }) => {
       await sendEmail(
         user.email,

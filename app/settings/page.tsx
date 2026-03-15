@@ -16,6 +16,11 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordStatus, setPasswordStatus] = useState<FormStatus>('idle');
+  // CRED-002: Delete account requires password re-entry.
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
   // SM-019: Cleanup timer refs for saved-state reset.
   const profileTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const passwordTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -193,23 +198,80 @@ export default function SettingsPage() {
           </form>
         </section>
 
-        {/* Danger zone */}
+        {/* Danger zone — CRED-002: Requires password re-entry */}
         <section className="bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900/50 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">Danger zone</h2>
           <p className="text-sm text-gray-500 dark:text-zinc-500 mb-4">
             Permanently delete your account and all associated data. This action cannot be undone.
           </p>
-          <button
-            onClick={async () => {
-              if (!confirm('Are you sure you want to delete your account? This cannot be undone.')) return;
-              await authClient.deleteUser();
-              router.push('/');
-              router.refresh();
-            }}
-            className="bg-red-600 hover:bg-red-500 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
-          >
-            Delete account
-          </button>
+
+          {!showDeleteConfirm ? (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="bg-red-600 hover:bg-red-500 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+            >
+              Delete account
+            </button>
+          ) : (
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setDeleteError('');
+                setDeleteLoading(true);
+                try {
+                  // Verify password first via a password change to self (validates current password)
+                  const { error } = await authClient.deleteUser({ password: deletePassword });
+                  if (error) {
+                    setDeleteError(error.message ?? 'Incorrect password or deletion failed.');
+                    setDeleteLoading(false);
+                  } else {
+                    router.push('/');
+                    router.refresh();
+                  }
+                } catch {
+                  setDeleteError('Failed to delete account. Please try again.');
+                  setDeleteLoading(false);
+                }
+              }}
+              className="space-y-3"
+            >
+              {deleteError && (
+                <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm">
+                  {deleteError}
+                </div>
+              )}
+              <div>
+                <label htmlFor="deletePassword" className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                  Enter your password to confirm
+                </label>
+                <input
+                  id="deletePassword"
+                  type="password"
+                  required
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-colors"
+                  placeholder="Your password"
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={deleteLoading || !deletePassword}
+                  className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+                >
+                  {deleteLoading ? 'Deleting...' : 'Confirm deletion'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowDeleteConfirm(false); setDeletePassword(''); setDeleteError(''); }}
+                  className="text-sm text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
         </section>
       </div>
     </div>

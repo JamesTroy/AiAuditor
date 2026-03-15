@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from '@/lib/auth-client';
+import { safeCallbackUrl } from '@/lib/utils/safeRedirect';
 
 const GITHUB_ENABLED = process.env.NEXT_PUBLIC_GITHUB_ENABLED === 'true';
 const GOOGLE_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_ENABLED === 'true';
@@ -12,7 +13,7 @@ const HAS_OAUTH = GITHUB_ENABLED || GOOGLE_ENABLED;
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') ?? '/';
+  const callbackUrl = safeCallbackUrl(searchParams.get('callbackUrl'), '/');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

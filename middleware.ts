@@ -36,7 +36,9 @@ export function middleware(request: NextRequest) {
 
   if (isProtected && !sessionCookie) {
     const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('callbackUrl', pathname);
+    // AUTH-001: Only pass safe relative paths as callbackUrl
+    const safePath = pathname.startsWith('/') && !pathname.startsWith('//') ? pathname : '/dashboard';
+    loginUrl.searchParams.set('callbackUrl', safePath);
     return NextResponse.redirect(loginUrl);
   }
 
@@ -88,6 +90,15 @@ export function middleware(request: NextRequest) {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   response.headers.set('X-Content-Type-Options', 'nosniff');
+  // SESS-004: Defense-in-depth for legacy browsers that don't support frame-ancestors.
+  response.headers.set('X-Frame-Options', 'DENY');
+  // SESS-005: HSTS — prevent SSL stripping attacks.
+  if (!isDev) {
+    response.headers.set(
+      'Strict-Transport-Security',
+      'max-age=63072000; includeSubDomains; preload',
+    );
+  }
   return response;
 }
 

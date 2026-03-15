@@ -44,8 +44,12 @@ export default function SignupPage() {
         router.refresh();
       }
     } catch (err) {
-      console.error('[signup] error:', err);
-      setError(err instanceof Error ? err.message : 'Unable to create account. Please try again.');
+      // AUTH-007: Log error type only — never log user-supplied data (email, name).
+      console.error('[signup] unexpected error', {
+        type: err instanceof Error ? err.constructor.name : typeof err,
+        message: err instanceof Error ? err.message : 'unknown',
+      });
+      setError('Unable to create account. Please try again.');
       setLoading(false);
     }
   }
