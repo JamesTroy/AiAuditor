@@ -156,6 +156,12 @@ export const auditLimiter = new RateLimiter({
   maxRequests: 10,
 });
 
+/** Site audit batch: 30 requests per minute per IP (higher cap for sequential multi-agent runs). */
+export const siteAuditLimiter = new RateLimiter({
+  windowMs: 60_000,
+  maxRequests: 30,
+});
+
 /** URL-fetch endpoint: 30 requests per minute per IP (cheaper operation). */
 export const fetchUrlLimiter = new RateLimiter({
   windowMs: 60_000,

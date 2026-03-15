@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { headers as nextHeaders } from 'next/headers';
 import { getAgent } from '@/lib/agents';
-import { auditLimiter, dailyAuditBudget } from '@/lib/rateLimit';
+import { auditLimiter, siteAuditLimiter, dailyAuditBudget } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { auditRequestSchema } from '@/lib/schemas/auditRequest';
 import { STREAM_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
@@ -192,33 +192,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // VULN-002 / ARCH-001: Rate limiting (in-memory sliding window, 10 req/min/IP).
-  // Process-scoped — replace with Redis/Upstash for distributed deployments.
-  // IP sourced from trusted platform header; see VULN-002 remediation notes.
   const ip =
     req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
     req.headers.get('x-real-ip') ??
     '127.0.0.1';
   const anonIp = anonymizeIp(ip);
-
-  const rl = auditLimiter.check(ip);
-  if (!rl.allowed) {
-    log('warn', 'rate_limit_exceeded', { requestId, ip: anonIp });
-    return new Response('Too many requests. Please wait a moment.', {
-      status: 429,
-      headers: { ...rl.headers, 'X-Request-Id': requestId },
-    });
-  }
-
-  // RL-010: Global daily audit call budget (500 calls/day across all users).
-  const dailyBudget = dailyAuditBudget.check('global');
-  if (!dailyBudget.allowed) {
-    log('warn', 'daily_audit_budget_exceeded', { requestId, ip: anonIp });
-    return new Response('Daily audit limit reached. Please try again tomorrow.', {
-      status: 429,
-      headers: { ...dailyBudget.headers, 'X-Request-Id': requestId },
-    });
-  }
 
   // Content-Length pre-check (advisory; field lengths enforced by Zod schema).
   const contentLengthHeader = req.headers.get('content-length');
@@ -260,6 +238,29 @@ export async function POST(req: NextRequest) {
   }
 
   const data = parsed.data;
+
+  // Rate limiting: site audit batches use a higher cap (30/min) since they
+  // fire many sequential requests from a single user action.
+  const isSiteAudit = 'siteAudit' in data && data.siteAudit === true;
+  const limiter = isSiteAudit ? siteAuditLimiter : auditLimiter;
+  const rl = limiter.check(ip);
+  if (!rl.allowed) {
+    log('warn', 'rate_limit_exceeded', { requestId, ip: anonIp, siteAudit: isSiteAudit });
+    return new Response('Too many requests. Please wait a moment.', {
+      status: 429,
+      headers: { ...rl.headers, 'X-Request-Id': requestId },
+    });
+  }
+
+  // RL-010: Global daily audit call budget (500 calls/day across all users).
+  const dailyBudget = dailyAuditBudget.check('global');
+  if (!dailyBudget.allowed) {
+    log('warn', 'daily_audit_budget_exceeded', { requestId, ip: anonIp });
+    return new Response('Daily audit limit reached. Please try again tomorrow.', {
+      status: 429,
+      headers: { ...dailyBudget.headers, 'X-Request-Id': requestId },
+    });
+  }
 
   // VULN-004: Escape XML tags in user input before wrapping so </user_content>
   // cannot break out of the delimiter and inject prompt-level instructions.

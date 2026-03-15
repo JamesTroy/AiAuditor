@@ -62,6 +62,9 @@ export default function SiteAuditPage() {
   const [copied, setCopied] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set(DEFAULT_IDS));
   const [pickerOpen, setPickerOpen] = useState(false);
+  // Explicit index tracking for sequential per-audit calls
+  const [currentAgentIndex, setCurrentAgentIndex] = useState(-1);
+  const [completedIndices, setCompletedIndices] = useState<Set<number>>(new Set());
   // SM-005: Discriminated union for synthesis state.
   type SynthStatus = 'idle' | 'loading' | 'done' | 'error';
   const [synthesis, setSynthesis] = useState('');
@@ -70,8 +73,6 @@ export default function SiteAuditPage() {
   const abortRef = useRef<AbortController | null>(null);
   // SM-011: AbortController for synthesis stream.
   const synthAbortRef = useRef<AbortController | null>(null);
-  const chunksRef = useRef<string[]>([]);
-  const rafRef = useRef<number | null>(null);
   const resultEndRef = useRef<HTMLDivElement>(null);
   const userScrolledUp = useRef(false);
 
@@ -153,41 +154,52 @@ export default function SiteAuditPage() {
 
   useEffect(() => {
     return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       abortRef.current?.abort();
       synthAbortRef.current?.abort();
     };
   }, []);
 
-  // Parse streamed result into per-agent sections and save each to localStorage
-  const savePerAgentResults = useCallback((fullResult: string, auditUrl: string) => {
-    // Split on section headers: ====...====\n## Agent Name Audit\n====...====
-    const sectionPattern = /={10,}\n## (.+?) Audit\n={10,}/g;
-    const matches = [...fullResult.matchAll(sectionPattern)];
+  /** Stream a single audit and return the result text. */
+  async function streamSingleAudit(
+    agentId: string,
+    siteContent: string,
+    signal: AbortSignal,
+    onChunk: (text: string) => void,
+  ): Promise<string> {
+    const res = await fetch('/api/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        agentType: agentId,
+        input: siteContent,
+        siteAudit: true,
+      }),
+      signal,
+    });
 
-    for (let i = 0; i < matches.length; i++) {
-      const match = matches[i];
-      const agentName = match[1];
-      const sectionStart = match.index! + match[0].length;
-      const sectionEnd = i + 1 < matches.length ? matches[i + 1].index! : fullResult.length;
-      let sectionText = fullResult.slice(sectionStart, sectionEnd).trim();
-
-      // Strip the metadata comment if present
-      sectionText = sectionText.replace(/\n<!--AGENT_META:.*?-->\n?/g, '').trim();
-
-      // Find the matching agent by name
-      const agent = allAgents.find((a) => a.name === agentName);
-      if (!agent || !sectionText) continue;
-
-      saveAudit({
-        agentId: agent.id,
-        agentName: agent.name,
-        inputSnippet: auditUrl.slice(0, 100) + (auditUrl.length > 100 ? '…' : ''),
-        result: sectionText,
-        timestamp: Date.now(),
-      });
+    if (!res.ok || !res.body) {
+      const text = await res.text();
+      throw new Error(text || `Error ${res.status}`);
     }
-  }, []);
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    const chunks: string[] = [];
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const text = decoder.decode(value, { stream: true });
+        chunks.push(text);
+        onChunk(text);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    return chunks.join('');
+  }
 
   const runSiteAudit = useCallback(async () => {
     const trimmed = url.trim();
@@ -195,13 +207,12 @@ export default function SiteAuditPage() {
 
     abortRef.current?.abort();
     abortRef.current = new AbortController();
-    chunksRef.current = [];
-    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-    rafRef.current = null;
 
     setLoading(true);
     setResult('');
     setError('');
+    setCurrentAgentIndex(-1);
+    setCompletedIndices(new Set());
     // SM-013: Clear synthesis errors from previous run.
     setSynthError('');
     setSynthStatus('idle');
@@ -209,67 +220,85 @@ export default function SiteAuditPage() {
     // SM-016: Close picker so results are visible.
     setPickerOpen(false);
 
+    // Snapshot selected agents at audit start so UI stays consistent
+    const agentsToRun = allAgents.filter((a) => selected.has(a.id));
+
     try {
-      const res = await fetch('/api/site-audit', {
+      // Step 1: Fetch site content once
+      const fetchRes = await fetch('/api/site-audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url: trimmed,
-          agents: Array.from(selected),
-        }),
+        body: JSON.stringify({ url: trimmed }),
         signal: abortRef.current.signal,
       });
 
-      if (!res.ok || !res.body) {
-        const text = await res.text();
-        setError(text || `Error ${res.status}`);
+      if (!fetchRes.ok) {
+        const text = await fetchRes.text();
+        setError(text || `Error ${fetchRes.status}`);
+        setLoading(false);
         return;
       }
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
+      const siteContent = await fetchRes.text();
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunksRef.current.push(decoder.decode(value, { stream: true }));
+      // Step 2: Run each audit sequentially
+      let accumulated = '';
 
-        if (rafRef.current === null) {
-          rafRef.current = requestAnimationFrame(() => {
-            setResult(chunksRef.current.join(''));
-            rafRef.current = null;
+      for (let i = 0; i < agentsToRun.length; i++) {
+        if (abortRef.current.signal.aborted) break;
+
+        const agent = agentsToRun[i];
+        setCurrentAgentIndex(i);
+
+        // Add section header
+        const header = `\n\n${'='.repeat(60)}\n## ${agent.name} Audit\n${'='.repeat(60)}\n\n`;
+        accumulated += header;
+        setResult(accumulated);
+
+        try {
+          const agentResult = await streamSingleAudit(
+            agent.id,
+            siteContent,
+            abortRef.current.signal,
+            (chunk) => {
+              accumulated += chunk;
+              setResult(accumulated);
+            },
+          );
+
+          // Save to localStorage immediately
+          saveAudit({
+            agentId: agent.id,
+            agentName: agent.name,
+            inputSnippet: trimmed.slice(0, 100) + (trimmed.length > 100 ? '…' : ''),
+            result: agentResult,
+            timestamp: Date.now(),
           });
+
+          setCompletedIndices((prev) => new Set(prev).add(i));
+        } catch (err: unknown) {
+          if (err instanceof Error && err.name === 'AbortError') break;
+          // Log error in result and continue to next audit
+          const errMsg = err instanceof Error ? err.message : String(err);
+          accumulated += `\n\n[Error: ${errMsg}]\n`;
+          setResult(accumulated);
+          setCompletedIndices((prev) => new Set(prev).add(i));
         }
       }
-
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-      const fullResult = chunksRef.current.join('');
-      setResult(fullResult);
-
-      // Save each agent's section to localStorage for history tracking
-      savePerAgentResults(fullResult, trimmed);
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== 'AbortError') {
         setError(err.message);
       }
     } finally {
       setLoading(false);
+      setCurrentAgentIndex(-1);
     }
-  }, [url, loading, selected, savePerAgentResults]);
+  }, [url, loading, selected]);
 
   function handleStop() {
     abortRef.current?.abort();
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    if (chunksRef.current.length > 0) {
-      setResult(chunksRef.current.join(''));
-    }
     setLoading(false);
+    setCurrentAgentIndex(-1);
   }
 
   async function handleCopy() {
@@ -332,14 +361,6 @@ export default function SiteAuditPage() {
     }
   }, [result, synthStatus]);
 
-  // Detect which agent section is currently streaming
-  const currentAgentIndex = selectedAgents.findIndex((agent, i) => {
-    const nextAgent = selectedAgents[i + 1];
-    const hasSection = result.includes(`## ${agent.name} Audit`);
-    const nextHasSection = nextAgent ? result.includes(`## ${nextAgent.name} Audit`) : false;
-    return hasSection && !nextHasSection;
-  });
-
   return (
     <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
       <div className="max-w-4xl mx-auto">
@@ -382,7 +403,7 @@ export default function SiteAuditPage() {
           )}
         </div>
 
-        {/* Agent Picker */}
+        {/* Audit Picker */}
         {!loading && !result && (
           <div className="mb-8">
             <button
@@ -504,9 +525,8 @@ export default function SiteAuditPage() {
         {(loading || (!loading && result)) && (
           <div className="flex flex-wrap gap-2 mb-6 sticky top-0 z-10 bg-gray-50/90 dark:bg-zinc-950/90 backdrop-blur-sm py-3 -mx-6 px-6">
             {selectedAgents.map((agent, i) => {
-              const hasSection = result.includes(`## ${agent.name} Audit`);
               const isActive = loading && i === currentAgentIndex;
-              const isDone = hasSection && (!loading || i < currentAgentIndex);
+              const isDone = completedIndices.has(i);
 
               // After audit completes, badges scroll to the corresponding section
               if (!loading && result) {
@@ -577,7 +597,7 @@ export default function SiteAuditPage() {
                 {loading ? (
                   <span className="flex items-center gap-1.5 text-violet-400">
                     <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
-                    Streaming · {selectedAgents[currentAgentIndex]?.name ?? 'Starting'}
+                    Streaming · {selectedAgents[currentAgentIndex]?.name ?? 'Fetching site'}
                   </span>
                 ) : (
                   'Site Audit Results'
@@ -672,7 +692,7 @@ export default function SiteAuditPage() {
           </div>
         )}
 
-        {/* Selected agents preview when idle and picker is closed */}
+        {/* Selected audits preview when idle and picker is closed */}
         {!loading && !result && !error && !pickerOpen && selected.size > 0 && (
           <div className="flex flex-wrap gap-2">
             {selectedAgents.map((agent) => (
