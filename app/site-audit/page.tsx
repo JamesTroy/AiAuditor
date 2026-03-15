@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import { agents as allAgents } from '@/lib/agents';
 import SafeMarkdown from '@/components/markdownComponents';
 
@@ -405,20 +406,39 @@ export default function SiteAuditPage() {
           </div>
         )}
 
-        {/* Agent Progress Indicator */}
-        {loading && (
+        {/* Agent badges — progress while loading, clickable links when done */}
+        {(loading || (!loading && result)) && (
           <div className="flex flex-wrap gap-2 mb-6">
             {selectedAgents.map((agent, i) => {
               const hasSection = result.includes(`## ${agent.name} Audit`);
-              const isActive = i === currentAgentIndex && loading;
-              const isDone = hasSection && i < currentAgentIndex;
+              const isActive = loading && i === currentAgentIndex;
+              const isDone = hasSection && (!loading || i < currentAgentIndex);
+
+              // After audit completes, badges become links to the individual agent page
+              if (!loading && result) {
+                return (
+                  <Link
+                    key={agent.id}
+                    href={`/audit/${agent.id}`}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:ring-1 hover:ring-violet-500/40 hover:text-violet-600 dark:hover:text-violet-300`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${dotColor(agent.accentClass)}`} />
+                    {agent.name}
+                    <svg className="w-3 h-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                    </svg>
+                  </Link>
+                );
+              }
+
+              // While loading, show progress status
               return (
                 <span
                   key={agent.id}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                     isActive
                       ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 ring-1 ring-violet-500/30'
-                      : isDone || (hasSection && !isActive)
+                      : isDone
                         ? 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-500'
                         : 'bg-gray-50 dark:bg-zinc-900 text-gray-400 dark:text-zinc-600'
                   }`}
@@ -426,7 +446,7 @@ export default function SiteAuditPage() {
                   {isActive && (
                     <span className={`w-2 h-2 rounded-full ${dotColor(agent.accentClass)} animate-pulse`} />
                   )}
-                  {(isDone || (hasSection && !isActive)) && (
+                  {isDone && (
                     <svg className="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
@@ -507,7 +527,7 @@ export default function SiteAuditPage() {
           </div>
         )}
 
-        {/* Selected agents summary when idle and picker is closed */}
+        {/* Selected agents preview when idle and picker is closed */}
         {!loading && !result && !error && !pickerOpen && selected.size > 0 && (
           <div className="flex flex-wrap gap-2">
             {selectedAgents.map((agent) => (
