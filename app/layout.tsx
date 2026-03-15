@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { headers } from 'next/headers';
 import ThemeProvider from '@/components/ThemeProvider';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -45,7 +46,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Reading headers forces dynamic rendering so Next.js can inject the
+  // per-request CSP nonce (from middleware x-nonce) into inline scripts.
+  // The nonce is NOT exposed in the DOM — only used internally by Next.js.
+  await headers();
+
   return (
     <html lang="en" className="dark">
       <head>
