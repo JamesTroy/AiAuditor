@@ -14,11 +14,20 @@ const FROM_EMAIL = process.env.EMAIL_FROM ?? 'Claudit <noreply@claudit.consultin
 
 async function sendEmail(to: string, subject: string, html: string) {
   if (!resend) {
-    console.warn(`[email] To: ${to} | Subject: ${subject}`);
-    console.warn(`[email] (No RESEND_API_KEY — email not sent)`);
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.warn(`[email] To: ${to} | Subject: ${subject}`);
+      // eslint-disable-next-line no-console
+      console.warn(`[email] (No RESEND_API_KEY — email not sent)`);
+    }
     return;
   }
-  await resend.emails.send({ from: FROM_EMAIL, to, subject, html });
+  try {
+    await resend.emails.send({ from: FROM_EMAIL, to, subject, html });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[email] send failed:', err instanceof Error ? err.message : err);
+  }
 }
 
 // TOKEN-002: Fail fast if auth secret is missing or too short.

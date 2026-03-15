@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import SafeMarkdown from '@/components/markdownComponents';
 
 interface Props {
@@ -8,6 +9,8 @@ interface Props {
 }
 
 export default function AuditResultView({ result, agentName }: Props) {
+  const [copied, setCopied] = useState(false);
+
   if (!result) {
     return (
       <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-8 text-center">
@@ -26,8 +29,14 @@ export default function AuditResultView({ result, agentName }: Props) {
     URL.revokeObjectURL(url);
   }
 
-  function handleCopy() {
-    navigator.clipboard.writeText(result!);
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(result!);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback: clipboard API may be unavailable in insecure contexts
+    }
   }
 
   return (
@@ -37,7 +46,7 @@ export default function AuditResultView({ result, agentName }: Props) {
           onClick={handleCopy}
           className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-1.5 transition-colors"
         >
-          Copy
+          {copied ? 'Copied!' : 'Copy'}
         </button>
         <button
           onClick={handleDownload}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { ChevronRight, ChevronDown, X } from 'lucide-react';
 
 import { getHistory, deleteAudit, AuditEntry } from '@/lib/history';
 import SafeMarkdown from '@/components/markdownComponents';
@@ -52,7 +53,7 @@ export default function HistoryPanel({ agentId, reloadRef }: Props) {
           onClick={() => setOpen((v) => !v)}
           className="flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 transition-colors"
         >
-          <span className={`transition-transform duration-200 ${open ? 'rotate-90' : ''}`}>▶</span>
+          {open ? <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" /> : <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />}
           <span>Recent Audits ({entries.length})</span>
         </button>
         <Link
@@ -78,14 +79,12 @@ export default function HistoryPanel({ agentId, reloadRef }: Props) {
                 <span className="text-sm text-gray-700 dark:text-zinc-300 truncate flex-1">{entry.inputSnippet}</span>
                 <button
                   onClick={(e) => handleDelete(entry.id, e)}
-                  className="text-gray-400 dark:text-zinc-600 hover:text-red-400 transition-colors text-xs shrink-0"
-                  aria-label="Delete entry"
+                  className="text-gray-400 dark:text-zinc-600 hover:text-red-400 transition-colors shrink-0 p-1"
+                  aria-label={`Delete audit from ${formatTime(entry.timestamp)}`}
                 >
-                  ✕
+                  <X className="w-3.5 h-3.5" />
                 </button>
-                <span className={`text-gray-400 dark:text-zinc-500 text-xs transition-transform duration-200 shrink-0 ${expanded === entry.id ? 'rotate-180' : ''}`}>
-                  ▼
-                </span>
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 dark:text-zinc-500 transition-transform duration-200 shrink-0 ${expanded === entry.id ? 'rotate-180' : ''}`} aria-hidden="true" />
               </div>
 
               {expanded === entry.id && (

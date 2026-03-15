@@ -407,14 +407,18 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
         <button
           onClick={() => { setInputPanel((v) => v === 'url' ? 'none' : 'url'); setInputFetchError(''); setInputFetchValue(''); }}
           className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 transition-colors"
+          aria-expanded={inputPanel === 'url'}
+          aria-label="Import from URL"
         >
-          {inputPanel === 'url' ? '▾' : '▸'} Import from URL
+          {inputPanel === 'url' ? '\u25BE' : '\u25B8'} Import from URL
         </button>
         <button
           onClick={() => { setInputPanel((v) => v === 'pr' ? 'none' : 'pr'); setInputFetchError(''); setInputFetchValue(''); }}
           className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 transition-colors"
+          aria-expanded={inputPanel === 'pr'}
+          aria-label="Import from GitHub PR"
         >
-          {inputPanel === 'pr' ? '▾' : '▸'} Import from GitHub PR
+          {inputPanel === 'pr' ? '\u25BE' : '\u25B8'} Import from GitHub PR
         </button>
       </div>
       {inputPanel !== 'none' && (

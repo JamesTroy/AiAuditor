@@ -85,7 +85,7 @@ export default async function DashboardPage({
       toBackfill.map((a) =>
         db.update(audit).set({ score: a.score }).where(eq(audit.id, a.id))
       ),
-    ).catch(() => { /* best-effort backfill */ });
+    ).catch((err) => { console.warn('[dashboard] score backfill failed:', err); });
   }
 
   const nextCursor = hasMore
