@@ -68,7 +68,7 @@ export default async function DashboardPage() {
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-8 text-center">
             <p className="text-gray-500 dark:text-zinc-500 mb-4">No audits yet</p>
             <Link
-              href="/"
+              href="/site-audit"
               className="inline-flex items-center gap-1 text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-500"
             >
               Run your first audit →

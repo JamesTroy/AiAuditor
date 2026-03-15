@@ -1,7 +1,12 @@
 import { NextRequest } from 'next/server';
+import { headers as nextHeaders } from 'next/headers';
 import { auditLimiter, dailyAuditBudget } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { getAgent } from '@/lib/agents';
+import { auth } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { audit as auditTable } from '@/lib/auth-schema';
+import { eq } from 'drizzle-orm';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY environment variable is not set.');
@@ -20,6 +25,7 @@ const DEFAULT_SITE_AGENTS = [
 ];
 
 const MAX_AGENTS_PER_REQUEST = 20;
+const MAX_RESULT_CHARS = 100_000;
 
 const STREAM_TIMEOUT_MS = 300_000;
 
@@ -98,6 +104,13 @@ export async function POST(req: NextRequest) {
     return new Response('Only HTTP/HTTPS URLs are supported', { status: 400 });
   }
 
+  // Detect logged-in user for DB persistence
+  let userId: string | null = null;
+  try {
+    const session = await auth.api.getSession({ headers: await nextHeaders() });
+    userId = session?.user?.id ?? null;
+  } catch { /* anonymous — no DB persistence */ }
+
   // Fetch the website content
   let pageContent: string;
   try {
@@ -122,10 +135,10 @@ export async function POST(req: NextRequest) {
 
   // Truncate to 30K chars to stay within model context limits
   const truncated = pageContent.slice(0, 30_000);
-  const siteInput = `Website URL: ${url}\n\n--- Page Source (first ${Math.min(pageContent.length, 30_000).toLocaleString()} chars) ---\n${truncated}`;
 
   // Stream results from each agent sequentially
   const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
   const timeoutSignal = AbortSignal.timeout(STREAM_TIMEOUT_MS);
 
   const stream = new ReadableStream({
@@ -136,10 +149,32 @@ export async function POST(req: NextRequest) {
         const agent = getAgent(agentId);
         if (!agent) continue;
 
+        // Create DB record for logged-in users
+        let auditRecordId: string | null = null;
+        const agentStartedAt = Date.now();
+        if (userId) {
+          try {
+            const id = crypto.randomUUID();
+            await db.insert(auditTable).values({
+              id,
+              userId,
+              agentId,
+              agentName: agent.name,
+              input: url.slice(0, 10_000),
+              status: 'running',
+            });
+            auditRecordId = id;
+          } catch {
+            // DB write failed — continue without persistence
+          }
+        }
+
         // Write section header
         controller.enqueue(
           encoder.encode(`\n\n${'='.repeat(60)}\n## ${agent.name} Audit\n${'='.repeat(60)}\n\n`),
         );
+
+        const chunks: string[] = [];
 
         try {
           const upstream = anthropicProvider.streamAudit(
@@ -153,18 +188,51 @@ export async function POST(req: NextRequest) {
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
+              if (value) chunks.push(decoder.decode(value, { stream: true }));
               controller.enqueue(value);
             }
           } finally {
             reader.releaseLock();
           }
+
+          // Save completed audit to DB
+          if (auditRecordId) {
+            try {
+              const fullResult = chunks.join('');
+              const scoreMatch = fullResult.match(/(\d{1,3})\s*\/\s*100/);
+              const score = scoreMatch ? parseInt(scoreMatch[1], 10) : null;
+              await db.update(auditTable)
+                .set({
+                  result: fullResult.slice(0, MAX_RESULT_CHARS),
+                  status: 'completed',
+                  score: score && score >= 0 && score <= 100 ? score : null,
+                  durationMs: Date.now() - agentStartedAt,
+                  updatedAt: new Date(),
+                })
+                .where(eq(auditTable.id, auditRecordId));
+            } catch { /* DB update failed — result was still streamed */ }
+          }
+
+          // Emit metadata comment so the frontend can parse per-agent info
+          const durationMs = Date.now() - agentStartedAt;
+          controller.enqueue(
+            encoder.encode(`\n<!--AGENT_META:${JSON.stringify({ agentId, agentName: agent.name, durationMs })}-->\n`),
+          );
         } catch (err) {
-          const msg =
-            err instanceof Error && err.name === 'TimeoutError'
-              ? '[Timed out]'
-              : `[Error: ${err instanceof Error ? err.message : String(err)}]`;
+          const isTimeout = err instanceof Error && err.name === 'TimeoutError';
+          const msg = isTimeout ? '[Timed out]' : `[Error: ${err instanceof Error ? err.message : String(err)}]`;
           controller.enqueue(encoder.encode(`\n\n${msg}\n`));
-          if (err instanceof Error && err.name === 'TimeoutError') break;
+
+          // Mark as failed in DB
+          if (auditRecordId) {
+            try {
+              await db.update(auditTable)
+                .set({ status: 'failed', durationMs: Date.now() - agentStartedAt, updatedAt: new Date() })
+                .where(eq(auditTable.id, auditRecordId));
+            } catch { /* ignore */ }
+          }
+
+          if (isTimeout) break;
         }
       }
 

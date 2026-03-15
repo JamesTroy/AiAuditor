@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { agents as allAgents } from '@/lib/agents';
 import SafeMarkdown from '@/components/markdownComponents';
+import { saveAudit } from '@/lib/history';
 
 const DEFAULT_IDS = new Set([
   'security',
@@ -150,6 +151,36 @@ export default function SiteAuditPage() {
     };
   }, []);
 
+  // Parse streamed result into per-agent sections and save each to localStorage
+  const savePerAgentResults = useCallback((fullResult: string, auditUrl: string) => {
+    // Split on section headers: ====...====\n## Agent Name Audit\n====...====
+    const sectionPattern = /={10,}\n## (.+?) Audit\n={10,}/g;
+    const matches = [...fullResult.matchAll(sectionPattern)];
+
+    for (let i = 0; i < matches.length; i++) {
+      const match = matches[i];
+      const agentName = match[1];
+      const sectionStart = match.index! + match[0].length;
+      const sectionEnd = i + 1 < matches.length ? matches[i + 1].index! : fullResult.length;
+      let sectionText = fullResult.slice(sectionStart, sectionEnd).trim();
+
+      // Strip the metadata comment if present
+      sectionText = sectionText.replace(/\n<!--AGENT_META:.*?-->\n?/g, '').trim();
+
+      // Find the matching agent by name
+      const agent = allAgents.find((a) => a.name === agentName);
+      if (!agent || !sectionText) continue;
+
+      saveAudit({
+        agentId: agent.id,
+        agentName: agent.name,
+        inputSnippet: auditUrl.slice(0, 100) + (auditUrl.length > 100 ? '…' : ''),
+        result: sectionText,
+        timestamp: Date.now(),
+      });
+    }
+  }, []);
+
   const runSiteAudit = useCallback(async () => {
     const trimmed = url.trim();
     if (!trimmed || loading || selected.size === 0) return;
@@ -201,7 +232,11 @@ export default function SiteAuditPage() {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
-      setResult(chunksRef.current.join(''));
+      const fullResult = chunksRef.current.join('');
+      setResult(fullResult);
+
+      // Save each agent's section to localStorage for history tracking
+      savePerAgentResults(fullResult, trimmed);
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== 'AbortError') {
         setError(err.message);
