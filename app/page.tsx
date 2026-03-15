@@ -3,18 +3,32 @@ import { agents } from '@/lib/agents';
 import Logo from '@/components/Logo';
 import HomeSearch from '@/components/HomeSearch';
 
+const FEATURED_IDS = [
+  'security',
+  'code-quality',
+  'performance',
+  'accessibility',
+  'architecture',
+  'privacy',
+];
+
 const CATEGORIES = [
-  { name: 'Security & Privacy', count: 0, color: 'bg-red-500', description: 'Find injection flaws, auth bugs, and exposed secrets before attackers do' },
-  { name: 'Code Quality', count: 0, color: 'bg-blue-500', description: 'Catch anti-patterns, dead code, and architectural issues reviewers miss' },
-  { name: 'Performance', count: 0, color: 'bg-amber-500', description: 'Pinpoint slow queries, render-blocking code, and bloated bundles' },
-  { name: 'Infrastructure', count: 0, color: 'bg-cyan-500', description: 'Audit your CI/CD, container configs, and database setup for production gaps' },
-  { name: 'Design', count: 0, color: 'bg-violet-500', description: 'Check accessibility compliance, responsive breakpoints, and i18n readiness' },
+  { name: 'Security & Privacy', color: 'bg-red-500', description: 'Injection flaws, auth bugs, exposed secrets' },
+  { name: 'Code Quality', color: 'bg-blue-500', description: 'Anti-patterns, dead code, architecture issues' },
+  { name: 'Performance', color: 'bg-amber-500', description: 'Slow queries, render-blocking, bloated bundles' },
+  { name: 'Infrastructure', color: 'bg-cyan-500', description: 'CI/CD, containers, database, observability' },
+  { name: 'Design', color: 'bg-violet-500', description: 'Accessibility, responsive, i18n, dark mode' },
+  { name: 'SEO', color: 'bg-emerald-500', description: 'Rankings, keywords, technical SEO' },
+  { name: 'Marketing', color: 'bg-pink-500', description: 'Positioning, CTAs, conversion friction' },
 ];
 
 // Count agents per category
-for (const cat of CATEGORIES) {
-  cat.count = agents.filter((a) => a.category === cat.name).length;
+const categoryCounts: Record<string, number> = {};
+for (const a of agents) {
+  categoryCounts[a.category] = (categoryCounts[a.category] ?? 0) + 1;
 }
+
+const featuredAgents = FEATURED_IDS.map((id) => agents.find((a) => a.id === id)!).filter(Boolean);
 
 export default function Home() {
   return (
@@ -22,7 +36,6 @@ export default function Home() {
       <div className="max-w-5xl mx-auto">
         {/* Hero */}
         <div className="text-center mb-16 relative">
-          {/* Gradient orbs */}
           <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[min(288px,80vw)] h-72 bg-violet-500/20 blur-3xl rounded-full -z-10 motion-safe:animate-pulse-slow" />
           <div className="absolute top-10 left-1/3 w-[min(384px,90vw)] h-64 bg-indigo-500/15 blur-3xl rounded-full -z-10 motion-safe:animate-pulse-slow" style={{ animationDelay: '3s' }} />
           <div className="absolute inset-0 bg-grid-pattern -z-10 opacity-50" />
@@ -37,7 +50,7 @@ export default function Home() {
             Find what your code review missed.
           </p>
           <p className="text-gray-500 dark:text-zinc-400 text-sm sm:text-base max-w-xl mx-auto mb-8">
-            Paste code or enter a URL &mdash; get a severity-rated security, performance, and accessibility report in 60 seconds. 50 audits covering OWASP Top 10, GDPR, HIPAA, SOC 2, and more.
+            Severity-rated security, performance, and accessibility reports in 60 seconds.
           </p>
 
           {/* Primary CTAs */}
@@ -57,7 +70,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Example finding — shows concrete value */}
+        {/* Example finding */}
         <section className="mb-16 max-w-3xl mx-auto">
           <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-4 text-center">Example finding from a real audit</h2>
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden">
@@ -81,36 +94,31 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <p className="text-center text-xs text-gray-400 dark:text-zinc-600 mt-3">
-            Every finding includes severity, file location, vulnerable code, and a specific fix.
-          </p>
         </section>
 
-        {/* Category overview */}
+        {/* Categories — compact chips */}
         <section className="mb-16">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-6 text-center">What you can audit</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-4 text-center">
+            {agents.length} audits across {CATEGORIES.length} categories
+          </h2>
+          <div className="flex flex-wrap justify-center gap-2">
             {CATEGORIES.map((cat) => (
-              <Link
+              <span
                 key={cat.name}
-                href={`/site-audit`}
-                className="group bg-white/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 hover:border-violet-500/30 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 text-xs text-gray-600 dark:text-zinc-400"
               >
-                <div className="flex items-center gap-2.5 mb-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${cat.color}`} />
-                  <span className="font-semibold text-sm text-gray-900 dark:text-zinc-100">{cat.name}</span>
-                  <span className="text-xs text-gray-400 dark:text-zinc-600 ml-auto">{cat.count} audits</span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-zinc-500">{cat.description}</p>
-              </Link>
+                <span className={`w-2 h-2 rounded-full ${cat.color}`} />
+                {cat.name}
+                <span className="text-gray-400 dark:text-zinc-600">{categoryCounts[cat.name] ?? 0}</span>
+              </span>
             ))}
           </div>
         </section>
 
-        {/* Agent search + grid — for users who want a specific single agent */}
+        {/* Agent search + grid — collapsed by default, search reveals */}
         <section id="agents" className="scroll-mt-20">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-6 text-center">Or run a single audit</h2>
-          <HomeSearch agents={agents} />
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-6 text-center">Find an audit</h2>
+          <HomeSearch agents={agents} featuredAgents={featuredAgents} />
         </section>
       </div>
     </div>

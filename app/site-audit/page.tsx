@@ -14,7 +14,7 @@ const DEFAULT_IDS = new Set([
   'code-quality',
 ]);
 
-const CATEGORIES = ['Security & Privacy', 'Code Quality', 'Performance', 'Infrastructure', 'Design'] as const;
+const CATEGORIES = ['Security & Privacy', 'Code Quality', 'Performance', 'Infrastructure', 'Design', 'SEO', 'Marketing'] as const;
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Security & Privacy': 'border-red-500/40',
@@ -22,6 +22,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Performance': 'border-amber-500/40',
   'Infrastructure': 'border-cyan-500/40',
   'Design': 'border-violet-500/40',
+  'SEO': 'border-emerald-500/40',
+  'Marketing': 'border-pink-500/40',
 };
 
 /** Map accent text color to a bg dot color. Uses a static map so Tailwind can tree-shake safely. */

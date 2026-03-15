@@ -63,6 +63,17 @@ export default function AboutPage() {
           </section>
 
           <section>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100 mb-3">Security &amp; trust</h2>
+            <ul className="space-y-2">
+              <li><strong className="text-gray-900 dark:text-zinc-100">Your code stays private.</strong> Code is sent directly for analysis and is not stored beyond the audit session.</li>
+              <li><strong className="text-gray-900 dark:text-zinc-100">Encrypted in transit.</strong> All data over HTTPS with TLS 1.3. Per-request CSP nonces prevent XSS.</li>
+              <li><strong className="text-gray-900 dark:text-zinc-100">Two-factor authentication.</strong> TOTP-based 2FA via any authenticator app, with backup codes.</li>
+              <li><strong className="text-gray-900 dark:text-zinc-100">Rate limited.</strong> All endpoints are rate-limited per IP and per user to prevent abuse.</li>
+              <li><strong className="text-gray-900 dark:text-zinc-100">No tracking, no ads.</strong> No analytics trackers or third-party scripts.</li>
+            </ul>
+          </section>
+
+          <section>
             <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100 mb-3">Contact</h2>
             <div className="bg-gray-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl p-5">
               <div className="space-y-2">
