@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { isAllowedUrl, ALLOWED_URL_DESCRIPTION } from '@/lib/config/urlAllowlist';
 import { fetchUrlLimiter } from '@/lib/rateLimit';
+import { API_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
 
 export const runtime = 'nodejs';
 
@@ -67,9 +68,8 @@ export async function POST(req: NextRequest) {
 
   return new Response(truncated, {
     headers: {
+      ...API_RESPONSE_HEADERS,
       'Content-Type': 'text/plain; charset=utf-8',
-      'X-Content-Type-Options': 'nosniff',
-      'Cache-Control': 'no-store',
     },
   });
 }

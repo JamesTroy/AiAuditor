@@ -46,12 +46,21 @@ export class AnthropicProvider implements AIProvider {
         while (true) {
           attempt++;
           try {
+            // CACHE-014: Use cache_control on system prompt so Anthropic caches the
+            // processed prompt for 5 minutes. Saves ~90% of input token cost on
+            // repeated requests to the same agent.
             const stream = client.messages.stream(
               {
                 model: MODEL,
                 max_tokens: MAX_TOKENS,
                 temperature: TEMPERATURE,
-                system: systemPrompt,
+                system: [
+                  {
+                    type: 'text' as const,
+                    text: systemPrompt,
+                    cache_control: { type: 'ephemeral' as const },
+                  },
+                ],
                 messages: [{ role: 'user', content: userInput }],
               },
               options?.signal ? { signal: options.signal } : undefined,
@@ -105,12 +114,19 @@ export class AnthropicProvider implements AIProvider {
         while (true) {
           attempt++;
           try {
+            // CACHE-014: Prompt caching for chat system prompt.
             const stream = client.messages.stream(
               {
                 model: MODEL,
                 max_tokens: MAX_TOKENS,
                 temperature: TEMPERATURE,
-                system: systemPrompt,
+                system: [
+                  {
+                    type: 'text' as const,
+                    text: systemPrompt,
+                    cache_control: { type: 'ephemeral' as const },
+                  },
+                ],
                 messages: messages.map((m) => ({ role: m.role, content: m.content })),
               },
               options?.signal ? { signal: options.signal } : undefined,

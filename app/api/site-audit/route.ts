@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
 import { headers as nextHeaders } from 'next/headers';
 import { auditLimiter, dailyAuditBudget } from '@/lib/rateLimit';
+import { STREAM_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
+import { cachedFetch } from '@/lib/cache';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { getAgent } from '@/lib/agents';
 import { auth } from '@/lib/auth';
@@ -111,30 +113,30 @@ export async function POST(req: NextRequest) {
     userId = session?.user?.id ?? null;
   } catch { /* anonymous — no DB persistence */ }
 
-  // Fetch the website content
-  let pageContent: string;
+  // CACHE-013: Fetch website content with Redis cache (TTL 10 min).
+  // Avoids re-fetching the same site on repeated audits within a session.
+  let truncated: string;
   try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'Claudit/1.0 (Site Audit Bot)',
-        Accept: 'text/html, text/plain, */*',
+    const { data } = await cachedFetch(url, {
+      ttlSeconds: 600,
+      maxBytes: 30_000,
+      prefix: 'site',
+      fetchOptions: {
+        headers: {
+          'User-Agent': 'Claudit/1.0 (Site Audit Bot)',
+          Accept: 'text/html, text/plain, */*',
+        },
+        signal: AbortSignal.timeout(15_000),
+        redirect: 'follow',
       },
-      signal: AbortSignal.timeout(15_000),
-      redirect: 'follow',
     });
-    if (!res.ok) {
-      return new Response(`Failed to fetch site: HTTP ${res.status}`, { status: 502 });
-    }
-    pageContent = await res.text();
+    truncated = data;
   } catch (err) {
     return new Response(
       `Failed to fetch site: ${err instanceof Error ? err.message : String(err)}`,
       { status: 502 },
     );
   }
-
-  // Truncate to 30K chars to stay within model context limits
-  const truncated = pageContent.slice(0, 30_000);
 
   // Stream results from each agent sequentially
   const encoder = new TextEncoder();
@@ -241,10 +243,6 @@ export async function POST(req: NextRequest) {
   });
 
   return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'X-Content-Type-Options': 'nosniff',
-      'Cache-Control': 'no-cache',
-    },
+    headers: STREAM_RESPONSE_HEADERS,
   });
 }

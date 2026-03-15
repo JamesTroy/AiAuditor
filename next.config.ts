@@ -47,9 +47,42 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      // Security headers on all routes.
       {
         source: '/:path*',
         headers: securityHeaders,
+      },
+      // CACHE-003: Vary header on API routes — prevents cache poisoning if a CDN
+      // or shared proxy is added. Keys cached responses on auth/cookie state.
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Vary', value: 'Authorization, Cookie' },
+        ],
+      },
+      // CACHE-003/009/025: CDN-ready cache headers for static and ISR pages.
+      // s-maxage controls shared cache (CDN) TTL; max-age controls browser TTL;
+      // stale-while-revalidate allows serving stale while fetching fresh copy.
+      {
+        source: '/audit/:agent',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=3600, stale-while-revalidate=60' },
+          { key: 'Vary', value: 'Accept-Encoding' },
+        ],
+      },
+      {
+        source: '/(privacy|how-it-works)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=2592000, stale-while-revalidate=86400' },
+          { key: 'Vary', value: 'Accept-Encoding' },
+        ],
+      },
+      // CACHE-003: Default Vary: Accept-Encoding for all other pages.
+      {
+        source: '/((?!api|_next).*)',
+        headers: [
+          { key: 'Vary', value: 'Accept-Encoding' },
+        ],
       },
     ];
   },

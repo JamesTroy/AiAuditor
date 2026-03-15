@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auditLimiter } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
+import { STREAM_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
 
 export const runtime = 'nodejs';
 
@@ -79,10 +80,6 @@ export async function POST(req: NextRequest) {
   );
 
   return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'X-Content-Type-Options': 'nosniff',
-      'Cache-Control': 'no-cache',
-    },
+    headers: STREAM_RESPONSE_HEADERS,
   });
 }

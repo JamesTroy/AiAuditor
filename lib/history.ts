@@ -1,5 +1,8 @@
 const STORAGE_KEY = 'aiaudit:history:v1';
 const MAX_ENTRIES = 20;
+// CACHE-016: Starred entries are capped and expire after 90 days.
+const MAX_STARRED_ENTRIES = 50;
+const STARRED_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
 // ARCH-017: Cap stored result size so a single large audit response cannot
 // exhaust the ~5 MB localStorage quota. The full result is only needed while
@@ -26,18 +29,25 @@ export function saveAudit(entry: Omit<AuditEntry, 'id'>): void {
       result: entry.result.slice(0, MAX_RESULT_CHARS),
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     };
-    // Starred entries are never evicted; only trim non-starred from the tail.
-    const starred = history.filter((e) => e.starred);
+    // CACHE-016: Evict expired starred entries (>90 days) and enforce cap.
+    const now = Date.now();
+    const starred = history
+      .filter((e) => e.starred && (now - e.timestamp) < STARRED_TTL_MS)
+      .slice(0, MAX_STARRED_ENTRIES);
     const unstarred = history.filter((e) => !e.starred);
     const trimmed = [newEntry, ...unstarred].slice(0, MAX_ENTRIES);
     localStorage.setItem(STORAGE_KEY, JSON.stringify([...starred, ...trimmed]));
   } catch (err) {
     // ARCH-017: If the browser throws QuotaExceededError, evict the oldest
     // non-starred entry and retry once before giving up silently.
+    // CACHE-016: Also evict oldest starred entries beyond the cap.
     if (err instanceof DOMException && err.name === 'QuotaExceededError') {
       try {
         const history = getHistory();
-        const starred = history.filter((e) => e.starred);
+        const now = Date.now();
+        const starred = history
+          .filter((e) => e.starred && (now - e.timestamp) < STARRED_TTL_MS)
+          .slice(0, MAX_STARRED_ENTRIES);
         const unstarred = history.filter((e) => !e.starred).slice(0, MAX_ENTRIES - 2);
         localStorage.setItem(STORAGE_KEY, JSON.stringify([...starred, ...unstarred]));
       } catch {

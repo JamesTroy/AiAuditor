@@ -4,6 +4,7 @@ import { getAgent } from '@/lib/agents';
 import { auditLimiter, dailyAuditBudget } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { auditRequestSchema } from '@/lib/schemas/auditRequest';
+import { STREAM_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { audit as auditTable } from '@/lib/auth-schema';
@@ -158,11 +159,8 @@ function makeStream(
   });
 }
 
-const STREAM_HEADERS = {
-  'Content-Type': 'text/plain; charset=utf-8',
-  'X-Content-Type-Options': 'nosniff',
-  'Cache-Control': 'no-cache',
-};
+// CACHE-002: Use shared stream headers (no-store instead of no-cache).
+const STREAM_HEADERS = STREAM_RESPONSE_HEADERS;
 
 export async function POST(req: NextRequest) {
   const requestId = newRequestId();

@@ -1,5 +1,8 @@
 import { NextRequest } from 'next/server';
+import { createHash } from 'crypto';
 import { auditLimiter } from '@/lib/rateLimit';
+import { API_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
+import { cacheGet, cacheSet } from '@/lib/cache';
 
 export const runtime = 'nodejs';
 
@@ -35,6 +38,17 @@ export async function POST(req: NextRequest) {
 
   const [, owner, repo, prNumber] = match;
   const apiUrl = `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`;
+
+  // CACHE-013: Check Redis cache for previously fetched PR data (TTL 5 min).
+  const prCacheKey = `pr:${createHash('sha256').update(apiUrl).digest('hex').slice(0, 32)}`;
+  const cached = await cacheGet<{
+    title: string; description: string; author: string; branch: string;
+    baseBranch: string; changedFiles: number; additions: number; deletions: number;
+    diff: string; truncated: boolean;
+  }>(prCacheKey);
+  if (cached) {
+    return Response.json(cached, { headers: API_RESPONSE_HEADERS });
+  }
 
   try {
     // Fetch PR metadata
@@ -78,7 +92,8 @@ export async function POST(req: NextRequest) {
     const diff = await diffRes.text();
     const truncatedDiff = diff.slice(0, MAX_DIFF_SIZE);
 
-    return Response.json({
+    // CACHE-001/026: Explicit no-store prevents shared caches from leaking private PR data.
+    const result = {
       title: prData.title,
       description: prData.body ?? '',
       author: prData.user?.login ?? 'unknown',
@@ -89,7 +104,12 @@ export async function POST(req: NextRequest) {
       deletions: prData.deletions ?? 0,
       diff: truncatedDiff,
       truncated: diff.length > MAX_DIFF_SIZE,
-    });
+    };
+
+    // CACHE-013: Cache PR data for 5 minutes (PRs change infrequently during an audit session).
+    await cacheSet(prCacheKey, result, 300);
+
+    return Response.json(result, { headers: API_RESPONSE_HEADERS });
   } catch (err) {
     if (err instanceof Error && err.name === 'TimeoutError') {
       return new Response('GitHub API request timed out', { status: 504 });
