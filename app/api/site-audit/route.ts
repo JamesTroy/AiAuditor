@@ -9,15 +9,17 @@ if (!process.env.ANTHROPIC_API_KEY) {
 
 export const runtime = 'nodejs';
 
-// Curated set of agents relevant to website analysis.
-const SITE_AUDIT_AGENTS = [
+// Default set of agents for website analysis.
+const DEFAULT_SITE_AGENTS = [
   'security',
   'seo-performance',
   'accessibility',
   'frontend-performance',
   'responsive-design',
   'code-quality',
-] as const;
+];
+
+const MAX_AGENTS_PER_REQUEST = 20;
 
 const STREAM_TIMEOUT_MS = 300_000;
 
@@ -58,7 +60,7 @@ export async function POST(req: NextRequest) {
     return new Response('Daily audit limit reached. Please try again tomorrow.', { status: 429 });
   }
 
-  let body: { url?: unknown };
+  let body: { url?: unknown; agents?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -68,6 +70,21 @@ export async function POST(req: NextRequest) {
   const url = typeof body.url === 'string' ? body.url.trim() : '';
   if (!url) {
     return new Response('Missing url', { status: 400 });
+  }
+
+  // Validate agent selection (optional — defaults to curated 6)
+  let agentIds: string[];
+  if (Array.isArray(body.agents) && body.agents.length > 0) {
+    if (body.agents.length > MAX_AGENTS_PER_REQUEST) {
+      return new Response(`Maximum ${MAX_AGENTS_PER_REQUEST} agents per request`, { status: 400 });
+    }
+    const invalid = body.agents.filter((id: unknown) => typeof id !== 'string' || !getAgent(id as string));
+    if (invalid.length > 0) {
+      return new Response(`Invalid agent IDs: ${invalid.join(', ')}`, { status: 400 });
+    }
+    agentIds = body.agents as string[];
+  } else {
+    agentIds = DEFAULT_SITE_AGENTS;
   }
 
   // Validate URL
@@ -113,7 +130,7 @@ export async function POST(req: NextRequest) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      for (const agentId of SITE_AUDIT_AGENTS) {
+      for (const agentId of agentIds) {
         if (timeoutSignal.aborted) break;
 
         const agent = getAgent(agentId);
