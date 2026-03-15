@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SmoothScroll from '@/components/SmoothScroll';
 import { GlobalJsonLd } from '@/components/JsonLd';
+import Analytics from '@/components/Analytics';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -58,6 +59,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
         <meta name="theme-color" content="#f9fafb" media="(prefers-color-scheme: light)" />
         <GlobalJsonLd />
+        <Analytics />
       </head>
       <body className={`${inter.className} bg-gray-50 dark:bg-zinc-950`}>
         <ThemeProvider>
