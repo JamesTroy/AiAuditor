@@ -3288,6 +3288,323 @@ Keep total under 30,000 characters.`,
 
 Keep total under 30,000 characters.`,
   },
+
+  // ─── SEO Foundations ─────────────────────────────────────────────
+  {
+    id: 'seo-basics',
+    name: 'SEO Basics',
+    description: 'Audits fundamental on-page SEO: title tags, meta descriptions, headings, URL structure, and internal linking.',
+    category: 'SEO',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-700 hover:bg-emerald-600',
+    placeholder: 'Paste your page HTML, layout components, or metadata configuration...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-basics'],
+    prepPrompt: `I'm preparing my site for an **SEO Basics** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js 15, WordPress, Shopify, static HTML]
+- Site type: [e.g. SaaS, e-commerce, blog, portfolio]
+- Known concerns: [e.g. "titles may be duplicated", "no meta descriptions on blog posts"]
+
+## Files to gather
+- Root layout / template with \`<head>\` and metadata
+- All page-level title and meta description definitions
+- Heading structure for key pages (render the HTML or paste the components)
+- URL routing configuration (file-based or config-based routes)
+- Navigation components (header, footer, sidebar links)
+- Image components with alt text handling
+- sitemap.xml or sitemap generator config
+
+## Don't forget
+- [ ] Include the rendered \`<head>\` output for 3–5 of your most important pages
+- [ ] Note any pages you know have SEO issues
+- [ ] Include robots.txt
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-search-engines',
+    name: 'Search Engine Understanding',
+    description: 'Analyzes how search engines crawl, render, and index your site — crawlability, JS rendering, and crawl budget.',
+    category: 'SEO',
+    accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
+    placeholder: 'Paste your robots.txt, sitemap, layout files, and routing configuration...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-search-engines'],
+    prepPrompt: `I'm preparing my site for a **Search Engine Understanding** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js 15, Nuxt 3, Gatsby, SPA]
+- Rendering: [SSR / SSG / CSR / hybrid — which pages use which strategy?]
+- Known concerns: [e.g. "pages not being indexed", "Google rendering issues", "crawl budget waste"]
+
+## Files to gather
+- robots.txt (full contents)
+- XML sitemap or sitemap generator config
+- Root layout and \`<head>\` configuration
+- Middleware or server config affecting redirects/rewrites
+- Any dynamic rendering or prerendering configuration
+- JavaScript-heavy page components (especially ones with client-side data fetching)
+- Canonical tag implementation
+- Pagination handling (rel=next/prev or alternatives)
+
+## Don't forget
+- [ ] Include the rendered HTML of a JavaScript-heavy page (view source, not inspect)
+- [ ] Note any pages that are NOT appearing in Google Search Console
+- [ ] Include redirect rules or chains you're aware of
+- [ ] Note approximate site size (number of pages)
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-ranking-factors',
+    name: 'Ranking Factors',
+    description: 'Evaluates E-E-A-T signals, content quality, Core Web Vitals readiness, and on-page ranking signals.',
+    category: 'SEO',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste your page content, layout, about/author pages, and structured data...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-ranking-factors'],
+    prepPrompt: `I'm preparing my site for a **Ranking Factors** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Site niche: [e.g. B2B SaaS, health blog, e-commerce]
+- Target audience: [e.g. developers, small business owners, consumers]
+- Main competitors: [list 2–3 competitor URLs if known]
+- Known concerns: [e.g. "low E-E-A-T", "thin content", "slow page speed"]
+
+## Files to gather
+- Key landing pages (full rendered HTML or components)
+- About page / team page / author bios
+- Trust signals (testimonials, reviews, certifications)
+- Privacy policy, terms of service pages
+- Schema.org / structured data implementation
+- Core Web Vitals related code (images, fonts, layout shift sources)
+- Any Lighthouse or PageSpeed Insights reports
+
+## Don't forget
+- [ ] Include the about/author page content — E-E-A-T starts here
+- [ ] Note if you have any Google Search Console data showing ranking positions
+- [ ] Include content from your most important 3–5 pages
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-quick-wins',
+    name: 'SEO Quick Wins',
+    description: 'Identifies high-impact, low-effort SEO improvements you can implement today for measurable results.',
+    category: 'SEO',
+    accentClass: 'text-lime-400 hover:bg-lime-500/10',
+    buttonClass: 'bg-lime-700 hover:bg-lime-600',
+    placeholder: 'Paste your site HTML, metadata config, and key page content...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-quick-wins'],
+    prepPrompt: `I'm looking for **SEO Quick Wins** on my site. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js, WordPress, Shopify]
+- Current SEO status: [e.g. "just launched, no SEO work done", "basic SEO in place", "advanced but plateauing"]
+- Traffic level: [e.g. "under 1K/mo", "10K/mo", "100K+/mo"]
+- Known issues: [anything you already know is broken or missing]
+
+## Files to gather
+- Root layout with \`<head>\` / metadata
+- robots.txt and sitemap.xml
+- Key page content (home, top 3 landing pages, blog index)
+- Image handling (alt text patterns, compression setup)
+- Internal linking structure (navigation, sidebar, footer)
+- Any existing structured data / JSON-LD
+- Redirect configuration
+
+## Don't forget
+- [ ] Include rendered \`<head>\` from your homepage and top landing page
+- [ ] Note any pages with zero or low traffic that should be performing better
+- [ ] Include your Google Search Console top queries if available
+
+Keep total under 30,000 characters.`,
+  },
+
+  // ─── SEO Research ────────────────────────────────────────────────
+  {
+    id: 'seo-keyword-research',
+    name: 'Keyword Research',
+    description: 'Analyzes keyword targeting, cannibalization, long-tail coverage, and content gaps across your pages.',
+    category: 'SEO',
+    accentClass: 'text-violet-400 hover:bg-violet-500/10',
+    buttonClass: 'bg-violet-700 hover:bg-violet-600',
+    placeholder: 'Paste your page content, titles, headings, and meta descriptions...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-keyword-research'],
+    prepPrompt: `I'm preparing my site for a **Keyword Research** audit. Please help me collect the relevant content.
+
+## Project context (fill in)
+- Niche/industry: [e.g. project management SaaS, fitness blog, legal services]
+- Target keywords: [list your known target keywords if any]
+- Competitors: [list 2–3 competitor domains]
+- Known concerns: [e.g. "not sure what keywords to target", "ranking for wrong terms"]
+
+## Content to gather
+- ALL page titles and meta descriptions (a sitemap-style list)
+- H1 and H2 headings for each page
+- Full content of your top 5 most important pages
+- Blog post titles and topics (or RSS feed)
+- Any existing keyword research or target keyword list
+- Google Search Console query data if available
+
+## Don't forget
+- [ ] Include EVERY unique page title — keyword cannibalization needs the full picture
+- [ ] Note which pages you consider most important for conversions
+- [ ] Include your site's value proposition / unique selling points
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-serp-analysis',
+    name: 'SERP Analysis',
+    description: 'Reviews how your pages appear in search results — rich snippets, featured snippet eligibility, and CTR optimization.',
+    category: 'SEO',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-700 hover:bg-orange-600',
+    placeholder: 'Paste your page metadata, structured data, and content structure...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-serp-analysis'],
+    prepPrompt: `I'm preparing my site for a **SERP Analysis** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Site type: [e.g. SaaS, blog, e-commerce, local business]
+- Target queries: [list 5–10 target search queries]
+- Current SERP features: [any rich results you already have?]
+- Known concerns: [e.g. "low CTR despite good rankings", "no rich results"]
+
+## Files to gather
+- All \`<title>\` and \`<meta name="description">\` for key pages
+- ALL structured data / JSON-LD schemas
+- Open Graph and Twitter Card meta tags
+- FAQ sections or Q&A content
+- How-to or step-by-step content
+- Product/pricing page content
+- Review/testimonial structured data
+- Breadcrumb implementation
+
+## Don't forget
+- [ ] Include the FULL rendered \`<head>\` for your top 5 pages
+- [ ] Include any FAQ content — these are rich result opportunities
+- [ ] Note your current click-through rates from Search Console if available
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-search-intent',
+    name: 'Search Intent',
+    description: 'Evaluates content alignment with user search intent — informational, navigational, transactional, and commercial.',
+    category: 'SEO',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-700 hover:bg-pink-600',
+    placeholder: 'Paste your page content, CTAs, and target keywords...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-search-intent'],
+    prepPrompt: `I'm preparing my site for a **Search Intent** audit. Please help me collect the relevant content.
+
+## Project context (fill in)
+- Business model: [e.g. SaaS, e-commerce, lead gen, content/media]
+- Target audience: [who are your customers?]
+- Primary conversion: [e.g. signup, purchase, contact form, download]
+- Known concerns: [e.g. "high bounce rate on landing pages", "traffic but no conversions"]
+
+## Content to gather
+- Full content of your top 10 pages (or your most important pages)
+- Each page's target keyword(s) and what you think the intent is
+- CTAs on each page (what action are you asking visitors to take?)
+- Navigation structure (how do users flow through the site?)
+- Any comparison or "vs" content
+- Pricing page content
+- Blog/resource content
+
+## Don't forget
+- [ ] For each page, note: what query should lead here, and what should the visitor do next?
+- [ ] Include pages with high traffic but low conversion
+- [ ] Note any pages where bounce rate is unexpectedly high
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-competitor-research',
+    name: 'Competitor Research',
+    description: 'Analyzes your SEO competitive position — content strategy gaps, technical advantages, and authority signals.',
+    category: 'SEO',
+    accentClass: 'text-rose-400 hover:bg-rose-500/10',
+    buttonClass: 'bg-rose-700 hover:bg-rose-600',
+    placeholder: 'Paste your site content and structure. Mention your competitors if known...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-competitor-research'],
+    prepPrompt: `I'm preparing my site for a **Competitor Research** SEO audit. Please help me collect the relevant content.
+
+## Project context (fill in)
+- Your site URL: [your domain]
+- Main competitors: [list 3–5 competitor domains]
+- Niche: [your industry/market]
+- Your strengths: [what do you think you do better?]
+- Your weaknesses: [where do you think competitors beat you?]
+
+## Content to gather
+- Your homepage, about page, and top 5 content pages (full content)
+- Your structured data / schema markup
+- Your sitemap (to show content breadth)
+- Content topics you cover (list of blog categories / resource types)
+- Trust signals: reviews, testimonials, certifications, team bios
+- Technical setup: rendering strategy, page speed indicators
+
+## Competitor data (if available)
+- Screenshot or paste of competitor homepages
+- Competitor blog topic lists
+- Any SEO tool data (Ahrefs, Semrush, Moz) showing competitor keywords
+
+## Don't forget
+- [ ] Include your unique selling proposition — what differentiates you?
+- [ ] Note your domain age and any existing authority signals
+- [ ] Include content you're most proud of and content you think is weak
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-keyword-gap',
+    name: 'Keyword Gap',
+    description: 'Identifies untapped keyword opportunities, missing topic clusters, and content gaps to expand your search footprint.',
+    category: 'SEO',
+    accentClass: 'text-teal-400 hover:bg-teal-500/10',
+    buttonClass: 'bg-teal-700 hover:bg-teal-600',
+    placeholder: 'Paste your sitemap, content index, blog posts, and target keywords...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-keyword-gap'],
+    prepPrompt: `I'm preparing my site for a **Keyword Gap** analysis. Please help me collect the relevant content.
+
+## Project context (fill in)
+- Niche: [your industry/market]
+- Site age: [e.g. 6 months, 3 years]
+- Content volume: [e.g. "20 blog posts", "200 pages", "just a landing page"]
+- Target audience: [who are you trying to reach?]
+- Competitors: [list 3–5 competitor domains ranking for your target keywords]
+
+## Content to gather
+- Complete list of all pages/URLs on the site (sitemap.xml or manual list)
+- Title and H1 for EVERY page (shows current keyword targeting)
+- Full content of your top 10 pages
+- Blog post list with titles and topics
+- Any existing keyword research or target keyword list
+- Google Search Console query data (top queries, impressions, clicks)
+- Any SEO tool exports showing keyword rankings
+
+## Don't forget
+- [ ] Include ALL page titles — even ones you think are unimportant
+- [ ] Note topics you want to rank for but don't have content for yet
+- [ ] Include competitor topic lists if available (their blog categories, resource pages)
+- [ ] Note your content production capacity (how many pieces per month?)
+
+Keep total under 30,000 characters.`,
+  },
 ];
 
 export function getAgent(id: string): AgentConfig | undefined {

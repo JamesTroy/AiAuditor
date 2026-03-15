@@ -12,7 +12,9 @@ import {
   Diamond, Atom, Globe, TrafficCone, ClipboardList, RefreshCw,
   Wrench, Regex, Package, Cable, Globe2, BarChart3,
   FileText, Moon, Mail, Settings, FileCode, Shuffle, Bookmark,
-  Star, StarOff, type LucideIcon,
+  Star, StarOff, ListChecks, ScanSearch, Award, Lightbulb,
+  Target, LayoutList, Compass, Swords, GitCompareArrows,
+  type LucideIcon,
 } from 'lucide-react';
 
 const BUILT_IN_ICONS: Record<string, LucideIcon> = {
@@ -66,6 +68,15 @@ const BUILT_IN_ICONS: Record<string, LucideIcon> = {
   'openapi': FileCode,
   'state-machines': Shuffle,
   'pagination': Bookmark,
+  'seo-basics': ListChecks,
+  'seo-search-engines': ScanSearch,
+  'seo-ranking-factors': Award,
+  'seo-quick-wins': Lightbulb,
+  'seo-keyword-research': Target,
+  'seo-serp-analysis': LayoutList,
+  'seo-search-intent': Compass,
+  'seo-competitor-research': Swords,
+  'seo-keyword-gap': GitCompareArrows,
 };
 
 interface Props {
