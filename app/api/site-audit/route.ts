@@ -29,7 +29,8 @@ const DEFAULT_SITE_AGENTS = [
 const MAX_AGENTS_PER_REQUEST = 20;
 const MAX_RESULT_CHARS = 100_000;
 
-const STREAM_TIMEOUT_MS = 300_000;
+const PER_AGENT_TIMEOUT_MS = 120_000; // 2 min per agent
+const MIN_TOTAL_TIMEOUT_MS = 300_000; // 5 min floor
 
 const ALLOWED_ORIGINS: ReadonlySet<string> = new Set(
   [
@@ -141,7 +142,8 @@ export async function POST(req: NextRequest) {
   // Stream results from each agent sequentially
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
-  const timeoutSignal = AbortSignal.timeout(STREAM_TIMEOUT_MS);
+  const totalTimeoutMs = Math.max(MIN_TOTAL_TIMEOUT_MS, agentIds.length * PER_AGENT_TIMEOUT_MS);
+  const timeoutSignal = AbortSignal.timeout(totalTimeoutMs);
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -179,10 +181,15 @@ export async function POST(req: NextRequest) {
         const chunks: string[] = [];
 
         try {
+          const agentSignal = AbortSignal.any([
+            timeoutSignal,
+            AbortSignal.timeout(PER_AGENT_TIMEOUT_MS),
+          ]);
+
           const upstream = anthropicProvider.streamAudit(
             agent.systemPrompt,
             `<user_content>\n${truncated}\n</user_content>`,
-            { signal: timeoutSignal },
+            { signal: agentSignal },
           );
 
           const reader = upstream.getReader();
@@ -222,6 +229,7 @@ export async function POST(req: NextRequest) {
           );
         } catch (err) {
           const isTimeout = err instanceof Error && err.name === 'TimeoutError';
+          const isGlobalTimeout = isTimeout && timeoutSignal.aborted;
           const msg = isTimeout ? '[Timed out]' : `[Error: ${err instanceof Error ? err.message : String(err)}]`;
           controller.enqueue(encoder.encode(`\n\n${msg}\n`));
 
@@ -234,7 +242,8 @@ export async function POST(req: NextRequest) {
             } catch { /* ignore */ }
           }
 
-          if (isTimeout) break;
+          // Per-agent timeout: skip to next agent. Global timeout: stop entirely.
+          if (isGlobalTimeout) break;
         }
       }
 
