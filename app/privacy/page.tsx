@@ -113,7 +113,7 @@ export default function PrivacyPage() {
           <Section title="6. Your rights">
             <p>Under GDPR, CCPA/CPRA, and applicable privacy laws, you have the right to:</p>
             <ul className="list-disc pl-5 space-y-1.5 mt-2">
-              <li><strong>Access</strong> your personal data &mdash; view your data on the <Link href="/dashboard" className="text-violet-600 dark:text-violet-400 underline">Dashboard</Link> and <Link href="/history" className="text-violet-600 dark:text-violet-400 underline">History</Link> pages, or request a full export.</li>
+              <li><strong>Access</strong> your personal data &mdash; view your data on the <Link href="/dashboard" className="text-violet-600 dark:text-violet-400 underline">Dashboard</Link>, or request a full export.</li>
               <li><strong>Rectify</strong> inaccurate data &mdash; update your name in <Link href="/settings" className="text-violet-600 dark:text-violet-400 underline">Settings</Link>.</li>
               <li><strong>Delete</strong> your account and all associated data &mdash; use the &quot;Delete Account&quot; option in <Link href="/settings" className="text-violet-600 dark:text-violet-400 underline">Settings</Link>. Deletion is completed within 30 days.</li>
               <li><strong>Export</strong> your data &mdash; audit reports can be downloaded as Markdown or JSON.</li>

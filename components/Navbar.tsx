@@ -11,7 +11,6 @@ const NAV_LINKS = [
   { href: '/', label: 'Audit Studio' },
   { href: '/site-audit', label: 'Site Audit' },
   { href: '/dashboard', label: 'Dashboard' },
-  { href: '/history', label: 'History' },
   { href: '/how-it-works', label: 'How It Works' },
 ] as const;
 

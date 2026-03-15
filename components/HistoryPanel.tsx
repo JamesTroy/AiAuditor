@@ -56,7 +56,7 @@ export default function HistoryPanel({ agentId, reloadRef }: Props) {
           <span>Recent Audits ({entries.length})</span>
         </button>
         <Link
-          href="/history"
+          href="/dashboard"
           className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 transition-colors"
         >
           View all →
