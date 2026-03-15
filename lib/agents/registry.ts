@@ -3606,6 +3606,57 @@ Keep total under 30,000 characters.`,
 Keep total under 30,000 characters.`,
   },
 
+  // ─── Bloat & Lean Code ──────────────────────────────────────────
+  {
+    id: 'code-bloat',
+    name: 'Code Bloat',
+    description: 'Finds dead code, over-abstraction, copy-paste duplication, unused dependencies, and unnecessary complexity.',
+    category: 'Code Quality',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-700 hover:bg-orange-600',
+    placeholder: 'Paste the code you suspect has bloat — the more files, the better the analysis...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['code-bloat'],
+    prepPrompt: `I'm preparing code for a **Code Bloat** audit. Please help me collect the right files.
+
+## Project context (fill in)
+- Language / framework: [e.g. TypeScript + Next.js, Python + Django, Go]
+- Codebase age: [e.g. "2 years", "started as a prototype 6 months ago"]
+- Known concerns: [e.g. "bundle is 2MB", "lots of unused utilities", "over-abstracted service layer"]
+
+## Files to gather
+
+### 1. Suspected bloat areas
+- Files or modules you suspect have dead code or unnecessary complexity
+- Utility/helper files (these often accumulate unused functions)
+- Base classes, abstract factories, or "framework" code written for the project
+
+### 2. Dependency manifest
+- package.json / requirements.txt / go.mod / Cargo.toml
+- Lock file if available (for size analysis)
+
+### 3. Configuration files
+- Build config (webpack, vite, tsconfig, etc.)
+- CI/CD pipeline config
+- Linter/formatter configs
+- Any custom scripts in package.json
+
+### 4. Entry points & imports
+- Main entry points so we can trace what's actually used
+- barrel files (index.ts) that re-export everything
+
+### 5. Recently untouched files (high bloat signal)
+Run \`git log --format=format: --name-only --diff-filter=M --since="6 months ago" | sort | uniq\` and compare against \`find src -name "*.ts"\` — files NOT in the first list haven't been touched in 6 months.
+
+## Don't forget
+- [ ] Include ALL utility/helper files — bloat hides here
+- [ ] Include package.json with full dependency list
+- [ ] Include barrel/index files that re-export
+- [ ] Note which modules feel "too complex for what they do"
+
+Keep total under 30,000 characters.`,
+  },
+
   // ─── Pain Point Audits ─────────────────────────────────────────
   {
     id: 'marketing-pain-points',

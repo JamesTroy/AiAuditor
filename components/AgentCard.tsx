@@ -14,7 +14,7 @@ import {
   FileText, Moon, Mail, Settings, FileCode, Shuffle, Bookmark,
   Star, StarOff, ListChecks, ScanSearch, Award, Lightbulb,
   Target, LayoutList, Compass, Swords, GitCompareArrows,
-  Megaphone, Hammer,
+  Megaphone, Hammer, Scissors,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -78,6 +78,7 @@ const BUILT_IN_ICONS: Record<string, LucideIcon> = {
   'seo-search-intent': Compass,
   'seo-competitor-research': Swords,
   'seo-keyword-gap': GitCompareArrows,
+  'code-bloat': Scissors,
   'marketing-pain-points': Megaphone,
   'developer-pain-points': Hammer,
 };

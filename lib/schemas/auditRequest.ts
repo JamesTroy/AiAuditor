@@ -68,6 +68,7 @@ export const VALID_AGENT_TYPES = [
   'openapi',
   'state-machines',
   'pagination',
+  'code-bloat',
   'marketing-pain-points',
   'developer-pain-points',
 ] as const;
