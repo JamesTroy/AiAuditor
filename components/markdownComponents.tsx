@@ -36,7 +36,17 @@ const components: Components = {
   h3: ({ children }) => <h3 id={slugify(childrenToText(children))}>{children}</h3>,
   h4: ({ children }) => <h4 id={slugify(childrenToText(children))}>{children}</h4>,
   a({ href, children, ...props }) {
-    const safeHref = href && /^https?:\/\//i.test(href) ? href : undefined;
+    // VULN-006: Strict URL validation — only allow http/https via URL parser.
+    // Blocks javascript:, data:, vbscript:, and malformed URLs.
+    let safeHref: string | undefined;
+    if (href) {
+      try {
+        const parsed = new URL(href);
+        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+          safeHref = href;
+        }
+      } catch { /* invalid URL — leave safeHref undefined */ }
+    }
     return (
       <a {...props} href={safeHref} target="_blank" rel="noopener noreferrer">
         {children}

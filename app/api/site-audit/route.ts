@@ -63,7 +63,9 @@ export async function POST(req: NextRequest) {
           Accept: 'text/html, text/plain, */*',
         },
         signal: AbortSignal.timeout(15_000),
-        redirect: 'follow',
+        // VULN-015: Never follow redirects — a redirect could reach internal
+        // addresses even if the original URL was public.
+        redirect: 'error',
       },
     });
     return new Response(data, {
@@ -72,10 +74,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'text/plain; charset=utf-8',
       },
     });
-  } catch (err) {
-    return new Response(
-      `Failed to fetch site: ${err instanceof Error ? err.message : String(err)}`,
-      { status: 502 },
-    );
+  } catch {
+    return new Response('Failed to fetch site. The URL may be unreachable or redirecting.', { status: 502 });
   }
 }

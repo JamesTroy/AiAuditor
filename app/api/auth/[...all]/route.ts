@@ -27,6 +27,8 @@ function getLimiterForPath(pathname: string): RateLimiter {
   if (pathname.endsWith('/forgot-password')) return authResetLimiter;
   if (pathname.endsWith('/reset-password')) return authResetLimiter;
   if (pathname.endsWith('/two-factor/verify')) return auth2faLimiter;
+  if (pathname.endsWith('/two-factor/enable')) return auth2faLimiter;
+  if (pathname.endsWith('/two-factor/disable')) return auth2faLimiter;
   if (pathname.endsWith('/verify-email')) return authGeneralLimiter;
   return authGeneralLimiter;
 }

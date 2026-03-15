@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       redirect: 'error',
     });
   } catch (err) {
-    return new Response(`Failed to fetch URL: ${err instanceof Error ? err.message : String(err)}`, { status: 502 });
+    return new Response('Failed to fetch URL. Please check the URL and try again.', { status: 502 });
   }
 
   if (!fetchRes.ok) {

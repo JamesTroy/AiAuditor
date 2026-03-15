@@ -12,6 +12,11 @@ const resend = process.env.RESEND_API_KEY
 
 const FROM_EMAIL = process.env.EMAIL_FROM ?? 'Claudit <noreply@claudit.consulting>';
 
+/** Escape HTML special characters to prevent injection in email templates. */
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 async function sendEmail(to: string, subject: string, html: string) {
   if (!resend) {
     if (process.env.NODE_ENV === 'development') {
@@ -79,7 +84,7 @@ export const auth = betterAuth({
       await sendEmail(
         user.email,
         'Reset your Claudit password',
-        `<p>Hi ${user.name},</p>
+        `<p>Hi ${escapeHtml(user.name ?? '')},</p>
          <p>Click the link below to reset your password:</p>
          <p><a href="${url}">Reset password</a></p>
          <p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>`,
@@ -92,7 +97,7 @@ export const auth = betterAuth({
       await sendEmail(
         user.email,
         'Verify your Claudit email',
-        `<p>Hi ${user.name},</p>
+        `<p>Hi ${escapeHtml(user.name ?? '')},</p>
          <p>Click below to verify your email address:</p>
          <p><a href="${url}">Verify email</a></p>`,
       );
@@ -124,7 +129,7 @@ export const auth = betterAuth({
           await sendEmail(
             user.email,
             'Your Claudit verification code',
-            `<p>Hi ${user.name},</p>
+            `<p>Hi ${escapeHtml(user.name ?? '')},</p>
              <p>Your two-factor code is: <strong>${otp}</strong></p>
              <p>This code expires in 5 minutes.</p>`,
           );

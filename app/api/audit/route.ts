@@ -9,7 +9,29 @@ import { auth } from '@/lib/auth';
 import { extractScore } from '@/lib/extractScore';
 import { db } from '@/lib/db';
 import { audit as auditTable } from '@/lib/auth-schema';
-import { eq } from 'drizzle-orm';
+import { eq, and, lt } from 'drizzle-orm';
+
+// STALE-001: Mark 'running' audits older than 30 min as 'failed'.
+// Streams that crash or server restarts leave records stuck in 'running' forever.
+// This runs at most once per 5 minutes to avoid extra DB queries on every request.
+const STALE_AUDIT_THRESHOLD_MS = 30 * 60_000; // 30 minutes
+const STALE_CLEANUP_INTERVAL_MS = 5 * 60_000; // 5 minutes
+let lastStaleCleanup = 0;
+
+async function cleanupStaleAudits() {
+  const now = Date.now();
+  if (now - lastStaleCleanup < STALE_CLEANUP_INTERVAL_MS) return;
+  lastStaleCleanup = now;
+  try {
+    const cutoff = new Date(now - STALE_AUDIT_THRESHOLD_MS);
+    await db.update(auditTable)
+      .set({ status: 'failed', updatedAt: new Date() })
+      .where(and(eq(auditTable.status, 'running'), lt(auditTable.updatedAt, cutoff)));
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(JSON.stringify({ ts: new Date().toISOString(), level: 'error', event: 'stale_cleanup_failed', error: String(err) }));
+  }
+}
 
 // ARCH-022: Fail fast at module init if the API key is missing.
 if (!process.env.ANTHROPIC_API_KEY) {
@@ -153,6 +175,9 @@ const STREAM_HEADERS = STREAM_RESPONSE_HEADERS;
 
 export async function POST(req: NextRequest) {
   const requestId = newRequestId();
+
+  // STALE-001: Opportunistically clean up stuck audit records.
+  cleanupStaleAudits();
 
   // VULN-010: CSRF origin check — reject cross-origin requests.
   // JSON Content-Type already provides implicit CSRF protection in most browsers,

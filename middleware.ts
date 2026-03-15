@@ -50,6 +50,9 @@ export function middleware(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const isDev = process.env.NODE_ENV === 'development';
 
+  // Allow Plausible analytics if configured (privacy-friendly, no cookies).
+  const hasPlausible = !!process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
+
   const csp = [
     "default-src 'self'",
     [
@@ -58,11 +61,12 @@ export function middleware(request: NextRequest) {
       "'strict-dynamic'",
       "'unsafe-inline'", // ignored by nonce-aware browsers; fallback for legacy
       ...(isDev ? ["'unsafe-eval'"] : []),
+      ...(hasPlausible ? ['https://plausible.io'] : []),
     ].join(' '),
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
     "img-src 'self' data: blob: https://avatars.githubusercontent.com https://lh3.googleusercontent.com",
-    "connect-src 'self'",
+    `connect-src 'self'${hasPlausible ? ' https://plausible.io' : ''}`,
     "frame-ancestors 'none'",
     "object-src 'none'",
     "base-uri 'self'",

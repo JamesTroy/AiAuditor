@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { authClient } from '@/lib/auth-client';
 
 type Step = 'idle' | 'loading' | 'setup' | 'verify' | 'enabled' | 'error';
@@ -50,6 +51,7 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
       setStep('enabled');
       setOtp('');
       setTotpURI('');
+      setBackupCodes([]);
     } catch {
       setError('Verification failed. Please try again.');
     }
@@ -106,14 +108,7 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
               Scan this QR code with your authenticator app (Google Authenticator, Authy, 1Password, etc.):
             </p>
             <div className="bg-white p-4 rounded-lg inline-block">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(totpURI)}`}
-                alt="2FA QR code"
-                width={200}
-                height={200}
-                className="block"
-              />
+              <QRCodeSVG value={totpURI} size={200} level="M" />
             </div>
             <details className="mt-2">
               <summary className="text-xs text-gray-500 dark:text-zinc-500 cursor-pointer">
@@ -132,14 +127,22 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
               </p>
               <p className="text-xs text-amber-700 dark:text-amber-400 mb-2">
                 Store these in a safe place. You can use them to access your account if you lose your authenticator.
+                These codes will not be shown again.
               </p>
-              <div className="grid grid-cols-2 gap-1">
+              <div className="grid grid-cols-2 gap-1 mb-3">
                 {backupCodes.map((code) => (
                   <code key={code} className="text-xs font-mono bg-white dark:bg-zinc-800 px-2 py-1 rounded">
                     {code}
                   </code>
                 ))}
               </div>
+              <button
+                type="button"
+                onClick={() => { navigator.clipboard.writeText(backupCodes.join('\n')).catch(() => {}); }}
+                className="text-xs text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-200 underline"
+              >
+                Copy all codes
+              </button>
             </div>
           )}
 
