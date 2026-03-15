@@ -41,14 +41,19 @@ export default async function DashboardPage({
     .where(eq(audit.userId, session.user.id));
   const totalCount = totalResult?.value ?? 0;
 
-  // Get all scores for avg calculation (lightweight — no full result text)
+  // Get all scores for avg calculation. Include result text so we can
+  // extract scores from audits that completed before score-saving was added.
   const scoredAudits = await db
-    .select({ score: audit.score })
+    .select({ score: audit.score, result: audit.result })
     .from(audit)
-    .where(eq(audit.userId, session.user.id));
+    .where(and(eq(audit.userId, session.user.id), eq(audit.status, 'completed')));
 
   const allScores = scoredAudits
-    .map((a) => a.score)
+    .map((a) => {
+      if (a.score != null) return a.score;
+      if (a.result) return extractScore(a.result);
+      return null;
+    })
     .filter((s): s is number => s !== null);
 
   const avgScore = allScores.length > 0
@@ -57,14 +62,14 @@ export default async function DashboardPage({
 
   // TREND-001: Get last 10 scored audits (chronological) for sparkline.
   const recentScored = await db
-    .select({ score: audit.score, createdAt: audit.createdAt })
+    .select({ score: audit.score, result: audit.result, createdAt: audit.createdAt })
     .from(audit)
     .where(and(eq(audit.userId, session.user.id), eq(audit.status, 'completed')))
     .orderBy(desc(audit.createdAt))
     .limit(10);
   const trendScores = recentScored
-    .filter((a) => a.score !== null)
-    .map((a) => a.score as number)
+    .map((a) => a.score ?? (a.result ? extractScore(a.result) : null))
+    .filter((s): s is number => s !== null)
     .reverse(); // oldest first for left-to-right chart
 
   // Fetch paginated audits
