@@ -16,7 +16,7 @@ export default function Footer() {
 
         <div className="flex items-center gap-4">
           <Link href="/stack" className="text-xs py-2 px-1 text-gray-400 dark:text-zinc-600 hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">
-            Stack
+            How It Works
           </Link>
         </div>
       </div>
