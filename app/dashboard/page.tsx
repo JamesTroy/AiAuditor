@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { db } from '@/lib/db';
 import { audit } from '@/lib/auth-schema';
 import { eq, desc } from 'drizzle-orm';
+import { extractScore } from '@/lib/extractScore';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -24,12 +25,29 @@ export default async function DashboardPage() {
 
   if (!session) redirect('/login');
 
-  const audits = await db
+  const rawAudits = await db
     .select()
     .from(audit)
     .where(eq(audit.userId, session.user.id))
     .orderBy(desc(audit.createdAt))
     .limit(20);
+
+  // Re-extract scores from stored results for records that have null scores
+  const audits = rawAudits.map((a) => {
+    if (a.score != null || !a.result) return a;
+    const extracted = extractScore(a.result);
+    return extracted !== null ? { ...a, score: extracted } : a;
+  });
+
+  // Backfill: update DB records that now have extracted scores (fire-and-forget)
+  const toBackfill = audits.filter((a, i) => a.score !== rawAudits[i].score && a.score != null);
+  if (toBackfill.length > 0) {
+    Promise.all(
+      toBackfill.map((a) =>
+        db.update(audit).set({ score: a.score }).where(eq(audit.id, a.id))
+      ),
+    ).catch(() => { /* best-effort backfill */ });
+  }
 
   return (
     <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
@@ -82,9 +100,10 @@ export default async function DashboardPage() {
         ) : (
           <div className="space-y-2">
             {audits.map((a) => (
-              <div
+              <Link
                 key={a.id}
-                className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-5 py-4 flex items-center justify-between"
+                href={`/dashboard/audit/${a.id}`}
+                className="block bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-5 py-4 flex items-center justify-between hover:border-violet-500/30 transition-colors"
               >
                 <div>
                   <p className="text-sm font-medium">{a.agentName}</p>
@@ -109,7 +128,7 @@ export default async function DashboardPage() {
                     {a.status}
                   </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

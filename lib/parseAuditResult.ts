@@ -2,6 +2,8 @@
 // Extracts score, severity counts, and individual findings
 // without changing the Claude output format.
 
+import { extractScore } from '@/lib/extractScore';
+
 export interface Finding {
   id: string;
   severity: 'critical' | 'high' | 'medium' | 'low' | 'informational';
@@ -36,36 +38,7 @@ export function parseAuditResult(markdown: string): AuditMetrics {
 
   const findings: Finding[] = [];
 
-  // Extract score — check table rows first, then fall back to N/100 (last match)
-  const tableOverall = markdown.match(
-    /\|\s*\*{0,2}(?:Overall|Composite|Total)\*{0,2}\s*\|\s*(\d{1,3}(?:\.\d+)?)\s*\|/i,
-  );
-  let score: number | null = null;
-  if (tableOverall) {
-    const val = parseFloat(tableOverall[1]);
-    if (val <= 10) score = Math.round(val * 10);
-    else if (val >= 0 && val <= 100) score = Math.round(val);
-  }
-  if (score === null) {
-    const allSlash100 = [...markdown.matchAll(/(\d{1,3})\s*\/\s*100/g)];
-    if (allSlash100.length > 0) {
-      const last = allSlash100[allSlash100.length - 1];
-      const val = parseInt(last[1], 10);
-      if (val >= 0 && val <= 100) score = val;
-    }
-  }
-  if (score === null) {
-    const overallLine = markdown.match(
-      /overall\s*(?:score|rating)?\s*[:]\s*(\d{1,3}(?:\.\d+)?)\s*(?:\/\s*(\d+))?/i,
-    );
-    if (overallLine) {
-      const num = parseFloat(overallLine[1]);
-      const denom = overallLine[2] ? parseInt(overallLine[2], 10) : null;
-      if (denom === 10 && num <= 10) score = Math.round(num * 10);
-      else if (denom === 100 && num <= 100) score = Math.round(num);
-      else if (!denom && num >= 0 && num <= 100) score = Math.round(num);
-    }
-  }
+  const score = extractScore(markdown);
 
   // Extract findings by severity
   const lines = markdown.split('\n');
