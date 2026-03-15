@@ -83,7 +83,7 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
       </p>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm">
+        <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm">
           {error}
         </div>
       )}
@@ -95,7 +95,7 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
           </p>
           <button
             onClick={handleEnable}
-            className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+            className="bg-violet-600 hover:bg-violet-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
           >
             Enable 2FA
           </button>
@@ -126,7 +126,7 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
           </div>
 
           {backupCodes.length > 0 && (
-            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-lg p-4">
+            <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900/50 rounded-lg p-4">
               <p className="text-sm font-medium text-amber-800 dark:text-amber-300 mb-2">
                 Save your backup codes
               </p>
@@ -173,7 +173,7 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
               <button
                 type="submit"
                 disabled={otp.length !== 6}
-                className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+                className="bg-violet-600 hover:bg-violet-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
               >
                 Verify and enable
               </button>
@@ -217,7 +217,7 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
             <button
               type="submit"
               disabled={!disablePassword}
-              className="bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600 disabled:opacity-50 text-gray-700 dark:text-zinc-300 font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+              className="bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600 disabled-muted-light text-gray-700 dark:text-zinc-300 font-medium rounded-xl px-4 py-2 text-sm transition-colors"
             >
               Disable 2FA
             </button>

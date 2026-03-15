@@ -30,6 +30,14 @@
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-300 to-zinc-500;
   }
+  /* WCAG-001: Explicit disabled colors instead of opacity reduction.
+     opacity-50 collapses contrast to ~1.5–2.5:1 on colored buttons. */
+  .disabled-muted {
+    @apply disabled:bg-zinc-700 disabled:text-zinc-400 disabled:border-zinc-600 disabled:cursor-not-allowed;
+  }
+  .disabled-muted-light {
+    @apply disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500 dark:disabled:border-zinc-700;
+  }
 }
 
 /* ─── Additional keyframes ───────────────────────────────────── */

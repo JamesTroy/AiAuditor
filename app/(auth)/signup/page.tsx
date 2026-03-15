@@ -59,7 +59,7 @@ export default function SignupPage() {
       <h2 className="text-xl font-semibold text-gray-900 dark:text-zinc-100 mb-6">Create an account</h2>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm">
+        <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm">
           {error}
         </div>
       )}
@@ -138,14 +138,14 @@ export default function SignupPage() {
             </div>
           )}
           {password.length === 0 && (
-            <p className="mt-1 text-xs text-gray-400 dark:text-zinc-600">Minimum 8 characters</p>
+            <p className="mt-1 text-xs text-gray-400 dark:text-zinc-500">Minimum 8 characters</p>
           )}
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl px-4 py-2.5 text-sm transition-all"
+          className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled-muted text-white font-medium rounded-xl px-4 py-2.5 text-sm transition-all"
         >
           {loading ? 'Creating account...' : 'Create account'}
         </button>

@@ -79,7 +79,7 @@ export default function HistoryPanel({ agentId, reloadRef }: Props) {
                 <span className="text-sm text-gray-700 dark:text-zinc-300 truncate flex-1">{entry.inputSnippet}</span>
                 <button
                   onClick={(e) => handleDelete(entry.id, e)}
-                  className="text-gray-400 dark:text-zinc-600 hover:text-red-400 transition-colors shrink-0 p-1"
+                  className="text-gray-400 dark:text-zinc-500 hover:text-red-400 transition-colors shrink-0 p-1"
                   aria-label={`Delete audit from ${formatTime(entry.timestamp)}`}
                 >
                   <X className="w-3.5 h-3.5" />
@@ -89,7 +89,7 @@ export default function HistoryPanel({ agentId, reloadRef }: Props) {
 
               {expanded === entry.id && (
                 <div className="border-t border-gray-200 dark:border-zinc-800 px-4 py-4">
-                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <div className="prose prose-sm max-w-prose dark:prose-invert">
                     <SafeMarkdown>{entry.result}</SafeMarkdown>
                   </div>
                 </div>

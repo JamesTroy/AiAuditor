@@ -432,12 +432,12 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
             onChange={(e) => setInputFetchValue(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleFetchInput(); }}
             placeholder={inputPanel === 'url' ? `https:// — allowed: ${ALLOWED_URL_DESCRIPTION}` : 'https://github.com/owner/repo/pull/123'}
-            className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500"
+            className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500"
           />
           <button
             onClick={handleFetchInput}
             disabled={inputFetching || !inputFetchValue.trim()}
-            className="px-4 py-2 rounded-lg text-sm bg-gray-200 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:bg-gray-300 dark:hover:bg-zinc-700 disabled:opacity-40 transition-colors"
+            className="px-4 py-2 rounded-lg text-sm bg-gray-200 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:bg-gray-300 dark:hover:bg-zinc-700 disabled-muted-light transition-colors"
           >
             {inputFetching ? 'Fetching…' : inputPanel === 'url' ? 'Fetch' : 'Fetch PR'}
           </button>
@@ -450,7 +450,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
         <button
           onClick={() => setDiffMode((v) => !v)}
           disabled={loading}
-          className={`text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+          className={`text-xs px-3 py-1.5 rounded-lg transition-colors disabled-muted-light ${
             diffMode
               ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300'
               : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'
@@ -470,7 +470,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
         <div className="relative">
           <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1">Before (old code)</label>
           <textarea
-            className="w-full h-40 bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-lg p-4 font-mono text-sm text-gray-900 dark:text-zinc-100 resize-y focus:outline-none focus:border-red-400 dark:focus:border-red-700 placeholder-gray-400 dark:placeholder-zinc-600"
+            className="w-full h-40 bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-lg p-4 font-mono text-sm text-gray-900 dark:text-zinc-100 resize-y focus:outline-none focus:border-red-400 dark:focus:border-red-700 placeholder-gray-500 dark:placeholder-zinc-400"
             placeholder="Paste the original / old version of the code here…"
             value={beforeCode}
             onChange={(e) => setBeforeCode(e.target.value)}
@@ -487,7 +487,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
           <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1">After (new code)</label>
         )}
         <textarea
-          className="w-full h-64 sm:h-80 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg p-4 font-mono text-sm text-gray-900 dark:text-zinc-100 resize-y focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-50 dark:focus-visible:ring-offset-zinc-950 placeholder-gray-400 dark:placeholder-zinc-600"
+          className="w-full h-64 sm:h-80 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg p-4 font-mono text-sm text-gray-900 dark:text-zinc-100 resize-y focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-50 dark:focus-visible:ring-offset-zinc-950 placeholder-gray-500 dark:placeholder-zinc-400"
           placeholder={`${agent.placeholder}\n\nTip: Press ⌘+Enter to run · Esc to stop`}
           value={input}
           onChange={(e) => { setInput(e.target.value); if (files.length > 0) setFiles([]); }}
@@ -500,7 +500,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
 
       {/* Min input hint */}
       {input.length > 0 && input.length < 200 && !loading && !result && (
-        <p className="text-xs text-gray-400 dark:text-zinc-600 mt-1">
+        <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">
           Tip: Include more code for a more thorough audit. The best results come from complete files or modules.
         </p>
       )}
@@ -530,7 +530,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
         <button
           onClick={() => runAudit(buildAuditInput())}
           disabled={loading || !input.trim()}
-          className={`inline-flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-lg font-semibold text-sm text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-ring ${agent.buttonClass}`}
+          className={`inline-flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-lg font-semibold text-sm text-white transition-colors disabled-muted focus-ring ${agent.buttonClass}`}
         >
           {loading && (
             <svg className="animate-spin h-4 w-4 text-white/80" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
@@ -555,7 +555,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
           <button
             onClick={handlePaste}
             disabled={loading}
-            className="px-4 py-2.5 min-h-[44px] rounded-lg text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            className="px-4 py-2.5 min-h-[44px] rounded-lg text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors disabled-muted-light focus-ring"
           >
             Paste
           </button>
@@ -565,7 +565,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={loading}
-          className="px-4 py-2.5 min-h-[44px] rounded-lg text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+          className="px-4 py-2.5 min-h-[44px] rounded-lg text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors disabled-muted-light focus-ring"
         >
           Upload file{files.length > 1 ? 's' : ''}
         </button>
@@ -587,12 +587,12 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
               {f.name}
               <button
                 onClick={() => removeFile(f.name)}
-                className="text-gray-400 dark:text-zinc-600 hover:text-gray-700 dark:hover:text-zinc-300 ml-1"
+                className="text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 ml-1"
                 aria-label={`Remove ${f.name}`}
               >✕</button>
             </span>
           ))}
-          <span className="text-xs text-gray-400 dark:text-zinc-600" aria-live="polite" aria-atomic="true">
+          <span className="text-xs text-gray-400 dark:text-zinc-500" aria-live="polite" aria-atomic="true">
             {input.length.toLocaleString()} / {MAX_CHARS.toLocaleString()} · ~{tokenEstimate.toLocaleString()} tokens
           </span>
         </div>
@@ -628,7 +628,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
                   <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
                   Streaming
                   {wordCount > 0 && (
-                    <span className="text-gray-400 dark:text-zinc-600 normal-case">· {wordCount.toLocaleString()} words</span>
+                    <span className="text-gray-400 dark:text-zinc-500 normal-case">· {wordCount.toLocaleString()} words</span>
                   )}
                 </span>
               ) : 'Result'}
@@ -706,22 +706,22 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
                 </span>
               )}
               {metrics.severityCounts.critical > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400 font-medium">
+                <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 font-medium">
                   {metrics.severityCounts.critical} Critical
                 </span>
               )}
               {metrics.severityCounts.high > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 font-medium">
+                <span className="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-400 font-medium">
                   {metrics.severityCounts.high} High
                 </span>
               )}
               {metrics.severityCounts.medium > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-medium">
+                <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 font-medium">
                   {metrics.severityCounts.medium} Medium
                 </span>
               )}
               {metrics.severityCounts.low > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 font-medium">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-400 font-medium">
                   {metrics.severityCounts.low} Low
                 </span>
               )}
@@ -736,7 +736,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
             </div>
           )}
 
-          <div className="p-6 prose prose-sm max-w-none dark:prose-invert">
+          <div className="p-6 prose prose-sm max-w-prose dark:prose-invert">
             {/* PERF-011: Render plain text while streaming to avoid re-parsing
                 markdown on every RAF tick. SafeMarkdown only on completion. */}
             {loading ? (
@@ -767,8 +767,8 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
                     msg.role === 'user'
                       ? 'text-gray-700 dark:text-zinc-300 bg-gray-50 dark:bg-zinc-800 rounded-lg px-3 py-2'
                       : msg.status === 'error'
-                        ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 rounded-lg px-3 py-2'
-                        : 'prose prose-sm max-w-none dark:prose-invert'
+                        ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 rounded-lg px-3 py-2'
+                        : 'prose prose-sm max-w-prose dark:prose-invert'
                   }`}
                 >
                   {msg.role === 'user' ? (
@@ -808,13 +808,13 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
               placeholder="How do I fix the critical findings?"
               disabled={chatLoading}
-              className="flex-1 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500 disabled:opacity-50"
+              className="flex-1 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500 disabled-muted-light"
               aria-label="Follow-up question"
             />
             <button
               onClick={sendChat}
               disabled={chatLoading || !chatInput.trim()}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 transition-colors disabled-muted-light focus-ring"
             >
               {chatLoading ? '…' : 'Ask'}
             </button>

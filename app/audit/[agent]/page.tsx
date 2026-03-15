@@ -65,7 +65,7 @@ export default async function AgentPage({ params }: Props) {
       />
       <div className="max-w-4xl mx-auto">
         {/* Breadcrumb */}
-        <nav className="text-xs text-gray-400 dark:text-zinc-600 mb-6 flex items-center gap-1.5">
+        <nav className="text-xs text-gray-400 dark:text-zinc-500 mb-6 flex items-center gap-1.5">
           <Link href="/" className="hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">Audit Studio</Link>
           <span>/</span>
           <span className={agent.accentClass.split(' ').find((c) => c.startsWith('text-')) ?? ''}>{agent.category}</span>

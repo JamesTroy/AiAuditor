@@ -86,7 +86,7 @@ export default function AuditResultView({ result, agentName, agentId, input, sta
           Download .md
         </button>
       </div>
-      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 prose prose-sm dark:prose-invert max-w-none">
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 prose prose-sm dark:prose-invert max-w-prose">
         <SafeMarkdown>{result}</SafeMarkdown>
       </div>
     </>

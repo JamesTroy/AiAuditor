@@ -395,13 +395,13 @@ export default function SiteAuditPage() {
             onKeyDown={(e) => { if (e.key === 'Enter' && !loading && selected.size > 0) runSiteAudit(); }}
             placeholder="https://example.com"
             disabled={loading}
-            className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-5 py-3.5 text-base text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 disabled:opacity-50"
+            className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-5 py-3.5 text-base text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 disabled-muted-light"
             aria-label="Website URL"
           />
           <button
             onClick={runSiteAudit}
             disabled={loading || !url.trim() || selected.size === 0}
-            className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-ring whitespace-nowrap"
+            className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors disabled-muted focus-ring whitespace-nowrap"
           >
             {loading ? `Auditing… ${elapsed}s` : `Run Audit (${selected.size})`}
           </button>
@@ -455,7 +455,7 @@ export default function SiteAuditPage() {
                   >
                     Clear
                   </button>
-                  <span className="ml-auto text-xs text-gray-400 dark:text-zinc-600 self-center">
+                  <span className="ml-auto text-xs text-gray-400 dark:text-zinc-500 self-center">
                     Max 20 per audit
                   </span>
                 </div>
@@ -474,13 +474,13 @@ export default function SiteAuditPage() {
                             className={`text-xs font-semibold uppercase tracking-widest pl-2 border-l-2 ${CATEGORY_COLORS[cat] ?? 'border-zinc-500/40'} text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors`}
                           >
                             {cat}
-                            <span className="ml-1.5 text-gray-400 dark:text-zinc-600 font-normal normal-case tracking-normal">
+                            <span className="ml-1.5 text-gray-400 dark:text-zinc-500 font-normal normal-case tracking-normal">
                               ({catAgents.filter((a) => selected.has(a.id)).length}/{catAgents.length})
                             </span>
                           </button>
                           <button
                             onClick={() => selectCategory(cat, !allSelected)}
-                            className="text-[10px] text-gray-400 dark:text-zinc-600 hover:text-gray-600 dark:hover:text-zinc-400 transition-colors"
+                            className="text-xs text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-400 transition-colors"
                           >
                             {allSelected ? 'deselect all' : someSelected ? 'select all' : 'select all'}
                           </button>
@@ -496,7 +496,7 @@ export default function SiteAuditPage() {
                                   isSelected
                                     ? 'bg-white dark:bg-zinc-800 shadow-sm'
                                     : wouldExceedMax
-                                      ? 'opacity-40 cursor-not-allowed'
+                                      ? 'text-gray-400 dark:text-zinc-500 cursor-not-allowed'
                                       : 'hover:bg-white dark:hover:bg-zinc-800/50'
                                 }`}
                               >
@@ -567,7 +567,7 @@ export default function SiteAuditPage() {
                       ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 ring-1 ring-violet-500/30'
                       : isDone
                         ? 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-500'
-                        : 'bg-gray-50 dark:bg-zinc-900 text-gray-400 dark:text-zinc-600'
+                        : 'bg-gray-50 dark:bg-zinc-900 text-gray-400 dark:text-zinc-500'
                   }`}
                 >
                   {isActive && (
@@ -642,7 +642,7 @@ export default function SiteAuditPage() {
             </div>
 
             {/* Result content */}
-            <div className="p-6 prose prose-sm max-w-none dark:prose-invert">
+            <div className="p-6 prose prose-sm max-w-prose dark:prose-invert">
               {loading ? (
                 <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-zinc-200 m-0 p-0 bg-transparent">
                   {result}
@@ -691,7 +691,7 @@ export default function SiteAuditPage() {
                     )}
                   </span>
                 </div>
-                <div className="p-6 prose prose-sm max-w-none dark:prose-invert">
+                <div className="p-6 prose prose-sm max-w-prose dark:prose-invert">
                   {synthStatus === 'loading' ? (
                     <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-zinc-200 m-0 p-0 bg-transparent">
                       {synthesis}

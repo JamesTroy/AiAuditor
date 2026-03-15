@@ -148,7 +148,7 @@ export default memo(function AgentCard({ agent, href, index = 0, onEdit, onDelet
         {onToggleFavorite && (
           <button
             onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-            className={`text-sm px-1.5 py-1 min-h-[44px] min-w-[44px] rounded transition-colors hover:bg-gray-200 dark:hover:bg-zinc-700 focus-ring ${isFavorite ? 'text-yellow-400' : 'text-gray-400 dark:text-zinc-600 hover:text-yellow-400'}`}
+            className={`text-sm px-1.5 py-1 min-h-[44px] min-w-[44px] rounded transition-colors hover:bg-gray-200 dark:hover:bg-zinc-700 focus-ring ${isFavorite ? 'text-yellow-400' : 'text-gray-400 dark:text-zinc-500 hover:text-yellow-400'}`}
             aria-label={isFavorite ? `Unpin ${agent.name}` : `Pin ${agent.name}`}
             aria-pressed={isFavorite ?? false}
           >

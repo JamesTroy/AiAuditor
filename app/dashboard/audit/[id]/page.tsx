@@ -55,9 +55,9 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
             <span
               className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                 auditRecord.status === 'completed'
-                  ? 'bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400'
+                  ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400'
                   : auditRecord.status === 'failed'
-                    ? 'bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400'
+                    ? 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400'
                     : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400'
               }`}
             >

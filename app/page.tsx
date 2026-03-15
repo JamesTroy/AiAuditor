@@ -77,15 +77,15 @@ export default function Home() {
             <div className="flex items-center gap-2 px-5 py-3 border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/80">
               <span className="w-2 h-2 rounded-full bg-red-500" />
               <span className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">Critical</span>
-              <span className="text-xs text-gray-400 dark:text-zinc-600 mx-1">&middot;</span>
+              <span className="text-xs text-gray-400 dark:text-zinc-500 mx-1">&middot;</span>
               <span className="text-xs text-gray-500 dark:text-zinc-400">Security Audit</span>
             </div>
             <div className="px-5 py-4 space-y-3">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">SQL Injection via unsanitized query parameter</h3>
               <div className="bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-3 font-mono text-xs text-gray-700 dark:text-zinc-300 overflow-x-auto">
-                <span className="text-gray-400 dark:text-zinc-600 select-none">app/api/users/route.ts:42 &nbsp;</span>
+                <span className="text-gray-400 dark:text-zinc-500 select-none">app/api/users/route.ts:42 &nbsp;</span>
                 <span className="text-red-600 dark:text-red-400">const result = await db.execute(</span><br />
-                <span className="text-gray-400 dark:text-zinc-600 select-none">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                <span className="text-gray-400 dark:text-zinc-500 select-none">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
                 <span className="text-red-600 dark:text-red-400">{"`SELECT * FROM users WHERE id = ${id}`"}</span>
                 <span className="text-red-600 dark:text-red-400">);</span>
               </div>
@@ -109,7 +109,7 @@ export default function Home() {
               >
                 <span className={`w-2 h-2 rounded-full ${cat.color}`} />
                 {cat.name}
-                <span className="text-gray-400 dark:text-zinc-600">{categoryCounts[cat.name] ?? 0}</span>
+                <span className="text-gray-400 dark:text-zinc-500">{categoryCounts[cat.name] ?? 0}</span>
               </span>
             ))}
           </div>

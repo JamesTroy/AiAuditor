@@ -21,7 +21,7 @@ export default function GlobalError({
             An unexpected error occurred. Please try again.
           </p>
           {error.digest && (
-            <p className="text-gray-400 dark:text-zinc-600 text-xs mb-4 font-mono">Error ID: {error.digest}</p>
+            <p className="text-gray-400 dark:text-zinc-500 text-xs mb-4 font-mono">Error ID: {error.digest}</p>
           )}
           <button
             onClick={reset}

@@ -131,7 +131,7 @@ export default function CreateAgentModal({ editing, onSave, onClose }: Props) {
               onChange={(e) => setName(e.target.value.slice(0, MAX_NAME))}
               maxLength={MAX_NAME}
               placeholder="e.g. TypeScript Expert"
-              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500 transition-colors"
+              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500 transition-colors"
             />
             {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name}</p>}
           </div>
@@ -147,7 +147,7 @@ export default function CreateAgentModal({ editing, onSave, onClose }: Props) {
               onChange={(e) => setDescription(e.target.value.slice(0, MAX_DESC))}
               maxLength={MAX_DESC}
               placeholder="What does this agent audit?"
-              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500 transition-colors"
+              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500 transition-colors"
             />
           </div>
 
@@ -180,10 +180,10 @@ export default function CreateAgentModal({ editing, onSave, onClose }: Props) {
               maxLength={MAX_PROMPT}
               rows={10}
               placeholder={`You are an expert in...\n\nAnalyze the provided content for:\n- ...\n\nProduce a structured report with:\n## 1. Summary\n## 2. Findings\n...`}
-              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg px-4 py-3 font-mono text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500 transition-colors resize-y"
+              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg px-4 py-3 font-mono text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500 transition-colors resize-y"
             />
             {errors.systemPrompt && <p className="mt-1 text-xs text-red-400">{errors.systemPrompt}</p>}
-            <p className="mt-1.5 text-xs text-gray-500 dark:text-zinc-600 leading-relaxed">
+            <p className="mt-1.5 text-xs text-gray-500 dark:text-zinc-500 leading-relaxed">
               Sent directly to Claude as the system prompt. Stored in your browser only — never saved on any server.
             </p>
           </div>

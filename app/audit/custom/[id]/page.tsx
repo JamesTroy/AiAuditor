@@ -33,7 +33,7 @@ export default function CustomAgentPage() {
         <div className="max-w-4xl mx-auto">
           <div className="mt-16 text-center">
             <p className="text-gray-600 dark:text-zinc-400 text-lg mb-2">Audit not found.</p>
-            <p className="text-gray-500 dark:text-zinc-600 text-sm">This custom audit may have been deleted or the URL is incorrect.</p>
+            <p className="text-gray-500 dark:text-zinc-500 text-sm">This custom audit may have been deleted or the URL is incorrect.</p>
             <Link href="/" className="inline-flex items-center gap-1 text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-500 mt-4">
               Browse audits →
             </Link>
@@ -47,7 +47,7 @@ export default function CustomAgentPage() {
     <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
       <div className="max-w-4xl mx-auto">
         {/* Breadcrumb */}
-        <nav className="text-xs text-gray-400 dark:text-zinc-600 mb-6 flex items-center gap-1.5">
+        <nav className="text-xs text-gray-400 dark:text-zinc-500 mb-6 flex items-center gap-1.5">
           <Link href="/" className="hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">Audit Studio</Link>
           <span>/</span>
           <span className="text-purple-400">Custom</span>

@@ -136,7 +136,7 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={profileStatus === 'saving'}
-                className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+                className="bg-violet-600 hover:bg-violet-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
               >
                 {profileStatus === 'saving' ? 'Saving...' : 'Save changes'}
               </button>
@@ -152,7 +152,7 @@ export default function SettingsPage() {
           <h2 className="text-lg font-semibold mb-4">Change password</h2>
 
           {passwordError && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm">
+            <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm">
               {passwordError}
             </div>
           )}
@@ -189,7 +189,7 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={passwordStatus === 'saving'}
-                className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+                className="bg-violet-600 hover:bg-violet-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
               >
                 {passwordStatus === 'saving' ? 'Changing...' : 'Change password'}
               </button>
@@ -244,7 +244,7 @@ export default function SettingsPage() {
               className="space-y-3"
             >
               {deleteError && (
-                <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm">
+                <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm">
                   {deleteError}
                 </div>
               )}
@@ -266,7 +266,7 @@ export default function SettingsPage() {
                 <button
                   type="submit"
                   disabled={deleteLoading || !deletePassword}
-                  className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+                  className="bg-red-600 hover:bg-red-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
                 >
                   {deleteLoading ? 'Deleting...' : 'Confirm deletion'}
                 </button>

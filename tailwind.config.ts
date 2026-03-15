@@ -15,11 +15,11 @@ const config: Config = {
     // Yellow (light — use -800 for white-text contrast)
     "bg-yellow-600", "bg-yellow-700", "bg-yellow-800", "hover:bg-yellow-500", "hover:bg-yellow-600", "hover:bg-yellow-700", "border-yellow-500", "text-yellow-400", "hover:bg-yellow-500/10",
     // Green
-    "bg-green-600", "bg-green-700", "hover:bg-green-500", "hover:bg-green-600", "border-green-500", "text-green-400", "hover:bg-green-500/10",
+    "bg-green-600", "bg-green-700", "bg-green-800", "hover:bg-green-500", "hover:bg-green-600", "hover:bg-green-700", "border-green-500", "text-green-400", "hover:bg-green-500/10",
     // Purple
     "bg-purple-600", "bg-purple-700", "hover:bg-purple-500", "hover:bg-purple-600", "border-purple-500", "text-purple-400", "hover:bg-purple-500/10",
     // Orange
-    "bg-orange-600", "bg-orange-700", "hover:bg-orange-500", "hover:bg-orange-600", "border-orange-500", "text-orange-400", "hover:bg-orange-500/10",
+    "bg-orange-600", "bg-orange-700", "bg-orange-800", "hover:bg-orange-500", "hover:bg-orange-600", "hover:bg-orange-700", "border-orange-500", "text-orange-400", "hover:bg-orange-500/10",
     // Cyan (light — use -800)
     "bg-cyan-600", "bg-cyan-700", "bg-cyan-800", "hover:bg-cyan-500", "hover:bg-cyan-600", "hover:bg-cyan-700", "border-cyan-500", "text-cyan-400", "hover:bg-cyan-500/10",
     // Slate
@@ -29,11 +29,11 @@ const config: Config = {
     // Pink
     "bg-pink-600", "bg-pink-700", "hover:bg-pink-500", "hover:bg-pink-600", "border-pink-500", "text-pink-400", "hover:bg-pink-500/10",
     // Teal
-    "bg-teal-600", "bg-teal-700", "hover:bg-teal-500", "hover:bg-teal-600", "border-teal-500", "text-teal-400", "hover:bg-teal-500/10",
+    "bg-teal-600", "bg-teal-700", "bg-teal-800", "hover:bg-teal-500", "hover:bg-teal-600", "hover:bg-teal-700", "border-teal-500", "text-teal-400", "hover:bg-teal-500/10",
     // Indigo
     "bg-indigo-600", "bg-indigo-700", "hover:bg-indigo-500", "hover:bg-indigo-600", "border-indigo-500", "text-indigo-400", "hover:bg-indigo-500/10",
     // Emerald (dependency-security)
-    "bg-emerald-600", "bg-emerald-700", "hover:bg-emerald-500", "hover:bg-emerald-600", "border-emerald-500", "text-emerald-400", "hover:bg-emerald-500/10",
+    "bg-emerald-600", "bg-emerald-700", "bg-emerald-800", "hover:bg-emerald-500", "hover:bg-emerald-600", "hover:bg-emerald-700", "border-emerald-500", "text-emerald-400", "hover:bg-emerald-500/10",
     // Violet (design agents)
     "bg-violet-600", "bg-violet-700", "hover:bg-violet-500", "hover:bg-violet-600", "border-violet-500", "text-violet-400", "hover:bg-violet-500/10",
     // Fuchsia (design agents)

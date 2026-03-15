@@ -22,7 +22,7 @@ export default function Error({
           An error occurred while loading this page.
         </p>
         {error.digest && (
-          <p className="text-gray-400 dark:text-zinc-600 text-xs mb-4 font-mono">Error ID: {error.digest}</p>
+          <p className="text-gray-400 dark:text-zinc-500 text-xs mb-4 font-mono">Error ID: {error.digest}</p>
         )}
         <div className="flex items-center justify-center gap-3">
           <button

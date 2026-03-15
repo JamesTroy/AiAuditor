@@ -193,7 +193,7 @@ export default function Navbar() {
             </nav>
 
             {/* Drawer footer */}
-            <div className="border-t border-gray-200 dark:border-zinc-800 px-6 py-4 text-xs text-gray-400 dark:text-zinc-600">
+            <div className="border-t border-gray-200 dark:border-zinc-800 px-6 py-4 text-xs text-gray-400 dark:text-zinc-500">
               60+ audits · Security · Performance · Compliance
             </div>
           </div>

@@ -16,7 +16,7 @@ export default function PrepPromptBox({ prompt }: Props) {
   }
 
   return (
-    <div className="mt-5 border border-blue-200 dark:border-blue-900 rounded-lg overflow-hidden bg-blue-50 dark:bg-blue-950/30">
+    <div className="mt-5 border border-blue-200 dark:border-blue-900 rounded-lg overflow-hidden bg-blue-50 dark:bg-blue-950">
       <div className="flex items-start justify-between gap-4 px-4 py-3">
         <div>
           <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-widest mb-0.5">
@@ -38,7 +38,7 @@ export default function PrepPromptBox({ prompt }: Props) {
           <span className="transition-transform duration-200 group-open:rotate-90">▶</span>
           Preview prompt
         </summary>
-        <pre className="px-4 py-3 text-xs font-mono text-blue-700 dark:text-blue-300 whitespace-pre-wrap leading-relaxed border-t border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/20 max-h-[80vh] overflow-y-auto">
+        <pre className="px-4 py-3 text-xs font-mono text-blue-700 dark:text-blue-300 whitespace-pre-wrap leading-relaxed border-t border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950 max-h-[80vh] overflow-y-auto">
           {prompt}
         </pre>
       </details>

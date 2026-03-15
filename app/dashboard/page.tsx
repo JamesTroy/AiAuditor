@@ -182,9 +182,9 @@ export default async function DashboardPage({
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         a.status === 'completed'
-                          ? 'bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400'
+                          ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400'
                           : a.status === 'failed'
-                            ? 'bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400'
+                            ? 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400'
                             : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400'
                       }`}
                     >
@@ -229,18 +229,24 @@ function ScoreSparkline({ scores }: { scores: number[] }) {
 
   const last = scores[scores.length - 1];
   const prev = scores[scores.length - 2];
-  const trending = last >= prev ? 'text-green-500' : 'text-red-500';
+  const improving = last >= prev;
+  const trending = improving ? 'text-green-500' : 'text-red-500';
+  const trendLabel = improving ? 'Trend: improving' : 'Trend: declining';
 
   return (
-    <svg width={w} height={h} className={trending} aria-label={`Score trend: ${scores.join(', ')}`}>
-      <polyline
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        points={points.join(' ')}
-      />
-    </svg>
+    <span className={`inline-flex items-center gap-1 ${trending}`}>
+      <svg width={w} height={h} aria-hidden="true">
+        <polyline
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          points={points.join(' ')}
+        />
+      </svg>
+      <span aria-hidden="true" className="text-sm">{improving ? '↑' : '↓'}</span>
+      <span className="sr-only">{trendLabel}</span>
+    </span>
   );
 }

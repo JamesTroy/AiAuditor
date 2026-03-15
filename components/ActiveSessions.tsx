@@ -95,7 +95,7 @@ export default function ActiveSessions({ currentSessionToken }: { currentSession
                   <button
                     onClick={() => handleRevoke(s.token)}
                     disabled={revoking === s.token}
-                    className="text-xs text-red-600 dark:text-red-400 hover:text-red-500 disabled:opacity-50 font-medium"
+                    className="text-xs text-red-600 dark:text-red-400 hover:text-red-500 disabled:text-red-800 disabled:dark:text-red-600 disabled:cursor-not-allowed font-medium"
                   >
                     {revoking === s.token ? 'Revoking...' : 'Revoke'}
                   </button>
