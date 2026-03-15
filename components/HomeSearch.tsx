@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { AgentConfig } from '@/lib/types';
 import AgentCard from '@/components/AgentCard';
 
@@ -12,7 +12,13 @@ interface HomeSearchProps {
 
 export default function HomeSearch({ agents }: HomeSearchProps) {
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 150);
+    return () => clearTimeout(id);
+  }, [search]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -25,10 +31,10 @@ export default function HomeSearch({ agents }: HomeSearchProps) {
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
-  const query = search.toLowerCase();
-  const filteredAgents = agents.filter(
+  const query = debouncedSearch.toLowerCase();
+  const filteredAgents = useMemo(() => agents.filter(
     (a) => a.name.toLowerCase().includes(query) || a.description.toLowerCase().includes(query) || a.category.toLowerCase().includes(query)
-  );
+  ), [agents, query]);
 
   const hasSearch = query.length > 0;
 

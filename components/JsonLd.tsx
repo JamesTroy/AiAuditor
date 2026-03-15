@@ -13,47 +13,54 @@ export function JsonLd({ data }: JsonLdProps) {
   );
 }
 
-/** Global structured data for the root layout. */
+/** Global structured data for the root layout — single @graph block. */
 export function GlobalJsonLd() {
-  const organization = {
+  const graph = {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: 'Claudit',
-    url: BASE_URL,
-    logo: `${BASE_URL}/logo.svg`,
-    sameAs: [],
+    '@graph': [
+      {
+        '@type': 'Organization',
+        name: 'Claudit',
+        url: BASE_URL,
+        logo: `${BASE_URL}/logo.svg`,
+      },
+      {
+        '@type': 'WebSite',
+        name: 'Claudit',
+        url: BASE_URL,
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${BASE_URL}/#agents?q={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
+      },
+      {
+        '@type': 'SoftwareApplication',
+        name: 'Claudit',
+        applicationCategory: 'DeveloperApplication',
+        operatingSystem: 'Web',
+        url: BASE_URL,
+        description:
+          'AI-powered code audit tool with 50 specialized agents for security, quality, and performance analysis.',
+        offers: {
+          '@type': 'Offer',
+          price: 0,
+          priceCurrency: 'USD',
+        },
+      },
+      {
+        '@type': 'HowTo',
+        name: 'How to run an AI code audit with Claudit',
+        step: [
+          { '@type': 'HowToStep', position: 1, name: 'Enter a URL or paste code', text: 'Point us at any website, or paste files directly.' },
+          { '@type': 'HowToStep', position: 2, name: 'Pick your audits', text: 'Choose from 50 specialized audits — or run them all.' },
+          { '@type': 'HowToStep', position: 3, name: 'Get your report', text: 'Severity-rated findings with remediation steps — export as MD or JSON.' },
+        ],
+      },
+    ],
   };
 
-  const website = {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: 'Claudit',
-    url: BASE_URL,
-  };
-
-  const softwareApp = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: 'Claudit',
-    applicationCategory: 'DeveloperApplication',
-    operatingSystem: 'Web',
-    url: BASE_URL,
-    description:
-      'AI-powered code audit tool with 50 specialized agents for security, quality, and performance analysis.',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'USD',
-    },
-  };
-
-  return (
-    <>
-      <JsonLd data={organization} />
-      <JsonLd data={website} />
-      <JsonLd data={softwareApp} />
-    </>
-  );
+  return <JsonLd data={graph} />;
 }
 
 /** Breadcrumb structured data for agent pages. */

@@ -136,7 +136,7 @@ export default memo(function AgentCard({ agent, href, index = 0, onEdit, onDelet
 
   return (
     <m.div
-      className={`group relative overflow-hidden border border-gray-200 dark:border-zinc-800 rounded-xl p-6 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-sm ${agent.accentClass}`}
+      className={`group relative overflow-hidden border border-gray-200 dark:border-zinc-800 rounded-xl p-6 bg-white/95 dark:bg-zinc-900/80 ${agent.accentClass}`}
       initial={false}
       whileHover={{
         scale: 1.03,

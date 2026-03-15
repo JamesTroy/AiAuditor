@@ -33,8 +33,7 @@ export default function Home() {
           <div className="flex items-center justify-center gap-3 mb-4">
             <Logo size={48} />
             <h1 className="text-[clamp(1.875rem,4vw+0.5rem,3.5rem)] font-bold tracking-tight dark:text-gradient">
-              <span aria-hidden="true">Claudit</span>
-              <span className="sr-only">Claudit — AI Code Audit Tool</span>
+              Claudit
             </h1>
           </div>
           <p className="text-gray-600 dark:text-zinc-400 text-lg max-w-xl mx-auto mb-2">

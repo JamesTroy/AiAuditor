@@ -55,9 +55,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" className="dark">
       <head>
+        <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#f9fafb" media="(prefers-color-scheme: light)" />
         <GlobalJsonLd />
       </head>
-      <body className={`${inter.className} bg-gray-50 dark:bg-zinc-950 transition-colors duration-200`}>
+      <body className={`${inter.className} bg-gray-50 dark:bg-zinc-950`}>
         <ThemeProvider>
           <SmoothScroll />
           <div className="flex flex-col min-h-screen">
