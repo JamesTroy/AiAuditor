@@ -13,4 +13,13 @@ export interface AIProvider {
     userInput: string,
     options?: { signal?: AbortSignal },
   ): ReadableStream<Uint8Array>;
+
+  /**
+   * Stream a multi-turn chat response given a system prompt and message history.
+   */
+  streamChat(
+    systemPrompt: string,
+    messages: { role: 'user' | 'assistant'; content: string }[],
+    options?: { signal?: AbortSignal },
+  ): ReadableStream<Uint8Array>;
 }

@@ -18,6 +18,9 @@ export default function Footer() {
           <Link href="/stack" className="text-xs py-2 px-1 text-gray-400 dark:text-zinc-600 hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">
             How It Works
           </Link>
+          <Link href="/privacy" className="text-xs py-2 px-1 text-gray-400 dark:text-zinc-600 hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">
+            Privacy
+          </Link>
         </div>
       </div>
     </footer>

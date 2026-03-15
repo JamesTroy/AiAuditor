@@ -90,6 +90,63 @@ export class AnthropicProvider implements AIProvider {
       },
     });
   }
+
+  streamChat(
+    systemPrompt: string,
+    messages: { role: 'user' | 'assistant'; content: string }[],
+    options?: { signal?: AbortSignal },
+  ): ReadableStream<Uint8Array> {
+    const client = this.client;
+
+    return new ReadableStream<Uint8Array>({
+      async start(controller) {
+        let attempt = 0;
+
+        while (true) {
+          attempt++;
+          try {
+            const stream = client.messages.stream(
+              {
+                model: MODEL,
+                max_tokens: MAX_TOKENS,
+                temperature: TEMPERATURE,
+                system: systemPrompt,
+                messages: messages.map((m) => ({ role: m.role, content: m.content })),
+              },
+              options?.signal ? { signal: options.signal } : undefined,
+            );
+
+            for await (const chunk of stream) {
+              if (
+                chunk.type === 'content_block_delta' &&
+                chunk.delta.type === 'text_delta'
+              ) {
+                controller.enqueue(encoder.encode(chunk.delta.text));
+              }
+            }
+
+            break;
+          } catch (err) {
+            if (options?.signal?.aborted) {
+              controller.error(err);
+              return;
+            }
+
+            if (attempt < MAX_RETRIES && isRetryable(err)) {
+              const delay = RETRY_BASE_MS * 2 ** (attempt - 1);
+              await sleep(delay);
+              continue;
+            }
+
+            controller.error(err);
+            return;
+          }
+        }
+
+        controller.close();
+      },
+    });
+  }
 }
 
 // Singleton — reuses the same Anthropic client across requests.

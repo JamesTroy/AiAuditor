@@ -9,6 +9,8 @@ import { agents } from '@/lib/agents';
 import { setChainInput, consumeChainInput } from '@/lib/session';
 import { ALLOWED_URL_DESCRIPTION } from '@/lib/config/urlAllowlist';
 import { useAuditSession } from '@/lib/hooks/useAuditSession';
+import { detectAgents } from '@/lib/detectAgents';
+import { parseAuditResult } from '@/lib/parseAuditResult';
 
 const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure', 'Design'] as const;
 
@@ -37,6 +39,16 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
   const [chainOpen, setChainOpen] = useState(false);
   const [canPaste, setCanPaste] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const [diffMode, setDiffMode] = useState(false);
+  const [beforeCode, setBeforeCode] = useState('');
+  const [prUrl, setPrUrl] = useState('');
+  const [prLoading, setPrLoading] = useState(false);
+  const [prError, setPrError] = useState('');
+  const [showPr, setShowPr] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chainRef = useRef<HTMLDivElement>(null);
   const resultEndRef = useRef<HTMLDivElement>(null);
@@ -110,10 +122,15 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
     return () => document.removeEventListener('keydown', onKey);
   }, [loading, handleStop]);
 
+  function buildAuditInput(): string {
+    if (!diffMode || !beforeCode.trim()) return input;
+    return `[DIFF MODE — Focus your audit on what changed between the BEFORE and AFTER versions. Flag new issues introduced in the AFTER code.]\n\n--- BEFORE ---\n${beforeCode}\n\n--- AFTER ---\n${input}`;
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      runAudit(input);
+      runAudit(buildAuditInput());
     }
   }
 
@@ -184,6 +201,34 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
     }
   }
 
+  async function handleFetchPr() {
+    const trimmed = prUrl.trim();
+    if (!trimmed) return;
+    setPrLoading(true);
+    setPrError('');
+    try {
+      const res = await fetch('/api/github-pr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: trimmed }),
+      });
+      if (!res.ok) {
+        setPrError(await res.text());
+        return;
+      }
+      const data = await res.json();
+      const header = `# PR: ${data.title}\n# Author: ${data.author}\n# Branch: ${data.branch} → ${data.baseBranch}\n# Changed files: ${data.changedFiles} (+${data.additions} -${data.deletions})\n${data.truncated ? '# Note: Diff truncated to 100KB\n' : ''}\n`;
+      setInput((header + data.diff).slice(0, MAX_CHARS));
+      setFiles([]);
+      setPrUrl('');
+      setShowPr(false);
+    } catch (err) {
+      setPrError(err instanceof Error ? err.message : 'Failed to fetch PR');
+    } finally {
+      setPrLoading(false);
+    }
+  }
+
   async function handleCopy() {
     await navigator.clipboard.writeText(result);
     setCopied(true);
@@ -233,6 +278,89 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
     router.push(`/audit/${targetId}`);
   }
 
+  async function sendChat() {
+    const trimmed = chatInput.trim();
+    if (!trimmed || chatLoading || !result) return;
+
+    const userMsg = { role: 'user' as const, content: trimmed };
+    const nextMessages = [...chatMessages, userMsg];
+    setChatMessages(nextMessages);
+    setChatInput('');
+    setChatLoading(true);
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: nextMessages,
+          context: `Code:\n${input}\n\nAudit Result:\n${result}`,
+        }),
+      });
+
+      if (!res.ok || !res.body) {
+        const errText = await res.text();
+        setChatMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${errText || res.status}` }]);
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      const chunks: string[] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(decoder.decode(value, { stream: true }));
+        const soFar = chunks.join('');
+        setChatMessages((prev) => {
+          const last = prev[prev.length - 1];
+          if (last?.role === 'assistant') {
+            return [...prev.slice(0, -1), { role: 'assistant', content: soFar }];
+          }
+          return [...prev, { role: 'assistant', content: soFar }];
+        });
+      }
+
+      const final = chunks.join('');
+      setChatMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === 'assistant') {
+          return [...prev.slice(0, -1), { role: 'assistant', content: final }];
+        }
+        return [...prev, { role: 'assistant', content: final }];
+      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setChatMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${err.message}` }]);
+      }
+    } finally {
+      setChatLoading(false);
+    }
+  }
+
+  // Scroll chat into view when new messages arrive
+  useEffect(() => {
+    if (chatMessages.length > 0) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [chatMessages]);
+
+  // Auto-detect language/framework and recommend other agents
+  const detection = useMemo(() => {
+    if (input.length < 50) return null;
+    return detectAgents(input);
+  }, [input]);
+
+  const suggestedAgents = useMemo(() => {
+    if (!detection || detection.recommendedAgents.length === 0) return [];
+    return detection.recommendedAgents
+      .filter((id) => id !== agent.id)
+      .map((id) => agents.find((a) => a.id === id))
+      .filter(Boolean)
+      .slice(0, 5) as AgentConfig[];
+  }, [detection, agent.id]);
+
   // PERF-003/004: Memoize derived values to avoid recalculation on every render.
   const wordCount = useMemo(
     () => (result.trim() ? result.trim().split(/\s+/).filter(Boolean).length : 0),
@@ -240,6 +368,10 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
   );
   const tokenEstimate = useMemo(() => Math.ceil(input.length / 4), [input]);
   const otherAgents = useMemo(() => agents.filter((a) => a.id !== agent.id), [agent.id]);
+  const metrics = useMemo(() => {
+    if (!result || loading) return null;
+    return parseAuditResult(result);
+  }, [result, loading]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -278,8 +410,76 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
         {urlError && <p className="mt-1 text-xs text-red-500">{urlError}</p>}
       </div>
 
+      {/* GitHub PR import */}
+      <div>
+        <button
+          onClick={() => setShowPr((v) => !v)}
+          className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 transition-colors mb-2"
+        >
+          {showPr ? '▾' : '▸'} Import from GitHub PR
+        </button>
+        {showPr && (
+          <div className="flex gap-2 mt-1">
+            <input
+              type="url"
+              value={prUrl}
+              onChange={(e) => setPrUrl(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleFetchPr(); }}
+              placeholder="https://github.com/owner/repo/pull/123"
+              className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500"
+            />
+            <button
+              onClick={handleFetchPr}
+              disabled={prLoading || !prUrl.trim()}
+              className="px-4 py-2 rounded-lg text-sm bg-gray-200 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:bg-gray-300 dark:hover:bg-zinc-700 disabled:opacity-40 transition-colors"
+            >
+              {prLoading ? 'Fetching…' : 'Fetch PR'}
+            </button>
+          </div>
+        )}
+        {prError && <p className="mt-1 text-xs text-red-500">{prError}</p>}
+      </div>
+
+      {/* Diff mode toggle */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setDiffMode((v) => !v)}
+          className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+            diffMode
+              ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300'
+              : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'
+          }`}
+        >
+          {diffMode ? '✓ Diff Mode' : 'Diff Mode'}
+        </button>
+        {diffMode && (
+          <span className="text-xs text-gray-400 dark:text-zinc-500">
+            Paste the old version below, new version in the main editor
+          </span>
+        )}
+      </div>
+
+      {/* Before code (diff mode) */}
+      {diffMode && (
+        <div className="relative">
+          <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1">Before (old code)</label>
+          <textarea
+            className="w-full h-40 bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-lg p-4 font-mono text-sm text-gray-900 dark:text-zinc-100 resize-y focus:outline-none focus:border-red-400 dark:focus:border-red-700 placeholder-gray-400 dark:placeholder-zinc-600"
+            placeholder="Paste the original / old version of the code here…"
+            value={beforeCode}
+            onChange={(e) => setBeforeCode(e.target.value)}
+            maxLength={MAX_CHARS}
+            disabled={loading}
+            aria-label="Before code for diff comparison"
+          />
+        </div>
+      )}
+
       {/* Textarea */}
       <div className="relative">
+        {diffMode && (
+          <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1">After (new code)</label>
+        )}
         <textarea
           className="w-full h-64 sm:h-80 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg p-4 font-mono text-sm text-gray-900 dark:text-zinc-100 resize-y focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-50 dark:focus-visible:ring-offset-zinc-950 placeholder-gray-400 dark:placeholder-zinc-600"
           placeholder={`${agent.placeholder}\n\nTip: Press ⌘+Enter to run · Esc to stop`}
@@ -292,10 +492,30 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
         />
       </div>
 
+      {/* Smart suggestions */}
+      {suggestedAgents.length > 0 && !loading && !result && (
+        <div className="flex items-center gap-2 flex-wrap text-xs">
+          <span className="text-gray-400 dark:text-zinc-500">
+            {detection?.language && <span className="font-medium text-gray-500 dark:text-zinc-400">{detection.language}</span>}
+            {detection?.framework && <span className="font-medium text-gray-500 dark:text-zinc-400"> + {detection.framework}</span>}
+            {' '}detected — also try:
+          </span>
+          {suggestedAgents.map((a) => (
+            <button
+              key={a.id}
+              onClick={() => handleChainTo(a.id)}
+              className="px-2 py-1 rounded-md bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors"
+            >
+              {a.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <button
-          onClick={() => runAudit(input)}
+          onClick={() => runAudit(buildAuditInput())}
           disabled={loading || !input.trim()}
           className={`inline-flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-lg font-semibold text-sm text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-ring ${agent.buttonClass}`}
         >
@@ -403,7 +623,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
             {!loading && result && (
               <div className="flex items-center gap-2 flex-wrap">
                 <button
-                  onClick={() => runAudit(input)}
+                  onClick={() => runAudit(buildAuditInput())}
                   className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[44px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                 >
                   Re-audit
@@ -464,6 +684,45 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
               </div>
             )}
           </div>
+          {/* Metrics summary bar */}
+          {metrics && metrics.totalFindings > 0 && (
+            <div className="flex items-center gap-4 flex-wrap px-4 py-2.5 bg-gray-50 dark:bg-zinc-800/50 border-b border-gray-200 dark:border-zinc-800 text-xs">
+              {metrics.score !== null && (
+                <span className={`font-bold text-base ${metrics.score >= 80 ? 'text-green-600 dark:text-green-400' : metrics.score >= 60 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {metrics.score}/100
+                </span>
+              )}
+              {metrics.severityCounts.critical > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400 font-medium">
+                  {metrics.severityCounts.critical} Critical
+                </span>
+              )}
+              {metrics.severityCounts.high > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 font-medium">
+                  {metrics.severityCounts.high} High
+                </span>
+              )}
+              {metrics.severityCounts.medium > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-medium">
+                  {metrics.severityCounts.medium} Medium
+                </span>
+              )}
+              {metrics.severityCounts.low > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 font-medium">
+                  {metrics.severityCounts.low} Low
+                </span>
+              )}
+              {metrics.severityCounts.informational > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-zinc-700/40 text-gray-600 dark:text-zinc-400 font-medium">
+                  {metrics.severityCounts.informational} Info
+                </span>
+              )}
+              <span className="text-gray-400 dark:text-zinc-500 ml-auto">
+                {metrics.totalFindings} finding{metrics.totalFindings !== 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
+
           <div className="p-6 prose prose-sm max-w-none dark:prose-invert">
             {/* PERF-011: Render plain text while streaming to avoid re-parsing
                 markdown on every RAF tick. SafeMarkdown only on completion. */}
@@ -473,6 +732,66 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
               <SafeMarkdown>{result}</SafeMarkdown>
             )}
             <div ref={resultEndRef} />
+          </div>
+        </div>
+      )}
+      {/* Follow-up chat */}
+      {!loading && result && (
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg overflow-hidden">
+          <div className="px-4 py-2 border-b border-gray-200 dark:border-zinc-800">
+            <span className="text-xs font-mono uppercase tracking-widest text-gray-500 dark:text-zinc-400">
+              Ask follow-up questions
+            </span>
+          </div>
+
+          {/* Chat messages */}
+          {chatMessages.length > 0 && (
+            <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
+              {chatMessages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`text-sm ${
+                    msg.role === 'user'
+                      ? 'text-gray-700 dark:text-zinc-300 bg-gray-50 dark:bg-zinc-800 rounded-lg px-3 py-2'
+                      : 'prose prose-sm max-w-none dark:prose-invert'
+                  }`}
+                >
+                  {msg.role === 'user' ? (
+                    <span className="font-medium">{msg.content}</span>
+                  ) : (
+                    <SafeMarkdown>{msg.content}</SafeMarkdown>
+                  )}
+                </div>
+              ))}
+              {chatLoading && chatMessages[chatMessages.length - 1]?.role === 'user' && (
+                <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-zinc-500">
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+                  Thinking…
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+          )}
+
+          {/* Chat input */}
+          <div className="flex gap-2 p-3 border-t border-gray-200 dark:border-zinc-800">
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
+              placeholder="How do I fix the critical findings?"
+              disabled={chatLoading}
+              className="flex-1 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500 disabled:opacity-50"
+              aria-label="Follow-up question"
+            />
+            <button
+              onClick={sendChat}
+              disabled={chatLoading || !chatInput.trim()}
+              className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            >
+              {chatLoading ? '…' : 'Ask'}
+            </button>
           </div>
         </div>
       )}

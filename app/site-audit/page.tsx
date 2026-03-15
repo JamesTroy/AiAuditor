@@ -63,6 +63,9 @@ export default function SiteAuditPage() {
   const [copied, setCopied] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set(DEFAULT_IDS));
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [synthesis, setSynthesis] = useState('');
+  const [synthesizing, setSynthesizing] = useState(false);
+  const [synthError, setSynthError] = useState('');
   const abortRef = useRef<AbortController | null>(null);
   const chunksRef = useRef<string[]>([]);
   const rafRef = useRef<number | null>(null);
@@ -272,6 +275,42 @@ export default function SiteAuditPage() {
     a.click();
     URL.revokeObjectURL(a.href);
   }
+
+  const runSynthesis = useCallback(async () => {
+    if (synthesizing || !result) return;
+    setSynthesizing(true);
+    setSynthesis('');
+    setSynthError('');
+
+    try {
+      const res = await fetch('/api/synthesize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ results: result }),
+      });
+
+      if (!res.ok || !res.body) {
+        setSynthError(await res.text() || `Error ${res.status}`);
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      const chunks: string[] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(decoder.decode(value, { stream: true }));
+        setSynthesis(chunks.join(''));
+      }
+      setSynthesis(chunks.join(''));
+    } catch (err: unknown) {
+      if (err instanceof Error) setSynthError(err.message);
+    } finally {
+      setSynthesizing(false);
+    }
+  }, [result, synthesizing]);
 
   // Detect which agent section is currently streaming
   const currentAgentIndex = selectedAgents.findIndex((agent, i) => {
@@ -559,6 +598,56 @@ export default function SiteAuditPage() {
               )}
               <div ref={resultEndRef} />
             </div>
+          </div>
+        )}
+
+        {/* Synthesis — Generate Roadmap */}
+        {!loading && result && (
+          <div className="mt-6">
+            {!synthesis && !synthesizing && (
+              <button
+                onClick={runSynthesis}
+                className="w-full py-3.5 rounded-xl font-semibold text-base text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all focus-ring flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+                </svg>
+                Generate Remediation Roadmap
+              </button>
+            )}
+
+            {synthError && (
+              <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-600 dark:text-red-300 text-sm mt-3">
+                {synthError}
+              </div>
+            )}
+
+            {(synthesis || synthesizing) && (
+              <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 border-t-2 border-t-indigo-500/50 rounded-lg overflow-hidden mt-3">
+                <div className="px-4 py-2 border-b border-gray-200 dark:border-zinc-800">
+                  <span className="text-xs font-mono uppercase tracking-widest">
+                    {synthesizing ? (
+                      <span className="flex items-center gap-1.5 text-indigo-400">
+                        <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                        Synthesizing findings…
+                      </span>
+                    ) : (
+                      'Remediation Roadmap'
+                    )}
+                  </span>
+                </div>
+                <div className="p-6 prose prose-sm max-w-none dark:prose-invert">
+                  {synthesizing ? (
+                    <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-zinc-200 m-0 p-0 bg-transparent">
+                      {synthesis}
+                      <span className="animate-blink"> ▍</span>
+                    </pre>
+                  ) : (
+                    <SafeMarkdown>{synthesis}</SafeMarkdown>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

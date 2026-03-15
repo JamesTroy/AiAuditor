@@ -66,6 +66,8 @@ export function middleware(request: NextRequest) {
     "base-uri 'self'",
     "form-action 'self'",
     'upgrade-insecure-requests',
+    "report-uri /api/csp-report",
+    "report-to csp-endpoint",
   ].join('; ');
 
   // Forward nonce to the Next.js runtime — it stamps this value onto the
@@ -78,6 +80,11 @@ export function middleware(request: NextRequest) {
   });
 
   response.headers.set('Content-Security-Policy', csp);
+  response.headers.set('Report-To', JSON.stringify({
+    group: 'csp-endpoint',
+    max_age: 86400,
+    endpoints: [{ url: '/api/csp-report' }],
+  }));
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   response.headers.set('X-Content-Type-Options', 'nosniff');
