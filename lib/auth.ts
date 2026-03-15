@@ -14,8 +14,8 @@ const FROM_EMAIL = process.env.EMAIL_FROM ?? 'Claudit <noreply@claudit.consultin
 
 async function sendEmail(to: string, subject: string, html: string) {
   if (!resend) {
-    console.log(`[email] To: ${to} | Subject: ${subject}`);
-    console.log(`[email] (No RESEND_API_KEY — email not sent)`);
+    console.warn(`[email] To: ${to} | Subject: ${subject}`);
+    console.warn(`[email] (No RESEND_API_KEY — email not sent)`);
     return;
   }
   await resend.emails.send({ from: FROM_EMAIL, to, subject, html });

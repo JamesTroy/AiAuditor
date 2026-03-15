@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auditLimiter } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
-import { STREAM_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
+import { STREAM_RESPONSE_HEADERS, ALLOWED_ORIGINS } from '@/lib/config/apiHeaders';
 
 export const runtime = 'nodejs';
 
@@ -41,15 +41,6 @@ Keep the output concise — under 800 words. Focus on actionable next steps, not
 const MAX_INPUT_CHARS = 80_000;
 const STREAM_TIMEOUT_MS = 120_000;
 
-const ALLOWED_ORIGINS: ReadonlySet<string> = new Set(
-  [
-    process.env.NEXT_PUBLIC_APP_URL,
-    process.env.RAILWAY_PUBLIC_DOMAIN && `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`,
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-  ].filter(Boolean) as string[],
-);
 
 export async function POST(req: NextRequest) {
   const origin = req.headers.get('origin');
@@ -81,13 +72,18 @@ export async function POST(req: NextRequest) {
 
   const truncated = results.slice(0, MAX_INPUT_CHARS);
 
-  const stream = anthropicProvider.streamAudit(
-    SYNTHESIS_PROMPT,
-    `<audit_results>\n${truncated}\n</audit_results>`,
-    { signal: AbortSignal.timeout(STREAM_TIMEOUT_MS) },
-  );
+  try {
+    const stream = anthropicProvider.streamAudit(
+      SYNTHESIS_PROMPT,
+      `<audit_results>\n${truncated}\n</audit_results>`,
+      { signal: AbortSignal.timeout(STREAM_TIMEOUT_MS) },
+    );
 
-  return new Response(stream, {
-    headers: STREAM_RESPONSE_HEADERS,
-  });
+    return new Response(stream, {
+      headers: STREAM_RESPONSE_HEADERS,
+    });
+  } catch (err) {
+    console.error('[synthesize] stream error', err instanceof Error ? err.message : err);
+    return new Response('Failed to generate synthesis. Please try again.', { status: 500 });
+  }
 }

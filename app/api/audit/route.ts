@@ -4,7 +4,7 @@ import { getAgent } from '@/lib/agents';
 import { auditLimiter, siteAuditLimiter, dailyAuditBudget } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { auditRequestSchema } from '@/lib/schemas/auditRequest';
-import { STREAM_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
+import { STREAM_RESPONSE_HEADERS, ALLOWED_ORIGINS } from '@/lib/config/apiHeaders';
 import { auth } from '@/lib/auth';
 import { extractScore } from '@/lib/extractScore';
 import { db } from '@/lib/db';
@@ -27,17 +27,6 @@ const MAX_CONTENT_LENGTH = 120_000; // ~120 KB; accounts for JSON overhead
 // large inputs routinely exceed 2 min.
 const STREAM_TIMEOUT_MS = 300_000;
 
-// VULN-010: Allowed origins for CSRF origin check.
-// In production set NEXT_PUBLIC_APP_URL to the canonical deployment URL.
-const ALLOWED_ORIGINS: ReadonlySet<string> = new Set(
-  [
-    process.env.NEXT_PUBLIC_APP_URL,
-    process.env.RAILWAY_PUBLIC_DOMAIN && `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`,
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-  ].filter(Boolean) as string[],
-);
 
 // ARCH-020: Structured JSON logging with anonymized IP.
 function log(

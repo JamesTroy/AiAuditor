@@ -14,14 +14,20 @@ export default function Footer() {
           AI-powered code auditing
         </p>
 
-        <div className="flex items-center gap-4">
+        <nav className="flex items-center gap-4" aria-label="Footer">
+          <Link href="/about" className="text-xs py-2 px-1 text-gray-400 dark:text-zinc-600 hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">
+            About
+          </Link>
           <Link href="/how-it-works" className="text-xs py-2 px-1 text-gray-400 dark:text-zinc-600 hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">
             How It Works
           </Link>
           <Link href="/privacy" className="text-xs py-2 px-1 text-gray-400 dark:text-zinc-600 hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">
             Privacy
           </Link>
-        </div>
+          <Link href="/terms" className="text-xs py-2 px-1 text-gray-400 dark:text-zinc-600 hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">
+            Terms
+          </Link>
+        </nav>
       </div>
     </footer>
   );

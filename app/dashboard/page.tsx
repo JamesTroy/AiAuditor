@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { audit } from '@/lib/auth-schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, lt, count, and } from 'drizzle-orm';
 import { extractScore } from '@/lib/extractScore';
 
 export const metadata: Metadata = {
@@ -18,29 +18,72 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function DashboardPage() {
+const PAGE_SIZE = 20;
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cursor?: string }>;
+}) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
   if (!session) redirect('/login');
 
+  const params = await searchParams;
+  const cursor = params.cursor;
+
+  // Get total count for stats (not paginated)
+  const [totalResult] = await db
+    .select({ value: count() })
+    .from(audit)
+    .where(eq(audit.userId, session.user.id));
+  const totalCount = totalResult?.value ?? 0;
+
+  // Get all scored audits for avg score calculation
+  const scoredAudits = await db
+    .select({ score: audit.score, result: audit.result })
+    .from(audit)
+    .where(eq(audit.userId, session.user.id));
+
+  // Calculate stats from all audits
+  const completedCount = totalCount; // all saved audits are completed at this point
+  const allScores = scoredAudits.map((a) => {
+    if (a.score != null) return a.score;
+    if (a.result) return extractScore(a.result);
+    return null;
+  }).filter((s): s is number => s !== null);
+
+  const avgScore = allScores.length > 0
+    ? Math.round(allScores.reduce((sum, s) => sum + s, 0) / allScores.length)
+    : null;
+
+  // Fetch paginated audits
+  const cursorDate = cursor ? new Date(cursor) : null;
+  const whereClause = cursorDate
+    ? and(eq(audit.userId, session.user.id), lt(audit.createdAt, cursorDate))
+    : eq(audit.userId, session.user.id);
+
   const rawAudits = await db
     .select()
     .from(audit)
-    .where(eq(audit.userId, session.user.id))
+    .where(whereClause)
     .orderBy(desc(audit.createdAt))
-    .limit(20);
+    .limit(PAGE_SIZE + 1); // fetch one extra to detect if there are more
+
+  const hasMore = rawAudits.length > PAGE_SIZE;
+  const pageAudits = hasMore ? rawAudits.slice(0, PAGE_SIZE) : rawAudits;
 
   // Re-extract scores from stored results for records that have null scores
-  const audits = rawAudits.map((a) => {
+  const audits = pageAudits.map((a) => {
     if (a.score != null || !a.result) return a;
     const extracted = extractScore(a.result);
     return extracted !== null ? { ...a, score: extracted } : a;
   });
 
   // Backfill: update DB records that now have extracted scores (fire-and-forget)
-  const toBackfill = audits.filter((a, i) => a.score !== rawAudits[i].score && a.score != null);
+  const toBackfill = audits.filter((a, i) => a.score !== pageAudits[i].score && a.score != null);
   if (toBackfill.length > 0) {
     Promise.all(
       toBackfill.map((a) =>
@@ -49,88 +92,97 @@ export default async function DashboardPage() {
     ).catch(() => { /* best-effort backfill */ });
   }
 
+  const nextCursor = hasMore
+    ? pageAudits[pageAudits.length - 1].createdAt.toISOString()
+    : null;
+
+  // Count completed audits from current page (for display)
+  const pageCompleted = audits.filter((a) => a.status === 'completed').length;
+
   return (
     <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-sm text-gray-500 dark:text-zinc-500 mt-1">
-            Welcome back, {session.user.name}. Your server-side audit history is tracked here — powered by Claude Sonnet 4.6 and stored in PostgreSQL via Drizzle ORM.
+            Welcome back, {session.user.name}. Here&apos;s an overview of your audit history and scores.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 border-l-2 border-l-violet-500 rounded-xl p-5">
-            <p className="text-2xl font-bold">{audits.length}</p>
+            <p className="text-2xl font-bold">{totalCount}</p>
             <p className="text-xs text-gray-500 dark:text-zinc-500 mt-1">Total audits</p>
           </div>
           <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 border-l-2 border-l-emerald-500 rounded-xl p-5">
-            <p className="text-2xl font-bold">
-              {audits.filter((a) => a.status === 'completed').length}
-            </p>
+            <p className="text-2xl font-bold">{pageCompleted}</p>
             <p className="text-xs text-gray-500 dark:text-zinc-500 mt-1">Completed</p>
           </div>
           <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 border-l-2 border-l-blue-500 rounded-xl p-5">
-            <p className="text-2xl font-bold">
-              {audits.filter((a) => a.score != null).length > 0
-                ? Math.round(
-                    audits
-                      .filter((a) => a.score != null)
-                      .reduce((sum, a) => sum + (a.score ?? 0), 0) /
-                      audits.filter((a) => a.score != null).length,
-                  )
-                : '—'}
-            </p>
+            <p className="text-2xl font-bold">{avgScore ?? '—'}</p>
             <p className="text-xs text-gray-500 dark:text-zinc-500 mt-1">Avg score</p>
           </div>
         </div>
 
         <h2 className="text-lg font-semibold mb-4">Recent audits</h2>
 
-        {audits.length === 0 ? (
+        {audits.length === 0 && !cursor ? (
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-8 text-center">
             <p className="text-gray-500 dark:text-zinc-500 mb-4">No audits yet</p>
             <Link
               href="/site-audit"
               className="inline-flex items-center gap-1 text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-500"
             >
-              Run your first audit →
+              Run your first audit &rarr;
             </Link>
           </div>
         ) : (
-          <div className="space-y-2">
-            {audits.map((a) => (
-              <Link
-                key={a.id}
-                href={`/dashboard/audit/${a.id}`}
-                className="block bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-5 py-4 flex items-center justify-between hover:border-violet-500/30 transition-colors"
-              >
-                <div>
-                  <p className="text-sm font-medium">{a.agentName}</p>
-                  <p className="text-xs text-gray-500 dark:text-zinc-500 mt-0.5">
-                    {new Date(a.createdAt).toLocaleDateString()} ·{' '}
-                    {a.durationMs ? `${(a.durationMs / 1000).toFixed(1)}s` : '—'}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  {a.score != null && (
-                    <span className="text-sm font-mono font-bold">{a.score}/100</span>
-                  )}
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      a.status === 'completed'
-                        ? 'bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400'
-                        : a.status === 'failed'
-                          ? 'bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400'
-                          : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400'
-                    }`}
-                  >
-                    {a.status}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <>
+            <div className="space-y-2">
+              {audits.map((a) => (
+                <Link
+                  key={a.id}
+                  href={`/dashboard/audit/${a.id}`}
+                  className="block bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-5 py-4 flex items-center justify-between hover:border-violet-500/30 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{a.agentName}</p>
+                    <p className="text-xs text-gray-500 dark:text-zinc-500 mt-0.5">
+                      {new Date(a.createdAt).toLocaleDateString()} &middot;{' '}
+                      {a.durationMs ? `${(a.durationMs / 1000).toFixed(1)}s` : '—'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {a.score != null && (
+                      <span className="text-sm font-mono font-bold">{a.score}/100</span>
+                    )}
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        a.status === 'completed'
+                          ? 'bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400'
+                          : a.status === 'failed'
+                            ? 'bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400'
+                            : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400'
+                      }`}
+                    >
+                      {a.status}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {nextCursor && (
+              <div className="mt-6 text-center">
+                <Link
+                  href={`/dashboard?cursor=${encodeURIComponent(nextCursor)}`}
+                  className="inline-flex items-center gap-1 text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-500 transition-colors"
+                >
+                  Load more audits &rarr;
+                </Link>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

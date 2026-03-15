@@ -15,3 +15,14 @@ export const API_RESPONSE_HEADERS: Record<string, string> = {
   'Cache-Control': 'no-store',
   'X-Content-Type-Options': 'nosniff',
 };
+
+/** Allowed origins for CORS / origin checks on API routes. */
+export const ALLOWED_ORIGINS: ReadonlySet<string> = new Set(
+  [
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.RAILWAY_PUBLIC_DOMAIN && `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`,
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+  ].filter(Boolean) as string[],
+);

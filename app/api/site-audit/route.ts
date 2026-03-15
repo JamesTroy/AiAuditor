@@ -1,19 +1,10 @@
 import { NextRequest } from 'next/server';
 import { fetchUrlLimiter } from '@/lib/rateLimit';
-import { API_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
+import { API_RESPONSE_HEADERS, ALLOWED_ORIGINS } from '@/lib/config/apiHeaders';
 import { cachedFetch } from '@/lib/cache';
 
 export const runtime = 'nodejs';
 
-const ALLOWED_ORIGINS: ReadonlySet<string> = new Set(
-  [
-    process.env.NEXT_PUBLIC_APP_URL,
-    process.env.RAILWAY_PUBLIC_DOMAIN && `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`,
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-  ].filter(Boolean) as string[],
-);
 
 /**
  * Fetch site content for site audits.

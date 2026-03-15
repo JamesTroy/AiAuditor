@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, authClient } from '@/lib/auth-client';
+import TwoFactorSettings from '@/components/TwoFactorSettings';
+import ActiveSessions from '@/components/ActiveSessions';
 
 // SM-004: Discriminated form status replaces saving + saved booleans.
 type FormStatus = 'idle' | 'saving' | 'saved' | 'error';
@@ -99,7 +101,7 @@ export default function SettingsPage() {
         <div className="mb-8">
           <h1 className="text-2xl font-bold">Settings</h1>
           <p className="text-sm text-gray-500 dark:text-zinc-500 mt-1">
-            Manage your account. Authentication is handled by Better Auth with sessions stored in PostgreSQL.
+            Manage your profile, security, and account preferences.
           </p>
         </div>
 
@@ -197,6 +199,12 @@ export default function SettingsPage() {
             </div>
           </form>
         </section>
+
+        {/* Two-factor authentication */}
+        <TwoFactorSettings twoFactorEnabled={session.user.twoFactorEnabled ?? false} />
+
+        {/* Active sessions */}
+        <ActiveSessions />
 
         {/* Danger zone — CRED-002: Requires password re-entry */}
         <section className="bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900/50 rounded-xl p-6">

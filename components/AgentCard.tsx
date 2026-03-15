@@ -4,114 +4,69 @@ import { memo } from 'react';
 import Link from 'next/link';
 import * as m from 'motion/react-m';
 import { AgentConfig } from '@/lib/types';
+import {
+  Hexagon, Lock, TrendingUp, Accessibility, Database, Plug, Container,
+  Zap, KeyRound, TestTube2, Building2, Palette, Puzzle, Ruler,
+  Theater, Sparkles, BookOpen, Search, ShieldCheck, Rocket,
+  Brain, Cloud, Radio, Archive, ShieldAlert, AlertTriangle,
+  Diamond, Atom, Globe, TrafficCone, ClipboardList, RefreshCw,
+  Wrench, Regex, Package, Cable, Globe2, BarChart3,
+  FileText, Moon, Mail, Settings, FileCode, Shuffle, Bookmark,
+  Star, StarOff, type LucideIcon,
+} from 'lucide-react';
 
-const BUILT_IN_ICONS: Record<string, string> = {
-  'code-quality': '⬡',
-  'security': '🔒',
-  'seo-performance': '📈',
-  'accessibility': '♿',
-  'sql': '🗄️',
-  'api-design': '🔌',
-  'devops': '🐳',
-  'performance': '⚡',
-  'privacy': '🔐',
-  'test-quality': '🧪',
-  'architecture': '🏗️',
-  'ux-review': '🎨',
-  'design-system': '🧩',
-  'responsive-design': '📐',
-  'color-typography': '🎭',
-  'motion-interaction': '✨',
-  'documentation': '📖',
-  'dependency-security': '🔍',
-  'auth-review': '🛡️',
-  'frontend-performance': '🚀',
-  'caching': '⚡',
-  'memory-profiler': '🧠',
-  'cloud-infra': '☁️',
-  'observability': '📡',
-  'database-infra': '🗃️',
-  'data-security': '🔏',
-  'error-handling': '🚨',
-  'typescript-strictness': '🔷',
-  'react-patterns': '⚛️',
-  'i18n': '🌍',
-  'rate-limiting': '🚦',
-  'logging': '📋',
-  'database-migrations': '🔄',
-  'concurrency': '⚡',
-  'ci-cd': '🔧',
-  'regex-review': '🔣',
-  'monorepo': '📦',
-  'graphql': '◈',
-  'websocket': '🔌',
-  'container-security': '🐳',
-  'cors-headers': '🌐',
-  'seo-technical': '🔍',
-  'bundle-size': '📊',
-  'forms-validation': '📝',
-  'dark-mode': '🌗',
-  'email-templates': '✉️',
-  'env-config': '⚙️',
-  'openapi': '📄',
-  'state-machines': '🔀',
-  'pagination': '📑',
+const BUILT_IN_ICONS: Record<string, LucideIcon> = {
+  'code-quality': Hexagon,
+  'security': Lock,
+  'seo-performance': TrendingUp,
+  'accessibility': Accessibility,
+  'sql': Database,
+  'api-design': Plug,
+  'devops': Container,
+  'performance': Zap,
+  'privacy': KeyRound,
+  'test-quality': TestTube2,
+  'architecture': Building2,
+  'ux-review': Palette,
+  'design-system': Puzzle,
+  'responsive-design': Ruler,
+  'color-typography': Theater,
+  'motion-interaction': Sparkles,
+  'documentation': BookOpen,
+  'dependency-security': Search,
+  'auth-review': ShieldCheck,
+  'frontend-performance': Rocket,
+  'caching': Zap,
+  'memory-profiler': Brain,
+  'cloud-infra': Cloud,
+  'observability': Radio,
+  'database-infra': Archive,
+  'data-security': ShieldAlert,
+  'error-handling': AlertTriangle,
+  'typescript-strictness': Diamond,
+  'react-patterns': Atom,
+  'i18n': Globe,
+  'rate-limiting': TrafficCone,
+  'logging': ClipboardList,
+  'database-migrations': RefreshCw,
+  'concurrency': Zap,
+  'ci-cd': Wrench,
+  'regex-review': Regex,
+  'monorepo': Package,
+  'graphql': Diamond,
+  'websocket': Cable,
+  'container-security': Container,
+  'cors-headers': Globe2,
+  'seo-technical': Search,
+  'bundle-size': BarChart3,
+  'forms-validation': FileText,
+  'dark-mode': Moon,
+  'email-templates': Mail,
+  'env-config': Settings,
+  'openapi': FileCode,
+  'state-machines': Shuffle,
+  'pagination': Bookmark,
 };
-
-const BUILT_IN_ICON_LABELS: Record<string, string> = {
-  'code-quality': 'hexagon',
-  'security': 'lock',
-  'seo-performance': 'chart',
-  'accessibility': 'accessibility symbol',
-  'sql': 'database',
-  'api-design': 'plug',
-  'devops': 'whale',
-  'performance': 'lightning bolt',
-  'privacy': 'lock with key',
-  'test-quality': 'test tube',
-  'architecture': 'construction',
-  'ux-review': 'palette',
-  'design-system': 'puzzle piece',
-  'responsive-design': 'ruler',
-  'color-typography': 'masks',
-  'motion-interaction': 'sparkles',
-  'documentation': 'open book',
-  'dependency-security': 'magnifying glass',
-  'auth-review': 'shield',
-  'frontend-performance': 'rocket',
-  'caching': 'lightning bolt',
-  'memory-profiler': 'brain',
-  'cloud-infra': 'cloud',
-  'observability': 'satellite dish',
-  'database-infra': 'card index dividers',
-  'data-security': 'locked with pen',
-  'error-handling': 'alert',
-  'typescript-strictness': 'blue diamond',
-  'react-patterns': 'atom',
-  'i18n': 'globe',
-  'rate-limiting': 'traffic light',
-  'logging': 'clipboard',
-  'database-migrations': 'cycle arrows',
-  'concurrency': 'lightning bolt',
-  'ci-cd': 'wrench',
-  'regex-review': 'input symbols',
-  'monorepo': 'package',
-  'graphql': 'diamond',
-  'websocket': 'plug',
-  'container-security': 'whale',
-  'cors-headers': 'globe with meridians',
-  'seo-technical': 'magnifying glass',
-  'bundle-size': 'bar chart',
-  'forms-validation': 'memo',
-  'dark-mode': 'last quarter moon',
-  'email-templates': 'envelope',
-  'env-config': 'gear',
-  'openapi': 'page',
-  'state-machines': 'shuffle',
-  'pagination': 'bookmarks',
-};
-
-const DEFAULT_CUSTOM_ICON = '✦';
 
 interface Props {
   agent: AgentConfig;
@@ -125,8 +80,7 @@ interface Props {
 
 // PERF-022: React.memo prevents re-render when parent state changes but this card's props haven't.
 export default memo(function AgentCard({ agent, href, index = 0, onEdit, onDelete, onToggleFavorite, isFavorite }: Props) {
-  const icon = BUILT_IN_ICONS[agent.id] ?? DEFAULT_CUSTOM_ICON;
-  const iconLabel = BUILT_IN_ICON_LABELS[agent.id] ?? 'custom agent';
+  const IconComponent = BUILT_IN_ICONS[agent.id] ?? null;
   const isCustom = !(agent.id in BUILT_IN_ICONS);
 
   // Robust text-color extraction — don't rely on positional splitting
@@ -158,7 +112,11 @@ export default memo(function AgentCard({ agent, href, index = 0, onEdit, onDelet
       <div className="relative z-10 pointer-events-none">
         <div className="flex items-start justify-between mb-3">
           <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-zinc-800/80 flex items-center justify-center">
-            <span role="img" aria-label={iconLabel} className="text-xl">{icon}</span>
+            {IconComponent ? (
+              <IconComponent className="w-5 h-5 text-gray-700 dark:text-zinc-300" aria-hidden="true" />
+            ) : (
+              <span className="text-xl text-gray-700 dark:text-zinc-300" aria-hidden="true">&#10022;</span>
+            )}
           </div>
         </div>
         <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-zinc-100 group-hover:text-black dark:group-hover:text-white transition-colors">
@@ -166,7 +124,7 @@ export default memo(function AgentCard({ agent, href, index = 0, onEdit, onDelet
         </h3>
         <p className="text-gray-600 dark:text-zinc-400 text-sm leading-relaxed">{agent.description}</p>
         <div className={`mt-4 text-xs font-medium uppercase tracking-widest ${accentTextClass} flex items-center gap-1`}>
-          Start audit <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
+          Start audit <span className="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
         </div>
       </div>
 
@@ -179,7 +137,7 @@ export default memo(function AgentCard({ agent, href, index = 0, onEdit, onDelet
             aria-label={isFavorite ? `Unpin ${agent.name}` : `Pin ${agent.name}`}
             aria-pressed={isFavorite ?? false}
           >
-            {isFavorite ? '⭐' : '☆'}
+            {isFavorite ? <Star className="w-5 h-5 fill-current" /> : <StarOff className="w-5 h-5" />}
           </button>
         )}
         {isCustom && onEdit && (

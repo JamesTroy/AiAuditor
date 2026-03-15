@@ -97,8 +97,8 @@ export default function StackPage() {
               items={[
                 'Personal dashboard with audit history',
                 'Score trends across audits',
-                'Star and annotate important findings',
-                'Search and filter past audits',
+                'Click any audit to view the full report',
+                'Download reports as Markdown',
               ]}
             />
           </div>
