@@ -350,7 +350,7 @@ export default function SiteAuditPage() {
             Full Site Audit
           </h1>
           <p className="text-gray-500 dark:text-zinc-400 text-lg max-w-2xl mx-auto">
-            Enter any website URL and choose which AI agents analyze it.
+            Enter any website URL and choose which AI audits to run.
           </p>
         </div>
 
@@ -397,7 +397,7 @@ export default function SiteAuditPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
               <span className="font-medium">
-                {selected.size} of {allAgents.length} agents selected
+                {selected.size} of {allAgents.length} audits selected
               </span>
             </button>
 

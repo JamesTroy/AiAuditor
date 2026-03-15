@@ -100,7 +100,7 @@ export default function OGImage() {
             fontSize: 20,
           }}
         >
-          <span>50 Specialized Agents</span>
+          <span>50 Specialized Audits</span>
           <span>·</span>
           <span>Instant Results</span>
           <span>·</span>

@@ -8,7 +8,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import UserNav from '@/components/UserNav';
 
 const NAV_LINKS = [
-  { href: '/', label: 'Agents' },
+  { href: '/', label: 'Audit Studio' },
   { href: '/site-audit', label: 'Site Audit' },
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/history', label: 'History' },
@@ -196,7 +196,7 @@ export default function Navbar() {
 
             {/* Drawer footer */}
             <div className="border-t border-gray-200 dark:border-zinc-800 px-6 py-4 text-xs text-gray-400 dark:text-zinc-600">
-              50 audit agents · Claude Sonnet 4.6
+              50 audits · Claude Sonnet 4.6
             </div>
           </div>
         </div>

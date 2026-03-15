@@ -167,7 +167,7 @@ export default function HistoryPage() {
                 onChange={(e) => setFilter(e.target.value)}
                 className="bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-zinc-300 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500 transition-colors"
               >
-                <option value="">All agents</option>
+                <option value="">All audits</option>
                 <option value="starred">⭐ Starred</option>
                 {agentIds.map((id) => {
                   const name = entries.find((e) => e.agentId === id)?.agentName ?? id;

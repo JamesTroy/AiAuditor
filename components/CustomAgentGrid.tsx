@@ -106,9 +106,9 @@ export default function CustomAgentGrid() {
     <>
       <div className="mt-12 mb-6 flex flex-col xs:flex-row xs:items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">Custom Agents</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">Custom Audits</h2>
           {agents.length === 0 && (
-            <p className="text-sm text-gray-500 dark:text-zinc-500 mt-0.5">Build your own audit agent with a custom system prompt.</p>
+            <p className="text-sm text-gray-500 dark:text-zinc-500 mt-0.5">Build your own audit with a custom system prompt.</p>
           )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -140,7 +140,7 @@ export default function CustomAgentGrid() {
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-zinc-300 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
           >
             <span aria-hidden="true" className="text-base leading-none">+</span>
-            New agent
+            New audit
           </button>
         </div>
       </div>

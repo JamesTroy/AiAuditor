@@ -32,10 +32,10 @@ export default function CustomAgentPage() {
       <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
         <div className="max-w-4xl mx-auto">
           <div className="mt-16 text-center">
-            <p className="text-gray-600 dark:text-zinc-400 text-lg mb-2">Agent not found.</p>
-            <p className="text-gray-500 dark:text-zinc-600 text-sm">This custom agent may have been deleted or the URL is incorrect.</p>
+            <p className="text-gray-600 dark:text-zinc-400 text-lg mb-2">Audit not found.</p>
+            <p className="text-gray-500 dark:text-zinc-600 text-sm">This custom audit may have been deleted or the URL is incorrect.</p>
             <Link href="/" className="inline-flex items-center gap-1 text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-500 mt-4">
-              Browse agents →
+              Browse audits →
             </Link>
           </div>
         </div>
@@ -48,7 +48,7 @@ export default function CustomAgentPage() {
       <div className="max-w-4xl mx-auto">
         {/* Breadcrumb */}
         <nav className="text-xs text-gray-400 dark:text-zinc-600 mb-6 flex items-center gap-1.5">
-          <Link href="/" className="hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">Agents</Link>
+          <Link href="/" className="hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">Audit Studio</Link>
           <span>/</span>
           <span className="text-purple-400">Custom</span>
           <span>/</span>
@@ -56,12 +56,12 @@ export default function CustomAgentPage() {
         </nav>
         <div className="mb-8">
           <div className="text-xs font-mono uppercase tracking-widest mb-3 text-purple-400">
-            Custom Audit Agent · Claude Sonnet 4.6
+            Custom Audit · Claude Sonnet 4.6
           </div>
           <h1 className="text-3xl font-bold mb-2">{agent.name}</h1>
           {agent.description && <p className="text-gray-600 dark:text-zinc-400">{agent.description}</p>}
           <p className="text-gray-500 dark:text-zinc-500 text-xs mt-2">
-            Custom agents use your own system prompt sent to the Anthropic API. Results stream in real-time and are stored in your browser.
+            Custom audits use your own system prompt sent to the Anthropic API. Results stream in real-time and are stored in your browser.
           </p>
           <SystemPromptViewer prompt={agent.systemPrompt} />
         </div>

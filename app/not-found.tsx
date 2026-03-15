@@ -15,7 +15,7 @@ export default function NotFound() {
             href="/"
             className="px-5 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors focus-ring"
           >
-            Browse agents
+            Browse audits
           </Link>
           <Link
             href="/dashboard"

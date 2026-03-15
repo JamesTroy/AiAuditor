@@ -41,7 +41,7 @@ export default function Home() {
             Instant AI-powered audits for code quality, security, and compliance.
           </p>
           <p className="text-gray-500 dark:text-zinc-500 text-sm max-w-lg mx-auto mb-8">
-            50 specialized agents powered by Claude Sonnet 4.6 — covering OWASP, GDPR, HIPAA, SOC 2, PCI DSS, and more.
+            50 specialized audits powered by Claude Sonnet 4.6 — covering OWASP, GDPR, HIPAA, SOC 2, PCI DSS, and more.
           </p>
 
           {/* Primary CTAs */}
@@ -56,7 +56,7 @@ export default function Home() {
               href="#agents"
               className="px-8 py-3.5 rounded-xl font-semibold text-base text-gray-600 dark:text-zinc-300 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors focus-ring whitespace-nowrap"
             >
-              Browse Agents
+              Browse Audits
             </Link>
           </div>
         </div>
@@ -72,7 +72,7 @@ export default function Home() {
             </div>
             <div className="bg-white/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl px-5 py-6">
               <div className="text-2xl mb-2">2</div>
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-zinc-200 mb-1">Pick your agents</h3>
+              <h3 className="text-sm font-semibold text-gray-800 dark:text-zinc-200 mb-1">Pick your audits</h3>
               <p className="text-xs text-gray-500 dark:text-zinc-500">Choose from 50 specialized audits — or run them all</p>
             </div>
             <div className="bg-white/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl px-5 py-6">
@@ -85,7 +85,7 @@ export default function Home() {
 
         {/* Category overview */}
         <section className="mb-16">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-6 text-center">50 agents across 5 categories</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-6 text-center">50 audits across 5 categories</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {CATEGORIES.map((cat) => (
               <Link
@@ -96,7 +96,7 @@ export default function Home() {
                 <div className="flex items-center gap-2.5 mb-2">
                   <span className={`w-2.5 h-2.5 rounded-full ${cat.color}`} />
                   <span className="font-semibold text-sm text-gray-900 dark:text-zinc-100">{cat.name}</span>
-                  <span className="text-xs text-gray-400 dark:text-zinc-600 ml-auto">{cat.count} agents</span>
+                  <span className="text-xs text-gray-400 dark:text-zinc-600 ml-auto">{cat.count} audits</span>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-zinc-500">{cat.description}</p>
               </Link>
@@ -106,7 +106,7 @@ export default function Home() {
 
         {/* Agent search + grid — for users who want a specific single agent */}
         <section id="agents" className="scroll-mt-20">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-6 text-center">Or run a single agent audit</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-6 text-center">Or run a single audit</h2>
           <HomeSearch agents={agents} />
         </section>
       </div>

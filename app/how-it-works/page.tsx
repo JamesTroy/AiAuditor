@@ -4,17 +4,17 @@ export const dynamic = 'force-static';
 
 export const metadata: Metadata = {
   title: 'How It Works',
-  description: 'How Claudit works — AI-powered code audits with 50 specialized agents, real-time streaming results, and enterprise-grade security.',
+  description: 'How Claudit works — AI-powered code audits with 50 specialized audits, real-time streaming results, and enterprise-grade security.',
   alternates: { canonical: '/how-it-works' },
   openGraph: {
     title: 'How It Works — Claudit',
-    description: 'Paste code or enter a URL, choose from 50 AI audit agents, and get severity-rated findings in seconds.',
+    description: 'Paste code or enter a URL, choose from 50 AI audits, and get severity-rated findings in seconds.',
     url: '/how-it-works',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'How It Works — Claudit',
-    description: 'Paste code or enter a URL, choose from 50 AI audit agents, and get severity-rated findings in seconds.',
+    description: 'Paste code or enter a URL, choose from 50 AI audits, and get severity-rated findings in seconds.',
   },
 };
 
@@ -41,12 +41,12 @@ export default function StackPage() {
             <StepCard
               step={1}
               title="Paste your code or enter a URL"
-              description="Drop in source files, paste code snippets, or point us at any live website. Each agent includes a prep prompt to help you gather the right files."
+              description="Drop in source files, paste code snippets, or point us at any live website. Each audit includes a prep prompt to help you gather the right files."
             />
             <StepCard
               step={2}
               title="AI analyzes it"
-              description="Your code is analyzed by specialized AI agents — each focused on a specific domain like security, accessibility, or performance. Results stream back in real-time."
+              description="Your code is analyzed by specialized AI audits — each focused on a specific domain like security, accessibility, or performance. Results stream back in real-time."
             />
             <StepCard
               step={3}
@@ -61,8 +61,8 @@ export default function StackPage() {
           <h2 className="text-2xl font-bold mb-6">What You Get</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FeatureCard
-              title="50 Specialized Agents"
-              description="Each agent is an expert in a specific domain — from OWASP security to React patterns, from GDPR compliance to bundle size optimization."
+              title="50 Specialized Audits"
+              description="Each audit is an expert in a specific domain — from OWASP security to React patterns, from GDPR compliance to bundle size optimization."
               items={[
                 'Security & Privacy (OWASP, GDPR, HIPAA, PCI DSS, SOC 2)',
                 'Code Quality (bugs, anti-patterns, architecture, testing)',
@@ -73,10 +73,10 @@ export default function StackPage() {
             />
             <FeatureCard
               title="Real-Time Streaming"
-              description="Results appear as the AI works — no waiting for a batch job to finish. Watch findings arrive live, or run a full site audit across multiple agents at once."
+              description="Results appear as the AI works — no waiting for a batch job to finish. Watch findings arrive live, or run a full site audit with multiple audits at once."
               items={[
                 'Results stream in real-time as they are generated',
-                'Full site audit runs multiple agents sequentially',
+                'Full site audit runs multiple audits sequentially',
                 'Stop anytime and keep partial results',
                 'Copy or download complete reports as Markdown',
               ]}
@@ -142,7 +142,7 @@ export default function StackPage() {
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-6">Built With</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <BuiltWithCard name="Claude by Anthropic" description="AI engine powering all 50 audit agents" />
+            <BuiltWithCard name="Claude by Anthropic" description="AI engine powering all 50 audits" />
             <BuiltWithCard name="Next.js 15" description="React framework with server-side rendering" />
             <BuiltWithCard name="PostgreSQL" description="Reliable, EU-hosted relational database" />
             <BuiltWithCard name="TypeScript" description="End-to-end type safety" />

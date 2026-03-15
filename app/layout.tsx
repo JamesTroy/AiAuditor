@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: '%s | Claudit',
   },
   description:
-    'Run instant AI code audits across security, quality, and performance — 50 specialized agents, results in seconds. Try it free.',
+    'Run instant AI code audits across security, quality, and performance — 50 specialized audits, results in seconds. Try it free.',
   manifest: '/site.webmanifest',
   alternates: {
     canonical: '/',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     siteName: 'Claudit',
     title: 'AI Code Audit Tool — Claudit',
     description:
-      'Run instant AI code audits across security, quality, and performance — 50 specialized agents, results in seconds. Try it free.',
+      'Run instant AI code audits across security, quality, and performance — 50 specialized audits, results in seconds. Try it free.',
     url: BASE_URL,
     images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Claudit — AI Code Audit Tool' }],
   },
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'AI Code Audit Tool — Claudit',
     description:
-      'Run instant AI code audits across security, quality, and performance — 50 specialized agents, results in seconds.',
+      'Run instant AI code audits across security, quality, and performance — 50 specialized audits, results in seconds.',
     images: ['/opengraph-image'],
   },
   robots: {

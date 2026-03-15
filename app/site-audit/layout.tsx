@@ -6,13 +6,13 @@ export const metadata: Metadata = {
   alternates: { canonical: '/site-audit' },
   openGraph: {
     title: 'Full Site Audit — Claudit',
-    description: 'Enter any URL and run up to 20 AI agents at once — security, SEO, accessibility, performance, and more.',
+    description: 'Enter any URL and run up to 20 AI audits at once — security, SEO, accessibility, performance, and more.',
     url: '/site-audit',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Full Site Audit — Claudit',
-    description: 'Enter any URL and run up to 20 AI agents at once — security, SEO, accessibility, performance, and more.',
+    description: 'Enter any URL and run up to 20 AI audits at once — security, SEO, accessibility, performance, and more.',
   },
 };
 

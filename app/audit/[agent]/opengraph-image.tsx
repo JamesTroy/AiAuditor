@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { getAgent, agents } from '@/lib/agents';
 
-export const alt = 'Claudit Audit Agent';
+export const alt = 'Claudit Audit';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -12,7 +12,7 @@ export default async function AgentOGImage({
 }) {
   const { agent: agentId } = await params;
   const agent = getAgent(agentId);
-  const name = agent?.name ?? 'Audit Agent';
+  const name = agent?.name ?? 'Audit';
   const category = agent?.category ?? '';
   const description = agent?.description ?? '';
 
