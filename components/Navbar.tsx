@@ -12,7 +12,7 @@ const NAV_LINKS = [
   { href: '/site-audit', label: 'Site Audit' },
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/history', label: 'History' },
-  { href: '/stack', label: 'How It Works' },
+  { href: '/how-it-works', label: 'How It Works' },
 ] as const;
 
 export default function Navbar() {

@@ -15,7 +15,7 @@ export default function Footer() {
         </p>
 
         <div className="flex items-center gap-4">
-          <Link href="/stack" className="text-xs py-2 px-1 text-gray-400 dark:text-zinc-600 hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">
+          <Link href="/how-it-works" className="text-xs py-2 px-1 text-gray-400 dark:text-zinc-600 hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">
             How It Works
           </Link>
           <Link href="/privacy" className="text-xs py-2 px-1 text-gray-400 dark:text-zinc-600 hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">

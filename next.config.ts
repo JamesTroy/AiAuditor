@@ -36,6 +36,15 @@ const nextConfig: NextConfig = {
       algorithm: 'sha256',
     },
   },
+  async redirects() {
+    return [
+      {
+        source: '/stack',
+        destination: '/how-it-works',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
