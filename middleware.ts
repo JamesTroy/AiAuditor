@@ -78,6 +78,9 @@ export function middleware(request: NextRequest) {
   });
 
   response.headers.set('Content-Security-Policy', csp);
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
   return response;
 }
 

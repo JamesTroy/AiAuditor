@@ -11,21 +11,13 @@ export default function Footer() {
         </Link>
 
         <p className="text-xs text-gray-400 dark:text-zinc-600">
-          Next.js 15 · React 19 · Claude Sonnet 4.6 · Better Auth · Drizzle · Tailwind
+          AI-powered code auditing
         </p>
 
         <div className="flex items-center gap-4">
           <Link href="/stack" className="text-xs text-gray-400 dark:text-zinc-600 hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">
             Stack
           </Link>
-          <a
-            href="https://github.com/JamesTroy/AiAuditor"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-gray-400 dark:text-zinc-600 hover:text-gray-600 dark:hover:text-zinc-400 transition-colors"
-          >
-            GitHub
-          </a>
         </div>
       </div>
     </footer>

@@ -21,7 +21,7 @@ export function GlobalJsonLd() {
     name: 'Claudit',
     url: BASE_URL,
     logo: `${BASE_URL}/logo.svg`,
-    sameAs: ['https://github.com/JamesTroy/AiAuditor'],
+    sameAs: [],
   };
 
   const website = {
