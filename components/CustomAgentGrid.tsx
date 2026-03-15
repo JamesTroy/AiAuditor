@@ -15,16 +15,16 @@ import {
   CustomAgent,
 } from '@/lib/customAgents';
 
-// Discriminated union — makes simultaneous modals structurally impossible.
+// SM-006: Discriminated union includes delete-confirm — makes simultaneous modals structurally impossible.
 type ModalState =
   | { mode: 'closed' }
   | { mode: 'create' }
-  | { mode: 'edit'; agent: CustomAgent };
+  | { mode: 'edit'; agent: CustomAgent }
+  | { mode: 'delete-confirm'; agentId: string };
 
 export default function CustomAgentGrid() {
   const [agents, setAgents] = useState<CustomAgent[]>([]);
   const [modal, setModal] = useState<ModalState>({ mode: 'closed' });
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [importError, setImportError] = useState('');
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -53,7 +53,7 @@ export default function CustomAgentGrid() {
 
   function handleDeleteConfirmed(id: string) {
     deleteCustomAgent(id);
-    setDeleteConfirm(null);
+    setModal({ mode: 'closed' });
     load();
   }
 
@@ -156,27 +156,27 @@ export default function CustomAgentGrid() {
               <AgentCard
                 agent={toAgentConfig(agent)}
                 onEdit={() => setModal({ mode: 'edit', agent })}
-                onDelete={() => setDeleteConfirm(agent.id)}
+                onDelete={() => setModal({ mode: 'delete-confirm', agentId: agent.id })}
               />
             </Link>
           ))}
         </div>
       )}
 
-      {deleteConfirm && (
+      {modal.mode === 'delete-confirm' && (
         <div className="mt-4 p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg flex items-center justify-between gap-4">
           <p className="text-sm text-gray-700 dark:text-zinc-300">
-            Delete &ldquo;{agents.find((a) => a.id === deleteConfirm)?.name}&rdquo;? This cannot be undone.
+            Delete &ldquo;{agents.find((a) => a.id === modal.agentId)?.name}&rdquo;? This cannot be undone.
           </p>
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => setDeleteConfirm(null)}
+              onClick={closeModal}
               className="px-3 py-1.5 text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 border border-gray-300 dark:border-zinc-700 rounded-lg transition-colors"
             >
               Cancel
             </button>
             <button
-              onClick={() => handleDeleteConfirmed(deleteConfirm)}
+              onClick={() => handleDeleteConfirmed(modal.agentId)}
               className="px-3 py-1.5 text-sm font-medium text-white bg-red-700 hover:bg-red-600 rounded-lg transition-colors"
             >
               Delete
@@ -186,7 +186,7 @@ export default function CustomAgentGrid() {
       )}
 
       {/* Single modal render site — mode discriminates create vs edit, making dual-render impossible */}
-      {modal.mode !== 'closed' && (
+      {(modal.mode === 'create' || modal.mode === 'edit') && (
         <CreateAgentModal
           editing={modal.mode === 'edit' ? modal.agent : null}
           onSave={modal.mode === 'edit' ? handleEdit : handleCreate}

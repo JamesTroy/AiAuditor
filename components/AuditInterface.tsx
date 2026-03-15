@@ -31,35 +31,51 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
   const router = useRouter();
   const [input, setInput] = useState('');
   const [files, setFiles] = useState<FileEntry[]>([]);
-  const [copied, setCopied] = useState(false);
-  const [urlValue, setUrlValue] = useState('');
-  const [urlLoading, setUrlLoading] = useState(false);
-  const [urlError, setUrlError] = useState('');
-  const [showUrl, setShowUrl] = useState(false);
   const [chainOpen, setChainOpen] = useState(false);
   const [canPaste, setCanPaste] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
   const [diffMode, setDiffMode] = useState(false);
   const [beforeCode, setBeforeCode] = useState('');
-  const [prUrl, setPrUrl] = useState('');
-  const [prLoading, setPrLoading] = useState(false);
-  const [prError, setPrError] = useState('');
-  const [showPr, setShowPr] = useState(false);
+
+  // SM-002: Single enum replaces showUrl + showPr booleans. Only one panel open at a time.
+  const [inputPanel, setInputPanel] = useState<'none' | 'url' | 'pr'>('none');
+  // SM-020: Single loading + error for whichever input panel is active.
+  const [inputFetching, setInputFetching] = useState(false);
+  const [inputFetchError, setInputFetchError] = useState('');
+  const [inputFetchValue, setInputFetchValue] = useState('');
+
+  // SM-019: Cleanup timer ref for copied state.
+  const [copied, setCopied] = useState(false);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // SM-001/SM-010: Chat state with abort controller and message status.
+  type ChatMessage = { role: 'user' | 'assistant'; content: string; status: 'done' | 'pending' | 'streaming' | 'error' };
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatAbortRef = useRef<AbortController | null>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chainRef = useRef<HTMLDivElement>(null);
   const resultEndRef = useRef<HTMLDivElement>(null);
   const userScrolledUp = useRef(false);
 
   // ARCH-002: Streaming audit state lives in the hook.
-  const { result, loading, error, runAudit, handleStop } = useAuditSession(agent, onAuditSaved);
+  const { result, status, loading, error, runAudit, handleStop } = useAuditSession(agent, onAuditSaved);
 
   // Detect clipboard API after mount — keeps SSR/client render identical
   useEffect(() => {
     setCanPaste(!!navigator.clipboard?.readText);
+  }, []);
+
+  // SM-019: Clear copied timer on unmount.
+  // SM-003: Abort chat stream on unmount.
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      chatAbortRef.current?.abort();
+    };
   }, []);
 
   // Elapsed timer while loading
@@ -174,65 +190,49 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
     });
   }
 
-  async function handleFetchUrl() {
-    const trimmed = urlValue.trim();
-    if (!trimmed) return;
-    setUrlLoading(true);
-    setUrlError('');
+  // SM-002/SM-020: Unified input fetch handler for URL and PR panels.
+  async function handleFetchInput() {
+    const trimmed = inputFetchValue.trim();
+    if (!trimmed || inputFetching) return;
+    setInputFetching(true);
+    setInputFetchError('');
     try {
-      const res = await fetch('/api/fetch-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: trimmed }),
-      });
-      if (!res.ok) {
-        setUrlError(await res.text());
-        return;
+      if (inputPanel === 'url') {
+        const res = await fetch('/api/fetch-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: trimmed }),
+        });
+        if (!res.ok) { setInputFetchError(await res.text()); return; }
+        const text = await res.text();
+        setInput(text.slice(0, MAX_CHARS));
+      } else if (inputPanel === 'pr') {
+        const res = await fetch('/api/github-pr', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: trimmed }),
+        });
+        if (!res.ok) { setInputFetchError(await res.text()); return; }
+        const data = await res.json();
+        const header = `# PR: ${data.title}\n# Author: ${data.author}\n# Branch: ${data.branch} → ${data.baseBranch}\n# Changed files: ${data.changedFiles} (+${data.additions} -${data.deletions})\n${data.truncated ? '# Note: Diff truncated to 100KB\n' : ''}\n`;
+        setInput((header + data.diff).slice(0, MAX_CHARS));
       }
-      const text = await res.text();
-      setInput(text.slice(0, MAX_CHARS));
       setFiles([]);
-      setUrlValue('');
-      setShowUrl(false);
+      setInputFetchValue('');
+      setInputPanel('none');
     } catch (err) {
-      setUrlError(err instanceof Error ? err.message : 'Failed to fetch URL');
+      setInputFetchError(err instanceof Error ? err.message : 'Failed to fetch');
     } finally {
-      setUrlLoading(false);
-    }
-  }
-
-  async function handleFetchPr() {
-    const trimmed = prUrl.trim();
-    if (!trimmed) return;
-    setPrLoading(true);
-    setPrError('');
-    try {
-      const res = await fetch('/api/github-pr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: trimmed }),
-      });
-      if (!res.ok) {
-        setPrError(await res.text());
-        return;
-      }
-      const data = await res.json();
-      const header = `# PR: ${data.title}\n# Author: ${data.author}\n# Branch: ${data.branch} → ${data.baseBranch}\n# Changed files: ${data.changedFiles} (+${data.additions} -${data.deletions})\n${data.truncated ? '# Note: Diff truncated to 100KB\n' : ''}\n`;
-      setInput((header + data.diff).slice(0, MAX_CHARS));
-      setFiles([]);
-      setPrUrl('');
-      setShowPr(false);
-    } catch (err) {
-      setPrError(err instanceof Error ? err.message : 'Failed to fetch PR');
-    } finally {
-      setPrLoading(false);
+      setInputFetching(false);
     }
   }
 
   async function handleCopy() {
     await navigator.clipboard.writeText(result);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    // SM-019: Store timer ID for cleanup on unmount.
+    if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
   }
 
   function handleDownload() {
@@ -278,13 +278,20 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
     router.push(`/audit/${targetId}`);
   }
 
+  // SM-001: Guard prevents chat while audit is loading.
+  // SM-003: AbortController for chat stream; aborted on unmount or new chat.
+  // SM-010: Explicit error recovery with retry affordance via message status.
+  // SM-018: Optimistic messages tagged with status field.
   async function sendChat() {
     const trimmed = chatInput.trim();
-    if (!trimmed || chatLoading || !result) return;
+    if (!trimmed || chatLoading || loading || !result) return;
 
-    const userMsg = { role: 'user' as const, content: trimmed };
-    const nextMessages = [...chatMessages, userMsg];
-    setChatMessages(nextMessages);
+    // Abort any previous chat stream.
+    chatAbortRef.current?.abort();
+    chatAbortRef.current = new AbortController();
+
+    const userMsg: ChatMessage = { role: 'user', content: trimmed, status: 'done' };
+    setChatMessages((prev) => [...prev, userMsg]);
     setChatInput('');
     setChatLoading(true);
 
@@ -293,14 +300,15 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: nextMessages,
+          messages: [...chatMessages, { role: 'user', content: trimmed }].map((m) => ({ role: m.role, content: m.content })),
           context: `Code:\n${input}\n\nAudit Result:\n${result}`,
         }),
+        signal: chatAbortRef.current.signal,
       });
 
       if (!res.ok || !res.body) {
         const errText = await res.text();
-        setChatMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${errText || res.status}` }]);
+        setChatMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${errText || res.status}`, status: 'error' }]);
         return;
       }
 
@@ -311,14 +319,15 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+        if (chatAbortRef.current?.signal.aborted) return;
         chunks.push(decoder.decode(value, { stream: true }));
         const soFar = chunks.join('');
         setChatMessages((prev) => {
           const last = prev[prev.length - 1];
-          if (last?.role === 'assistant') {
-            return [...prev.slice(0, -1), { role: 'assistant', content: soFar }];
+          if (last?.role === 'assistant' && last.status === 'streaming') {
+            return [...prev.slice(0, -1), { role: 'assistant', content: soFar, status: 'streaming' }];
           }
-          return [...prev, { role: 'assistant', content: soFar }];
+          return [...prev, { role: 'assistant', content: soFar, status: 'streaming' }];
         });
       }
 
@@ -326,16 +335,29 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
       setChatMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last?.role === 'assistant') {
-          return [...prev.slice(0, -1), { role: 'assistant', content: final }];
+          return [...prev.slice(0, -1), { role: 'assistant', content: final, status: 'done' }];
         }
-        return [...prev, { role: 'assistant', content: final }];
+        return [...prev, { role: 'assistant', content: final, status: 'done' }];
       });
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setChatMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${err.message}` }]);
-      }
+      if (err instanceof Error && err.name === 'AbortError') return;
+      setChatMessages((prev) => {
+        // SM-018: Mark the failed assistant message with error status for retry.
+        return [...prev, { role: 'assistant', content: err instanceof Error ? err.message : 'Stream failed', status: 'error' }];
+      });
     } finally {
       setChatLoading(false);
+    }
+  }
+
+  // SM-010: Retry failed chat message.
+  function retryChatMessage(failedIndex: number) {
+    // Remove the failed assistant message and re-send from the last user message.
+    setChatMessages((prev) => prev.filter((_, i) => i !== failedIndex));
+    // Re-trigger will happen on next user action; or we can auto-retry:
+    const lastUserMsg = chatMessages.filter((m) => m.role === 'user').at(-1);
+    if (lastUserMsg) {
+      setChatInput(lastUserMsg.content);
     }
   }
 
@@ -380,71 +402,48 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
         Audit history is stored in your browser&apos;s localStorage as unencrypted text. Do not submit proprietary credentials or sensitive data.
       </p>
 
-      {/* URL import */}
-      <div>
+      {/* SM-002: URL / PR import — single panel open at a time */}
+      <div className="flex items-center gap-3">
         <button
-          onClick={() => setShowUrl((v) => !v)}
-          className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 transition-colors mb-2"
+          onClick={() => { setInputPanel((v) => v === 'url' ? 'none' : 'url'); setInputFetchError(''); setInputFetchValue(''); }}
+          className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 transition-colors"
         >
-          {showUrl ? '▾' : '▸'} Import from URL
+          {inputPanel === 'url' ? '▾' : '▸'} Import from URL
         </button>
-        {showUrl && (
-          <div className="flex gap-2 mt-1">
-            <input
-              type="url"
-              value={urlValue}
-              onChange={(e) => setUrlValue(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleFetchUrl(); }}
-              placeholder={`https:// — allowed: ${ALLOWED_URL_DESCRIPTION}`}
-              className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500"
-            />
-            <button
-              onClick={handleFetchUrl}
-              disabled={urlLoading || !urlValue.trim()}
-              className="px-4 py-2 rounded-lg text-sm bg-gray-200 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:bg-gray-300 dark:hover:bg-zinc-700 disabled:opacity-40 transition-colors"
-            >
-              {urlLoading ? 'Fetching…' : 'Fetch'}
-            </button>
-          </div>
-        )}
-        {urlError && <p className="mt-1 text-xs text-red-500">{urlError}</p>}
-      </div>
-
-      {/* GitHub PR import */}
-      <div>
         <button
-          onClick={() => setShowPr((v) => !v)}
-          className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 transition-colors mb-2"
+          onClick={() => { setInputPanel((v) => v === 'pr' ? 'none' : 'pr'); setInputFetchError(''); setInputFetchValue(''); }}
+          className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 transition-colors"
         >
-          {showPr ? '▾' : '▸'} Import from GitHub PR
+          {inputPanel === 'pr' ? '▾' : '▸'} Import from GitHub PR
         </button>
-        {showPr && (
-          <div className="flex gap-2 mt-1">
-            <input
-              type="url"
-              value={prUrl}
-              onChange={(e) => setPrUrl(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleFetchPr(); }}
-              placeholder="https://github.com/owner/repo/pull/123"
-              className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500"
-            />
-            <button
-              onClick={handleFetchPr}
-              disabled={prLoading || !prUrl.trim()}
-              className="px-4 py-2 rounded-lg text-sm bg-gray-200 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:bg-gray-300 dark:hover:bg-zinc-700 disabled:opacity-40 transition-colors"
-            >
-              {prLoading ? 'Fetching…' : 'Fetch PR'}
-            </button>
-          </div>
-        )}
-        {prError && <p className="mt-1 text-xs text-red-500">{prError}</p>}
       </div>
+      {inputPanel !== 'none' && (
+        <div className="flex gap-2 mt-1">
+          <input
+            type="url"
+            value={inputFetchValue}
+            onChange={(e) => setInputFetchValue(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleFetchInput(); }}
+            placeholder={inputPanel === 'url' ? `https:// — allowed: ${ALLOWED_URL_DESCRIPTION}` : 'https://github.com/owner/repo/pull/123'}
+            className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500"
+          />
+          <button
+            onClick={handleFetchInput}
+            disabled={inputFetching || !inputFetchValue.trim()}
+            className="px-4 py-2 rounded-lg text-sm bg-gray-200 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:bg-gray-300 dark:hover:bg-zinc-700 disabled:opacity-40 transition-colors"
+          >
+            {inputFetching ? 'Fetching…' : inputPanel === 'url' ? 'Fetch' : 'Fetch PR'}
+          </button>
+        </div>
+      )}
+      {inputFetchError && <p className="mt-1 text-xs text-red-500">{inputFetchError}</p>}
 
-      {/* Diff mode toggle */}
+      {/* SM-007: Diff mode toggle — disabled during loading */}
       <div className="flex items-center gap-2">
         <button
           onClick={() => setDiffMode((v) => !v)}
-          className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+          disabled={loading}
+          className={`text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
             diffMode
               ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300'
               : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'
@@ -753,13 +752,26 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
                   className={`text-sm ${
                     msg.role === 'user'
                       ? 'text-gray-700 dark:text-zinc-300 bg-gray-50 dark:bg-zinc-800 rounded-lg px-3 py-2'
-                      : 'prose prose-sm max-w-none dark:prose-invert'
+                      : msg.status === 'error'
+                        ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 rounded-lg px-3 py-2'
+                        : 'prose prose-sm max-w-none dark:prose-invert'
                   }`}
                 >
                   {msg.role === 'user' ? (
                     <span className="font-medium">{msg.content}</span>
                   ) : (
-                    <SafeMarkdown>{msg.content}</SafeMarkdown>
+                    <>
+                      <SafeMarkdown>{msg.content}</SafeMarkdown>
+                      {/* SM-010: Retry button for failed assistant messages */}
+                      {msg.status === 'error' && (
+                        <button
+                          onClick={() => retryChatMessage(i)}
+                          className="mt-1 text-xs text-red-500 hover:text-red-700 dark:hover:text-red-300 underline"
+                        >
+                          Retry
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               ))}

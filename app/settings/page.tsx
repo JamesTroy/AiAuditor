@@ -1,25 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, authClient } from '@/lib/auth-client';
+
+// SM-004: Discriminated form status replaces saving + saved booleans.
+type FormStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export default function SettingsPage() {
   const { data: session, isPending } = useSession();
   const router = useRouter();
   const [name, setName] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [profileStatus, setProfileStatus] = useState<FormStatus>('idle');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const [passwordSaved, setPasswordSaved] = useState(false);
-  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordStatus, setPasswordStatus] = useState<FormStatus>('idle');
+  // SM-019: Cleanup timer refs for saved-state reset.
+  const profileTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const passwordTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Initialize name from session once loaded
-  if (session && !name && !saving) {
-    setName(session.user.name ?? '');
-  }
+  // SM-015: Initialize name from session in useEffect, not during render.
+  useEffect(() => {
+    if (session?.user.name && !name && profileStatus === 'idle') {
+      setName(session.user.name);
+    }
+  }, [session, name, profileStatus]);
+
+  // Cleanup timers on unmount.
+  useEffect(() => {
+    return () => {
+      if (profileTimerRef.current) clearTimeout(profileTimerRef.current);
+      if (passwordTimerRef.current) clearTimeout(passwordTimerRef.current);
+    };
+  }, []);
 
   if (isPending) {
     return (
@@ -36,27 +50,26 @@ export default function SettingsPage() {
 
   async function handleUpdateProfile(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
-    setSaved(false);
+    setProfileStatus('saving');
 
     await authClient.updateUser({ name });
 
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setProfileStatus('saved');
+    if (profileTimerRef.current) clearTimeout(profileTimerRef.current);
+    profileTimerRef.current = setTimeout(() => setProfileStatus('idle'), 3000);
   }
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
     setPasswordError('');
-    setPasswordSaved(false);
+    setPasswordStatus('idle');
 
     if (newPassword.length < 8) {
       setPasswordError('New password must be at least 8 characters');
       return;
     }
 
-    setChangingPassword(true);
+    setPasswordStatus('saving');
 
     const { error } = await authClient.changePassword({
       currentPassword,
@@ -65,14 +78,14 @@ export default function SettingsPage() {
 
     if (error) {
       setPasswordError(error.message ?? 'Failed to change password');
+      setPasswordStatus('error');
     } else {
-      setPasswordSaved(true);
+      setPasswordStatus('saved');
       setCurrentPassword('');
       setNewPassword('');
-      setTimeout(() => setPasswordSaved(false), 3000);
+      if (passwordTimerRef.current) clearTimeout(passwordTimerRef.current);
+      passwordTimerRef.current = setTimeout(() => setPasswordStatus('idle'), 3000);
     }
-
-    setChangingPassword(false);
   }
 
   return (
@@ -115,12 +128,12 @@ export default function SettingsPage() {
             <div className="flex items-center gap-3">
               <button
                 type="submit"
-                disabled={saving}
+                disabled={profileStatus === 'saving'}
                 className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
               >
-                {saving ? 'Saving...' : 'Save changes'}
+                {profileStatus === 'saving' ? 'Saving...' : 'Save changes'}
               </button>
-              {saved && (
+              {profileStatus === 'saved' && (
                 <span className="text-sm text-green-600 dark:text-green-400">Saved!</span>
               )}
             </div>
@@ -168,12 +181,12 @@ export default function SettingsPage() {
             <div className="flex items-center gap-3">
               <button
                 type="submit"
-                disabled={changingPassword}
+                disabled={passwordStatus === 'saving'}
                 className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
               >
-                {changingPassword ? 'Changing...' : 'Change password'}
+                {passwordStatus === 'saving' ? 'Changing...' : 'Change password'}
               </button>
-              {passwordSaved && (
+              {passwordStatus === 'saved' && (
                 <span className="text-sm text-green-600 dark:text-green-400">Password updated!</span>
               )}
             </div>

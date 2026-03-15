@@ -63,10 +63,14 @@ export default function SiteAuditPage() {
   const [copied, setCopied] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set(DEFAULT_IDS));
   const [pickerOpen, setPickerOpen] = useState(false);
+  // SM-005: Discriminated union for synthesis state.
+  type SynthStatus = 'idle' | 'loading' | 'done' | 'error';
   const [synthesis, setSynthesis] = useState('');
-  const [synthesizing, setSynthesizing] = useState(false);
+  const [synthStatus, setSynthStatus] = useState<SynthStatus>('idle');
   const [synthError, setSynthError] = useState('');
   const abortRef = useRef<AbortController | null>(null);
+  // SM-011: AbortController for synthesis stream.
+  const synthAbortRef = useRef<AbortController | null>(null);
   const chunksRef = useRef<string[]>([]);
   const rafRef = useRef<number | null>(null);
   const resultEndRef = useRef<HTMLDivElement>(null);
@@ -151,6 +155,8 @@ export default function SiteAuditPage() {
   useEffect(() => {
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      abortRef.current?.abort();
+      synthAbortRef.current?.abort();
     };
   }, []);
 
@@ -197,6 +203,12 @@ export default function SiteAuditPage() {
     setLoading(true);
     setResult('');
     setError('');
+    // SM-013: Clear synthesis errors from previous run.
+    setSynthError('');
+    setSynthStatus('idle');
+    setSynthesis('');
+    // SM-016: Close picker so results are visible.
+    setPickerOpen(false);
 
     try {
       const res = await fetch('/api/site-audit', {
@@ -247,7 +259,7 @@ export default function SiteAuditPage() {
     } finally {
       setLoading(false);
     }
-  }, [url, loading, selected]);
+  }, [url, loading, selected, savePerAgentResults]);
 
   function handleStop() {
     abortRef.current?.abort();
@@ -277,8 +289,13 @@ export default function SiteAuditPage() {
   }
 
   const runSynthesis = useCallback(async () => {
-    if (synthesizing || !result) return;
-    setSynthesizing(true);
+    if (synthStatus === 'loading' || !result) return;
+
+    // SM-011: Abort previous synthesis stream if any.
+    synthAbortRef.current?.abort();
+    synthAbortRef.current = new AbortController();
+
+    setSynthStatus('loading');
     setSynthesis('');
     setSynthError('');
 
@@ -287,10 +304,12 @@ export default function SiteAuditPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ results: result }),
+        signal: synthAbortRef.current.signal,
       });
 
       if (!res.ok || !res.body) {
         setSynthError(await res.text() || `Error ${res.status}`);
+        setSynthStatus('error');
         return;
       }
 
@@ -301,16 +320,18 @@ export default function SiteAuditPage() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+        if (synthAbortRef.current?.signal.aborted) return;
         chunks.push(decoder.decode(value, { stream: true }));
         setSynthesis(chunks.join(''));
       }
       setSynthesis(chunks.join(''));
+      setSynthStatus('done');
     } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') return;
       if (err instanceof Error) setSynthError(err.message);
-    } finally {
-      setSynthesizing(false);
+      setSynthStatus('error');
     }
-  }, [result, synthesizing]);
+  }, [result, synthStatus]);
 
   // Detect which agent section is currently streaming
   const currentAgentIndex = selectedAgents.findIndex((agent, i) => {
@@ -604,7 +625,7 @@ export default function SiteAuditPage() {
         {/* Synthesis — Generate Roadmap */}
         {!loading && result && (
           <div className="mt-6">
-            {!synthesis && !synthesizing && (
+            {synthStatus === 'idle' && (
               <button
                 onClick={runSynthesis}
                 className="w-full py-3.5 rounded-xl font-semibold text-base text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all focus-ring flex items-center justify-center gap-2"
@@ -622,11 +643,11 @@ export default function SiteAuditPage() {
               </div>
             )}
 
-            {(synthesis || synthesizing) && (
+            {(synthesis || synthStatus === 'loading') && (
               <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 border-t-2 border-t-indigo-500/50 rounded-lg overflow-hidden mt-3">
                 <div className="px-4 py-2 border-b border-gray-200 dark:border-zinc-800">
                   <span className="text-xs font-mono uppercase tracking-widest">
-                    {synthesizing ? (
+                    {synthStatus === 'loading' ? (
                       <span className="flex items-center gap-1.5 text-indigo-400">
                         <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
                         Synthesizing findings…
@@ -637,7 +658,7 @@ export default function SiteAuditPage() {
                   </span>
                 </div>
                 <div className="p-6 prose prose-sm max-w-none dark:prose-invert">
-                  {synthesizing ? (
+                  {synthStatus === 'loading' ? (
                     <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-zinc-200 m-0 p-0 bg-transparent">
                       {synthesis}
                       <span className="animate-blink"> ▍</span>
