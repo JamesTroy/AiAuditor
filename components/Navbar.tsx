@@ -195,7 +195,7 @@ export default function Navbar() {
 
             {/* Drawer footer */}
             <div className="border-t border-gray-200 dark:border-zinc-800 px-6 py-4 text-xs text-gray-400 dark:text-zinc-600">
-              50 audits · Claude Sonnet 4.6
+              50 audits · Security · Performance · Compliance
             </div>
           </div>
         </div>

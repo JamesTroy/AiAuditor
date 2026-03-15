@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-export const alt = 'Claudit — AI Code Audit Tool';
+export const alt = 'Claudit — Find what your code review missed';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -46,23 +46,6 @@ export default function OGImage() {
           }}
         />
 
-        {/* Badge */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '8px 20px',
-            borderRadius: 24,
-            background: 'rgba(124,58,237,0.15)',
-            color: '#a78bfa',
-            fontSize: 18,
-            marginBottom: 24,
-          }}
-        >
-          Powered by Claude
-        </div>
-
         {/* Title */}
         <div
           style={{
@@ -72,25 +55,39 @@ export default function OGImage() {
             background: 'linear-gradient(to right, #ffffff, #d4d4d8, #a1a1aa)',
             backgroundClip: 'text',
             color: 'transparent',
-            marginBottom: 16,
+            marginBottom: 20,
           }}
         >
           Claudit
         </div>
 
+        {/* Headline */}
+        <div
+          style={{
+            fontSize: 32,
+            fontWeight: 600,
+            color: '#e4e4e7',
+            textAlign: 'center',
+            maxWidth: 800,
+            marginBottom: 12,
+          }}
+        >
+          Find what your code review missed.
+        </div>
+
         {/* Subtitle */}
         <div
           style={{
-            fontSize: 28,
+            fontSize: 22,
             color: '#a1a1aa',
             textAlign: 'center',
             maxWidth: 700,
           }}
         >
-          AI-powered code audits for security, quality, and performance
+          Severity-rated security, performance, and accessibility reports in 60 seconds.
         </div>
 
-        {/* Agent count */}
+        {/* Stats */}
         <div
           style={{
             display: 'flex',
@@ -100,9 +97,9 @@ export default function OGImage() {
             fontSize: 20,
           }}
         >
-          <span>50 Specialized Audits</span>
+          <span>50 Audits</span>
           <span>·</span>
-          <span>Instant Results</span>
+          <span>OWASP · GDPR · SOC 2</span>
           <span>·</span>
           <span>Free to Use</span>
         </div>

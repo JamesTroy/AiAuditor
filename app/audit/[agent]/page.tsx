@@ -75,7 +75,7 @@ export default async function AgentPage({ params }: Props) {
 
         <div className="mb-8">
           <div className={`text-xs font-mono uppercase tracking-widest mb-3 ${agent.accentClass.split(' ').find((c) => c.startsWith('text-')) ?? ''}`}>
-            Audit · Claude Sonnet 4.6
+            Audit · {agent.category}
           </div>
           <h1 className="text-3xl font-bold mb-2">{agent.name}</h1>
           <p className="text-gray-600 dark:text-zinc-400">{agent.description}</p>

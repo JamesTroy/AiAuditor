@@ -4,17 +4,17 @@ export const dynamic = 'force-static';
 
 export const metadata: Metadata = {
   title: 'How It Works',
-  description: 'How Claudit works — AI-powered code audits with 50 specialized audits, real-time streaming results, and enterprise-grade security.',
+  description: 'How Claudit works — 50 specialized code audits with real-time streaming results and severity-rated findings.',
   alternates: { canonical: '/how-it-works' },
   openGraph: {
     title: 'How It Works — Claudit',
-    description: 'Paste code or enter a URL, choose from 50 AI audits, and get severity-rated findings in seconds.',
+    description: 'Paste code or enter a URL, choose from 50 audits, and get severity-rated findings in seconds.',
     url: '/how-it-works',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'How It Works — Claudit',
-    description: 'Paste code or enter a URL, choose from 50 AI audits, and get severity-rated findings in seconds.',
+    description: 'Paste code or enter a URL, choose from 50 audits, and get severity-rated findings in seconds.',
   },
 };
 
@@ -30,7 +30,7 @@ export default function StackPage() {
             How Claudit Works
           </h1>
           <p className="text-lg text-gray-600 dark:text-zinc-400 max-w-2xl">
-            AI-powered code audits that give you actionable, severity-rated findings in seconds — not hours.
+            Actionable, severity-rated findings in seconds — not hours. Here&apos;s how it works.
           </p>
         </div>
 

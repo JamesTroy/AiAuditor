@@ -21,7 +21,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <Logo size={36} className="mb-3 drop-shadow-[0_0_12px_rgba(139,92,246,0.3)]" />
           <h1 className="text-2xl font-bold text-gray-900 dark:text-zinc-100">Claudit</h1>
           <p className="text-sm text-gray-500 dark:text-zinc-500 mt-1">
-            AI-powered code audits — built with Next.js 15, Better Auth, and Claude
+            Automated security, performance, and compliance audits
           </p>
         </div>
         {children}

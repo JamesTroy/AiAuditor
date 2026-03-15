@@ -1,7 +1,7 @@
 {
   "name": "claudit",
   "version": "0.1.0",
-  "description": "AI-powered code audit platform using Claude for security, performance, accessibility, and SEO analysis",
+  "description": "Automated code audit platform for security, performance, accessibility, and compliance analysis",
   "private": true,
   "license": "MIT",
   "author": "Claudit",

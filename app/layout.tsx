@@ -16,11 +16,11 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://claudit.consulting'
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: 'AI Code Audit Tool — Claudit',
+    default: 'Find What Your Code Review Missed — Claudit',
     template: '%s | Claudit',
   },
   description:
-    'Run instant AI code audits across security, quality, and performance — 50 specialized audits, results in seconds. Try it free.',
+    'Paste code or enter a URL — get a severity-rated security, performance, and accessibility report in 60 seconds. 50 audits covering OWASP, GDPR, SOC 2, and more.',
   manifest: '/site.webmanifest',
   alternates: {
     canonical: '/',
@@ -28,17 +28,17 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     siteName: 'Claudit',
-    title: 'AI Code Audit Tool — Claudit',
+    title: 'Find What Your Code Review Missed — Claudit',
     description:
-      'Run instant AI code audits across security, quality, and performance — 50 specialized audits, results in seconds. Try it free.',
+      'Paste code or enter a URL — get a severity-rated security, performance, and accessibility report in 60 seconds. 50 audits covering OWASP, GDPR, SOC 2, and more.',
     url: BASE_URL,
-    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Claudit — AI Code Audit Tool' }],
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Claudit — automated code auditing' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AI Code Audit Tool — Claudit',
+    title: 'Find What Your Code Review Missed — Claudit',
     description:
-      'Run instant AI code audits across security, quality, and performance — 50 specialized audits, results in seconds.',
+      'Paste code or enter a URL — get a severity-rated security, performance, and accessibility report in 60 seconds. 50 audits covering OWASP, GDPR, SOC 2, and more.',
     images: ['/opengraph-image'],
   },
   robots: {

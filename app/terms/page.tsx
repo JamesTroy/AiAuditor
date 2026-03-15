@@ -31,7 +31,7 @@ export default function TermsPage() {
 
           <Section title="2. Description of Service">
             <p>
-              Claudit provides AI-powered code and website auditing. You submit code snippets, files,
+              Claudit provides automated code and website auditing. You submit code snippets, files,
               or URLs, and our system returns structured findings and recommendations. The Service is
               provided &quot;as is&quot; and is intended as a supplementary tool, not a replacement for
               professional security assessments or code reviews.

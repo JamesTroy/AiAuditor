@@ -41,7 +41,7 @@ export function GlobalJsonLd() {
         operatingSystem: 'Web',
         url: BASE_URL,
         description:
-          'AI-powered code audit tool with 50 specialized agents for security, quality, and performance analysis.',
+          'Automated code audit tool with 50 specialized audits for security, quality, performance, and compliance.',
         offers: {
           '@type': 'Offer',
           price: 0,
@@ -50,7 +50,7 @@ export function GlobalJsonLd() {
       },
       {
         '@type': 'HowTo',
-        name: 'How to run an AI code audit with Claudit',
+        name: 'How to run a code audit with Claudit',
         step: [
           { '@type': 'HowToStep', position: 1, name: 'Enter a URL or paste code', text: 'Point us at any website, or paste files directly.' },
           { '@type': 'HowToStep', position: 2, name: 'Pick your audits', text: 'Choose from 50 specialized audits — or run them all.' },

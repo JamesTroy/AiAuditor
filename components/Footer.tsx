@@ -11,7 +11,7 @@ export default function Footer() {
         </Link>
 
         <p className="text-xs text-gray-500 dark:text-zinc-500">
-          AI-powered code auditing
+          Automated code auditing
         </p>
 
         <nav className="flex items-center gap-4" aria-label="Footer">

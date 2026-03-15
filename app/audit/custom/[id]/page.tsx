@@ -56,7 +56,7 @@ export default function CustomAgentPage() {
         </nav>
         <div className="mb-8">
           <div className="text-xs font-mono uppercase tracking-widest mb-3 text-purple-400">
-            Custom Audit · Claude Sonnet 4.6
+            Custom Audit
           </div>
           <h1 className="text-3xl font-bold mb-2">{agent.name}</h1>
           {agent.description && <p className="text-gray-600 dark:text-zinc-400">{agent.description}</p>}

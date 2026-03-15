@@ -1,6 +1,6 @@
 # Claudit
 
-AI-powered code audit platform. Paste your code and get instant, detailed analysis across 50+ audit categories including security, performance, accessibility, SEO, architecture, and more — powered by Claude.
+Find what your code review missed. Paste code or enter a URL and get severity-rated findings across 50+ audit categories — security, performance, accessibility, compliance, and more.
 
 ## Features
 

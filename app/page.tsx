@@ -4,11 +4,11 @@ import Logo from '@/components/Logo';
 import HomeSearch from '@/components/HomeSearch';
 
 const CATEGORIES = [
-  { name: 'Security & Privacy', count: 0, color: 'bg-red-500', description: 'OWASP, GDPR, HIPAA, PCI DSS, SOC 2 compliance' },
-  { name: 'Code Quality', count: 0, color: 'bg-blue-500', description: 'Bugs, anti-patterns, architecture, testing' },
-  { name: 'Performance', count: 0, color: 'bg-amber-500', description: 'Core Web Vitals, bundle size, caching, concurrency' },
-  { name: 'Infrastructure', count: 0, color: 'bg-cyan-500', description: 'DevOps, CI/CD, cloud, observability, databases' },
-  { name: 'Design', count: 0, color: 'bg-violet-500', description: 'UX, accessibility, responsive, i18n, dark mode' },
+  { name: 'Security & Privacy', count: 0, color: 'bg-red-500', description: 'Find injection flaws, auth bugs, and exposed secrets before attackers do' },
+  { name: 'Code Quality', count: 0, color: 'bg-blue-500', description: 'Catch anti-patterns, dead code, and architectural issues reviewers miss' },
+  { name: 'Performance', count: 0, color: 'bg-amber-500', description: 'Pinpoint slow queries, render-blocking code, and bloated bundles' },
+  { name: 'Infrastructure', count: 0, color: 'bg-cyan-500', description: 'Audit your CI/CD, container configs, and database setup for production gaps' },
+  { name: 'Design', count: 0, color: 'bg-violet-500', description: 'Check accessibility compliance, responsive breakpoints, and i18n readiness' },
 ];
 
 // Count agents per category
@@ -27,20 +27,17 @@ export default function Home() {
           <div className="absolute top-10 left-1/3 w-[min(384px,90vw)] h-64 bg-indigo-500/15 blur-3xl rounded-full -z-10 motion-safe:animate-pulse-slow" style={{ animationDelay: '3s' }} />
           <div className="absolute inset-0 bg-grid-pattern -z-10 opacity-50" />
 
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-violet-500/10 text-violet-400 mb-4">
-            Powered by Claude
-          </span>
           <div className="flex items-center justify-center gap-3 mb-4">
             <Logo size={48} />
             <h1 className="text-[clamp(1.875rem,4vw+0.5rem,3.5rem)] font-bold tracking-tight dark:text-gradient">
               Claudit
             </h1>
           </div>
-          <p className="text-gray-600 dark:text-zinc-400 text-lg max-w-xl mx-auto mb-2">
-            Instant AI-powered audits for code quality, security, and compliance.
+          <p className="text-gray-800 dark:text-zinc-200 text-xl sm:text-2xl font-semibold max-w-2xl mx-auto mb-3">
+            Find what your code review missed.
           </p>
-          <p className="text-gray-500 dark:text-zinc-500 text-sm max-w-lg mx-auto mb-8">
-            50 specialized audits powered by Claude Sonnet 4.6 — covering OWASP, GDPR, HIPAA, SOC 2, PCI DSS, and more.
+          <p className="text-gray-500 dark:text-zinc-400 text-sm sm:text-base max-w-xl mx-auto mb-8">
+            Paste code or enter a URL &mdash; get a severity-rated security, performance, and accessibility report in 60 seconds. 50 audits covering OWASP Top 10, GDPR, HIPAA, SOC 2, and more.
           </p>
 
           {/* Primary CTAs */}
@@ -60,31 +57,38 @@ export default function Home() {
           </div>
         </div>
 
-        {/* How it works */}
+        {/* Example finding — shows concrete value */}
         <section className="mb-16 max-w-3xl mx-auto">
-          <h2 className="sr-only">How it works</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-            <div className="bg-white/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl px-5 py-6">
-              <div className="text-2xl mb-2">1</div>
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-zinc-200 mb-1">Enter a URL or paste code</h3>
-              <p className="text-xs text-gray-500 dark:text-zinc-500">Point us at any website, or paste files directly</p>
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-4 text-center">Example finding from a real audit</h2>
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/80">
+              <span className="w-2 h-2 rounded-full bg-red-500" />
+              <span className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">Critical</span>
+              <span className="text-xs text-gray-400 dark:text-zinc-600 mx-1">&middot;</span>
+              <span className="text-xs text-gray-500 dark:text-zinc-400">Security Audit</span>
             </div>
-            <div className="bg-white/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl px-5 py-6">
-              <div className="text-2xl mb-2">2</div>
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-zinc-200 mb-1">Pick your audits</h3>
-              <p className="text-xs text-gray-500 dark:text-zinc-500">Choose from 50 specialized audits — or run them all</p>
-            </div>
-            <div className="bg-white/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl px-5 py-6">
-              <div className="text-2xl mb-2">3</div>
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-zinc-200 mb-1">Get your report</h3>
-              <p className="text-xs text-gray-500 dark:text-zinc-500">Severity-rated findings with remediation steps — export as MD or JSON</p>
+            <div className="px-5 py-4 space-y-3">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">SQL Injection via unsanitized query parameter</h3>
+              <div className="bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-3 font-mono text-xs text-gray-700 dark:text-zinc-300 overflow-x-auto">
+                <span className="text-gray-400 dark:text-zinc-600 select-none">app/api/users/route.ts:42 &nbsp;</span>
+                <span className="text-red-600 dark:text-red-400">const result = await db.execute(</span><br />
+                <span className="text-gray-400 dark:text-zinc-600 select-none">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                <span className="text-red-600 dark:text-red-400">{"`SELECT * FROM users WHERE id = ${id}`"}</span>
+                <span className="text-red-600 dark:text-red-400">);</span>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed">
+                <strong className="text-gray-800 dark:text-zinc-200">Fix:</strong> Use parameterized queries. Replace string interpolation with <code className="bg-gray-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-xs">{"db.execute(sql`SELECT * FROM users WHERE id = ${id}`)"}</code> to prevent injection attacks.
+              </p>
             </div>
           </div>
+          <p className="text-center text-xs text-gray-400 dark:text-zinc-600 mt-3">
+            Every finding includes severity, file location, vulnerable code, and a specific fix.
+          </p>
         </section>
 
         {/* Category overview */}
         <section className="mb-16">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-6 text-center">50 audits across 5 categories</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-6 text-center">What you can audit</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {CATEGORIES.map((cat) => (
               <Link

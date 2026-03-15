@@ -5,11 +5,11 @@ export const dynamic = 'force-static';
 
 export const metadata: Metadata = {
   title: 'About',
-  description: 'About Claudit — AI-powered code auditing for developers and teams.',
+  description: 'About Claudit — automated code auditing for security, performance, and compliance.',
   alternates: { canonical: '/about' },
   openGraph: {
     title: 'About — Claudit',
-    description: 'About Claudit — AI-powered code auditing for developers and teams.',
+    description: 'About Claudit — automated code auditing for security, performance, and compliance.',
     url: '/about',
   },
 };
@@ -20,17 +20,17 @@ export default function AboutPage() {
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold tracking-tight mb-3">About Claudit</h1>
         <p className="text-lg text-gray-600 dark:text-zinc-400 mb-10 max-w-2xl">
-          AI-powered code auditing that gives developers actionable feedback in seconds, not days.
+          Automated code auditing that finds security vulnerabilities, performance issues, and compliance gaps — so you can ship with confidence.
         </p>
 
         <div className="space-y-10 text-sm leading-relaxed text-gray-700 dark:text-zinc-300">
           <section>
             <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100 mb-3">What we do</h2>
             <p>
-              Claudit analyzes your code and websites across 50+ specialized audit categories — from
-              security vulnerabilities and accessibility compliance to performance optimization and
-              code quality. Each audit produces a structured report with severity-rated findings,
-              specific line references, and step-by-step remediation guidance.
+              Claudit runs your code through 50+ specialized audits — checking for injection flaws,
+              auth bugs, accessibility violations, slow queries, compliance gaps, and hundreds of other
+              patterns that manual code review often misses. Each audit produces a structured report with
+              severity ratings, exact file/line references, and copy-paste fixes.
             </p>
           </section>
 
@@ -38,13 +38,13 @@ export default function AboutPage() {
             <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100 mb-3">How it works</h2>
             <div className="space-y-2">
               <p>
-                Paste your code, upload files, or enter a URL. Choose one or more audit types, and
-                our AI analyzes your submission in real-time. Results stream back as they are generated —
-                no waiting for batch jobs to finish.
+                Paste your code or enter a URL. Pick which audits to run — security, performance,
+                accessibility, or all of them. Results stream back in real-time as findings are
+                identified. No waiting for batch jobs, no manual setup.
               </p>
               <p>
-                Every audit result includes a composite score out of 100, making it easy to track
-                improvement over time. All results are saved to your personal dashboard for reference.
+                Every report includes a composite score out of 100, so you can measure improvement
+                over time. All results are saved to your dashboard for reference and export.
               </p>
             </div>
           </section>
@@ -52,9 +52,9 @@ export default function AboutPage() {
           <section>
             <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100 mb-3">Privacy first</h2>
             <p>
-              Your code is sent directly to our AI provider for analysis and is not stored on our
-              servers beyond the truncated snippet saved with your audit record. We use no analytics
-              trackers, no advertising, and no third-party scripts. Read our full{' '}
+              Your code is analyzed and discarded — it is not stored on our servers beyond the
+              truncated snippet saved with your audit record. We use no advertising and no
+              third-party tracking scripts. Read our full{' '}
               <Link href="/privacy" className="text-violet-600 dark:text-violet-400 underline">
                 Privacy Policy
               </Link>{' '}
