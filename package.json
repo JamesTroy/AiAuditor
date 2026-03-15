@@ -1,8 +1,15 @@
 {
   "name": "claudit",
   "version": "0.1.0",
+  "description": "AI-powered code audit platform using Claude for security, performance, accessibility, and SEO analysis",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "author": "Claudit",
+  "homepage": "https://claudit.consulting",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/claudit/claudit"
+  },
   "engines": {
     "node": ">=20.0.0 <21.0.0"
   },

@@ -205,3 +205,10 @@ export const dailyAuditBudget = new RateLimiter({
   maxEntries: 1, // single "global" key
   cleanupIntervalMs: 60 * 60_000,
 });
+
+// RL-011: Per-user daily audit limit — 50 audits per day per authenticated user.
+export const userDailyAuditLimiter = new RateLimiter({
+  windowMs: 24 * 60 * 60_000,
+  maxRequests: 50,
+  cleanupIntervalMs: 60 * 60_000,
+});

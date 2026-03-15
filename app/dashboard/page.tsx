@@ -41,19 +41,15 @@ export default async function DashboardPage({
     .where(eq(audit.userId, session.user.id));
   const totalCount = totalResult?.value ?? 0;
 
-  // Get all scored audits for avg score calculation
+  // Get all scores for avg calculation (lightweight — no full result text)
   const scoredAudits = await db
-    .select({ score: audit.score, result: audit.result })
+    .select({ score: audit.score })
     .from(audit)
     .where(eq(audit.userId, session.user.id));
 
-  // Calculate stats from all audits
-  const completedCount = totalCount; // all saved audits are completed at this point
-  const allScores = scoredAudits.map((a) => {
-    if (a.score != null) return a.score;
-    if (a.result) return extractScore(a.result);
-    return null;
-  }).filter((s): s is number => s !== null);
+  const allScores = scoredAudits
+    .map((a) => a.score)
+    .filter((s): s is number => s !== null);
 
   const avgScore = allScores.length > 0
     ? Math.round(allScores.reduce((sum, s) => sum + s, 0) / allScores.length)

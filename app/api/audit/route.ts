@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { headers as nextHeaders } from 'next/headers';
 import { getAgent } from '@/lib/agents';
-import { auditLimiter, siteAuditLimiter, dailyAuditBudget } from '@/lib/rateLimit';
+import { auditLimiter, siteAuditLimiter, dailyAuditBudget, userDailyAuditLimiter } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { auditRequestSchema } from '@/lib/schemas/auditRequest';
 import { STREAM_RESPONSE_HEADERS, ALLOWED_ORIGINS } from '@/lib/config/apiHeaders';
@@ -262,6 +262,18 @@ export async function POST(req: NextRequest) {
     const session = await auth.api.getSession({ headers: await nextHeaders() });
     userId = session?.user?.id ?? null;
   } catch { /* no session — anonymous audit */ }
+
+  // RL-011: Per-user daily audit limit (50/day) for authenticated users.
+  if (userId) {
+    const userRl = userDailyAuditLimiter.check(userId);
+    if (!userRl.allowed) {
+      log('warn', 'user_daily_limit_exceeded', { requestId, ip: anonIp, userId });
+      return new Response('You have reached your daily audit limit. Please try again tomorrow.', {
+        status: 429,
+        headers: { ...userRl.headers, 'X-Request-Id': requestId },
+      });
+    }
+  }
 
   // Create audit record in DB if user is logged in
   async function createAuditRecord(agentId: string, agentName: string) {
