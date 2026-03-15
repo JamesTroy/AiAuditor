@@ -1,4 +1,12 @@
+'use client';
+
+import { useId } from 'react';
+
 export default function Logo({ size = 40, className = '' }: { size?: number; className?: string }) {
+  const uid = useId();
+  const g1 = `logo-g1-${uid}`;
+  const g2 = `logo-g2-${uid}`;
+
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -10,11 +18,11 @@ export default function Logo({ size = 40, className = '' }: { size?: number; cla
       aria-hidden="true"
     >
       <defs>
-        <linearGradient id="logo-g1" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+        <linearGradient id={g1} x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#8b5cf6" />
           <stop offset="100%" stopColor="#6366f1" />
         </linearGradient>
-        <linearGradient id="logo-g2" x1="180" y1="160" x2="340" y2="360" gradientUnits="userSpaceOnUse">
+        <linearGradient id={g2} x1="180" y1="160" x2="340" y2="360" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#a78bfa" />
           <stop offset="100%" stopColor="#7c3aed" />
         </linearGradient>
@@ -23,7 +31,7 @@ export default function Logo({ size = 40, className = '' }: { size?: number; cla
       {/* C arc — lens / scanner rim */}
       <path
         d="M 390 148 A 176 176 0 1 0 390 364"
-        stroke="url(#logo-g1)"
+        stroke={`url(#${g1})`}
         strokeWidth="52"
         strokeLinecap="round"
         fill="none"
@@ -36,7 +44,7 @@ export default function Logo({ size = 40, className = '' }: { size?: number; cla
       {/* Checkmark — the audit verdict */}
       <polyline
         points="190,264 238,312 330,208"
-        stroke="url(#logo-g2)"
+        stroke={`url(#${g2})`}
         strokeWidth="44"
         strokeLinecap="round"
         strokeLinejoin="round"

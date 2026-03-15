@@ -1,27 +1,18 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AgentConfig } from '@/lib/types';
 import AgentCard from '@/components/AgentCard';
-import CustomAgentGrid from '@/components/CustomAgentGrid';
-import KeyboardShortcutsModal from '@/components/KeyboardShortcutsModal';
-import { getFavorites, toggleFavorite } from '@/lib/favorites';
 
 const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure', 'Design'] as const;
 
-interface HomeClientProps {
+interface HomeSearchProps {
   agents: AgentConfig[];
 }
 
-export default function HomeClient({ agents }: HomeClientProps) {
+export default function HomeSearch({ agents }: HomeSearchProps) {
   const [search, setSearch] = useState('');
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const searchRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setFavorites(getFavorites());
-  }, []);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -29,17 +20,9 @@ export default function HomeClient({ agents }: HomeClientProps) {
         e.preventDefault();
         searchRef.current?.focus();
       }
-      if (e.key === '?' && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
-        setShortcutsOpen(true);
-      }
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, []);
-
-  const handleToggleFavorite = useCallback((id: string) => {
-    toggleFavorite(id);
-    setFavorites(getFavorites());
   }, []);
 
   const query = search.toLowerCase();
@@ -48,7 +31,6 @@ export default function HomeClient({ agents }: HomeClientProps) {
   );
 
   const hasSearch = query.length > 0;
-  const pinnedAgents = agents.filter((a) => favorites.has(a.id));
 
   return (
     <>
@@ -73,13 +55,7 @@ export default function HomeClient({ agents }: HomeClientProps) {
         filteredAgents.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             {filteredAgents.map((agent, i) => (
-              <AgentCard
-                key={agent.id}
-                agent={agent}
-                index={i}
-                isFavorite={favorites.has(agent.id)}
-                onToggleFavorite={() => handleToggleFavorite(agent.id)}
-              />
+              <AgentCard key={agent.id} agent={agent} index={i} />
             ))}
           </div>
         ) : (
@@ -87,42 +63,15 @@ export default function HomeClient({ agents }: HomeClientProps) {
         )
       ) : (
         <>
-          {/* Pinned section */}
-          {pinnedAgents.length > 0 && (
-            <section className="mb-10">
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-yellow-500 mb-4">
-                <span aria-hidden="true">⭐ </span>Pinned
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pinnedAgents.map((agent, i) => (
-                  <AgentCard
-                    key={agent.id}
-                    agent={agent}
-                    index={i}
-                    isFavorite={true}
-                    onToggleFavorite={() => handleToggleFavorite(agent.id)}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Category sections */}
           {CATEGORIES.map((cat) => {
             const group = agents.filter((a) => a.category === cat);
             if (group.length === 0) return null;
             return (
               <section key={cat} className="mb-10">
-                <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-4 border-l-2 border-violet-500/30 pl-3">{cat}</h2>
+                <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-4 border-l-2 border-violet-500/30 pl-3">{cat}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {group.map((agent, i) => (
-                      <AgentCard
-                        key={agent.id}
-                        agent={agent}
-                        index={i}
-                        isFavorite={favorites.has(agent.id)}
-                        onToggleFavorite={() => handleToggleFavorite(agent.id)}
-                      />
+                    <AgentCard key={agent.id} agent={agent} index={i} />
                   ))}
                 </div>
               </section>
@@ -130,10 +79,6 @@ export default function HomeClient({ agents }: HomeClientProps) {
           })}
         </>
       )}
-
-      <CustomAgentGrid />
-
-      {shortcutsOpen && <KeyboardShortcutsModal onClose={() => setShortcutsOpen(false)} />}
     </>
   );
 }

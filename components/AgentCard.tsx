@@ -1,6 +1,7 @@
 'use client';
 
 import { memo } from 'react';
+import Link from 'next/link';
 import * as m from 'motion/react-m';
 import { AgentConfig } from '@/lib/types';
 
@@ -114,6 +115,7 @@ const DEFAULT_CUSTOM_ICON = '✦';
 
 interface Props {
   agent: AgentConfig;
+  href?: string;
   index?: number;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -122,7 +124,7 @@ interface Props {
 }
 
 // PERF-022: React.memo prevents re-render when parent state changes but this card's props haven't.
-export default memo(function AgentCard({ agent, index = 0, onEdit, onDelete, onToggleFavorite, isFavorite }: Props) {
+export default memo(function AgentCard({ agent, href, index = 0, onEdit, onDelete, onToggleFavorite, isFavorite }: Props) {
   const icon = BUILT_IN_ICONS[agent.id] ?? DEFAULT_CUSTOM_ICON;
   const iconLabel = BUILT_IN_ICON_LABELS[agent.id] ?? 'custom agent';
   const isCustom = !(agent.id in BUILT_IN_ICONS);
@@ -130,9 +132,11 @@ export default memo(function AgentCard({ agent, index = 0, onEdit, onDelete, onT
   // Robust text-color extraction — don't rely on positional splitting
   const accentTextClass = agent.accentClass.split(' ').find((c) => c.startsWith('text-')) ?? '';
 
+  const cardHref = href ?? `/audit/${agent.id}`;
+
   return (
-    <m.article
-      className={`group relative overflow-hidden border border-gray-200 dark:border-zinc-800 rounded-xl p-6 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-sm cursor-pointer ${agent.accentClass}`}
+    <m.div
+      className={`group relative overflow-hidden border border-gray-200 dark:border-zinc-800 rounded-xl p-6 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-sm ${agent.accentClass}`}
       initial={false}
       whileHover={{
         scale: 1.03,
@@ -142,48 +146,61 @@ export default memo(function AgentCard({ agent, index = 0, onEdit, onDelete, onT
       }}
       whileTap={{ scale: 0.98 }}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-zinc-800/80 flex items-center justify-center">
-          <span role="img" aria-label={iconLabel} className="text-xl">{icon}</span>
+      {/* Full-coverage link — sits behind content but covers the entire card */}
+      <Link
+        href={cardHref}
+        className="absolute inset-0 z-0 focus-ring rounded-xl"
+        aria-label={`${agent.name} — ${agent.description}`}
+        tabIndex={0}
+      />
+
+      {/* Card content — pointer-events-none so clicks fall through to the link */}
+      <div className="relative z-10 pointer-events-none">
+        <div className="flex items-start justify-between mb-3">
+          <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-zinc-800/80 flex items-center justify-center">
+            <span role="img" aria-label={iconLabel} className="text-xl">{icon}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch-show transition-opacity">
-          {onToggleFavorite && (
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(); }}
-              className={`text-sm px-1.5 py-1 min-h-[44px] min-w-[44px] rounded transition-colors hover:bg-gray-200 dark:hover:bg-zinc-700 focus-ring ${isFavorite ? 'text-yellow-400' : 'text-gray-400 dark:text-zinc-600 hover:text-yellow-400'}`}
-              aria-label={isFavorite ? `Unpin ${agent.name}` : `Pin ${agent.name}`}
-              aria-pressed={isFavorite ?? false}
-            >
-              {isFavorite ? '⭐' : '☆'}
-            </button>
-          )}
-          {isCustom && onEdit && (
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(); }}
-              className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[44px] rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus-ring"
-              aria-label={`Edit ${agent.name}`}
-            >
-              Edit
-            </button>
-          )}
-          {isCustom && onDelete && (
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }}
-              className="text-xs text-gray-500 dark:text-zinc-500 hover:text-red-400 px-2 py-1 min-h-[44px] rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus-ring"
-              aria-label={`Delete ${agent.name}`}
-            >
-              Delete
-            </button>
-          )}
+        <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-zinc-100 group-hover:text-black dark:group-hover:text-white transition-colors">
+          {agent.name}
+        </h3>
+        <p className="text-gray-600 dark:text-zinc-400 text-sm leading-relaxed">{agent.description}</p>
+        <div className={`mt-4 text-xs font-medium uppercase tracking-widest ${accentTextClass} flex items-center gap-1`}>
+          Start audit <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
         </div>
       </div>
-      <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-zinc-100 group-hover:text-black dark:group-hover:text-white transition-colors">
-        {agent.name}
-      </h3>
-      <p className="text-gray-600 dark:text-zinc-400 text-sm leading-relaxed">{agent.description}</p>
-      <div className={`mt-4 text-xs font-medium uppercase tracking-widest ${accentTextClass} flex items-center gap-1`}>
-        Start audit <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
+
+      {/* Action buttons — positioned above the link with pointer-events restored */}
+      <div className="absolute top-4 right-4 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch-show transition-opacity pointer-events-auto">
+        {onToggleFavorite && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+            className={`text-sm px-1.5 py-1 min-h-[44px] min-w-[44px] rounded transition-colors hover:bg-gray-200 dark:hover:bg-zinc-700 focus-ring ${isFavorite ? 'text-yellow-400' : 'text-gray-400 dark:text-zinc-600 hover:text-yellow-400'}`}
+            aria-label={isFavorite ? `Unpin ${agent.name}` : `Pin ${agent.name}`}
+            aria-pressed={isFavorite ?? false}
+          >
+            {isFavorite ? '⭐' : '☆'}
+          </button>
+        )}
+        {isCustom && onEdit && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[44px] rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus-ring"
+            aria-label={`Edit ${agent.name}`}
+          >
+            Edit
+          </button>
+        )}
+        {isCustom && onDelete && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="text-xs text-gray-500 dark:text-zinc-500 hover:text-red-400 px-2 py-1 min-h-[44px] rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus-ring"
+            aria-label={`Delete ${agent.name}`}
+          >
+            Delete
+          </button>
+        )}
       </div>
-    </m.article>
+    </m.div>
   );
 });
