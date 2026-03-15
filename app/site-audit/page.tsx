@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import Link from 'next/link';
 import { agents as allAgents } from '@/lib/agents';
 import SafeMarkdown from '@/components/markdownComponents';
 import { saveAudit } from '@/lib/history';
@@ -501,28 +500,29 @@ export default function SiteAuditPage() {
           </div>
         )}
 
-        {/* Agent badges — progress while loading, clickable links when done */}
+        {/* Audit badges — progress while loading, scroll-to-section when done */}
         {(loading || (!loading && result)) && (
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex flex-wrap gap-2 mb-6 sticky top-0 z-10 bg-gray-50/90 dark:bg-zinc-950/90 backdrop-blur-sm py-3 -mx-6 px-6">
             {selectedAgents.map((agent, i) => {
               const hasSection = result.includes(`## ${agent.name} Audit`);
               const isActive = loading && i === currentAgentIndex;
               const isDone = hasSection && (!loading || i < currentAgentIndex);
 
-              // After audit completes, badges become links to the individual agent page
+              // After audit completes, badges scroll to the corresponding section
               if (!loading && result) {
+                const sectionId = `${agent.name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')}-audit`;
                 return (
-                  <Link
+                  <button
                     key={agent.id}
-                    href={`/audit/${agent.id}`}
+                    onClick={() => {
+                      const el = document.getElementById(sectionId);
+                      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:ring-1 hover:ring-violet-500/40 hover:text-violet-600 dark:hover:text-violet-300`}
                   >
                     <span className={`w-2 h-2 rounded-full ${dotColor(agent.accentClass)}`} />
                     {agent.name}
-                    <svg className="w-3 h-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
-                    </svg>
-                  </Link>
+                  </button>
                 );
               }
 

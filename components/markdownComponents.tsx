@@ -13,7 +13,28 @@ import type { Components } from 'react-markdown';
 
 const DISALLOWED_ELEMENTS = ['script', 'iframe', 'object', 'embed', 'form'];
 
+/** Convert heading text to a URL-friendly slug. */
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+}
+
+/** Extract plain text from react-markdown children. */
+function childrenToText(children: React.ReactNode): string {
+  if (typeof children === 'string') return children;
+  if (Array.isArray(children)) return children.map(childrenToText).join('');
+  return '';
+}
+
 const components: Components = {
+  h1: ({ children }) => <h1 id={slugify(childrenToText(children))}>{children}</h1>,
+  h2: ({ children }) => <h2 id={slugify(childrenToText(children))} className="scroll-mt-20">{children}</h2>,
+  h3: ({ children }) => <h3 id={slugify(childrenToText(children))}>{children}</h3>,
+  h4: ({ children }) => <h4 id={slugify(childrenToText(children))}>{children}</h4>,
   a({ href, children, ...props }) {
     const safeHref = href && /^https?:\/\//i.test(href) ? href : undefined;
     return (
