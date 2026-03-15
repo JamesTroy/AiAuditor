@@ -2,8 +2,10 @@ import Anthropic from '@anthropic-ai/sdk';
 import type { AIProvider } from './provider';
 
 const MODEL = 'claude-sonnet-4-6';
-const MAX_TOKENS = 8192;
-const TEMPERATURE = 0;
+const MAX_TOKENS = 16384;
+// THINK-001: Extended thinking budget for audit reasoning.
+// Thinking tokens are separate from max_tokens output budget.
+const THINKING_BUDGET = 10_000;
 
 // ARCH-018: Retry parameters for transient Anthropic API server errors.
 // RL-014: Do NOT retry on 429 — retrying a rate limit worsens cost and delays.
@@ -49,11 +51,14 @@ export class AnthropicProvider implements AIProvider {
             // CACHE-014: Use cache_control on system prompt so Anthropic caches the
             // processed prompt for 5 minutes. Saves ~90% of input token cost on
             // repeated requests to the same agent.
+            // THINK-001: Extended thinking enables deeper reasoning for audits.
+            // Temperature must be 1 (default) when thinking is enabled.
+            // Thinking blocks are automatically filtered — only text_delta is forwarded.
             const stream = client.messages.stream(
               {
                 model: MODEL,
                 max_tokens: MAX_TOKENS,
-                temperature: TEMPERATURE,
+                thinking: { type: 'enabled', budget_tokens: THINKING_BUDGET },
                 system: [
                   {
                     type: 'text' as const,
@@ -115,11 +120,12 @@ export class AnthropicProvider implements AIProvider {
           attempt++;
           try {
             // CACHE-014: Prompt caching for chat system prompt.
+            // Chat uses standard mode (no extended thinking) for faster responses.
             const stream = client.messages.stream(
               {
                 model: MODEL,
                 max_tokens: MAX_TOKENS,
-                temperature: TEMPERATURE,
+                temperature: 0,
                 system: [
                   {
                     type: 'text' as const,

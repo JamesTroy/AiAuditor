@@ -5,7 +5,7 @@
 // Constraints here must match the server-side ceilings in app/api/audit/route.ts.
 import { z } from 'zod';
 
-export const MAX_INPUT_CHARS = 30_000;
+export const MAX_INPUT_CHARS = 60_000;
 export const MAX_SYSTEM_PROMPT_CHARS = 10_000;
 
 export const VALID_AGENT_TYPES = [

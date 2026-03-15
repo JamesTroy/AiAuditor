@@ -55,6 +55,18 @@ export default async function DashboardPage({
     ? Math.round(allScores.reduce((sum, s) => sum + s, 0) / allScores.length)
     : null;
 
+  // TREND-001: Get last 10 scored audits (chronological) for sparkline.
+  const recentScored = await db
+    .select({ score: audit.score, createdAt: audit.createdAt })
+    .from(audit)
+    .where(and(eq(audit.userId, session.user.id), eq(audit.status, 'completed')))
+    .orderBy(desc(audit.createdAt))
+    .limit(10);
+  const trendScores = recentScored
+    .filter((a) => a.score !== null)
+    .map((a) => a.score as number)
+    .reverse(); // oldest first for left-to-right chart
+
   // Fetch paginated audits
   const cursorDate = cursor ? new Date(cursor) : null;
   const whereClause = cursorDate
@@ -115,8 +127,15 @@ export default async function DashboardPage({
             <p className="text-xs text-gray-500 dark:text-zinc-500 mt-1">Completed</p>
           </div>
           <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 border-l-2 border-l-blue-500 rounded-xl p-5">
-            <p className="text-2xl font-bold">{avgScore ?? '—'}</p>
-            <p className="text-xs text-gray-500 dark:text-zinc-500 mt-1">Avg score</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold">{avgScore ?? '—'}</p>
+                <p className="text-xs text-gray-500 dark:text-zinc-500 mt-1">Avg score</p>
+              </div>
+              {trendScores.length >= 2 && (
+                <ScoreSparkline scores={trendScores} />
+              )}
+            </div>
           </div>
         </div>
 
@@ -190,5 +209,38 @@ export default async function DashboardPage({
         )}
       </div>
     </div>
+  );
+}
+
+// TREND-001: Minimal SVG sparkline for score trend visualization.
+function ScoreSparkline({ scores }: { scores: number[] }) {
+  const w = 80;
+  const h = 32;
+  const pad = 2;
+  const min = Math.min(...scores);
+  const max = Math.max(...scores);
+  const range = max - min || 1;
+
+  const points = scores.map((s, i) => {
+    const x = pad + (i / (scores.length - 1)) * (w - pad * 2);
+    const y = pad + (1 - (s - min) / range) * (h - pad * 2);
+    return `${x},${y}`;
+  });
+
+  const last = scores[scores.length - 1];
+  const prev = scores[scores.length - 2];
+  const trending = last >= prev ? 'text-green-500' : 'text-red-500';
+
+  return (
+    <svg width={w} height={h} className={trending} aria-label={`Score trend: ${scores.join(', ')}`}>
+      <polyline
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points.join(' ')}
+      />
+    </svg>
   );
 }

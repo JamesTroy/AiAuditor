@@ -66,7 +66,13 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
           </div>
         </div>
 
-        <AuditResultView result={auditRecord.result} agentName={auditRecord.agentName} status={auditRecord.status} />
+        <AuditResultView
+          result={auditRecord.result}
+          agentName={auditRecord.agentName}
+          agentId={auditRecord.agentId}
+          input={auditRecord.input}
+          status={auditRecord.status}
+        />
       </div>
     </div>
   );

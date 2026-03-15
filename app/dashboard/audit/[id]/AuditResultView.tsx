@@ -1,16 +1,21 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import SafeMarkdown from '@/components/markdownComponents';
+import { setChainInput } from '@/lib/session';
 
 interface Props {
   result: string | null;
   agentName: string;
+  agentId: string;
+  input: string;
   status?: string;
 }
 
-export default function AuditResultView({ result, agentName, status }: Props) {
+export default function AuditResultView({ result, agentName, agentId, input, status }: Props) {
+  const router = useRouter();
   const [copied, setCopied] = useState(false);
 
   if (!result) {
@@ -59,6 +64,15 @@ export default function AuditResultView({ result, agentName, status }: Props) {
   return (
     <>
       <div className="flex items-center gap-2 mb-4">
+        <button
+          onClick={() => {
+            setChainInput(input);
+            router.push(`/audit/${agentId}`);
+          }}
+          className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-500 border border-violet-300 dark:border-violet-700 rounded-lg px-3 py-1.5 min-h-[44px] transition-colors focus-ring font-medium"
+        >
+          Re-audit
+        </button>
         <button
           onClick={handleCopy}
           className="text-xs text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-1.5 min-h-[44px] transition-colors focus-ring"

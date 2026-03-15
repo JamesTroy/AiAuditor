@@ -16,7 +16,7 @@ import { friendlyError } from '@/lib/friendlyError';
 const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure', 'Design', 'SEO', 'Marketing'] as const;
 
 const ACCEPTED_EXTENSIONS = '.js,.ts,.tsx,.jsx,.html,.css,.py,.go,.java,.rb,.php,.md,.txt';
-const MAX_CHARS = 30_000;
+const MAX_CHARS = 60_000;
 
 interface FileEntry {
   name: string;

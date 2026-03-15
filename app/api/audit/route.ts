@@ -43,7 +43,7 @@ if (!process.env.ANTHROPIC_API_KEY) {
 
 export const runtime = 'nodejs';
 
-const MAX_CONTENT_LENGTH = 120_000; // ~120 KB; accounts for JSON overhead
+const MAX_CONTENT_LENGTH = 200_000; // ~200 KB; accounts for JSON overhead with 60K char inputs
 
 // ARCH-016: Hard server-side timeout. 5 min: security/architecture audits on
 // large inputs routinely exceed 2 min.
