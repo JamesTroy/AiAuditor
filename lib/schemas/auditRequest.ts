@@ -68,6 +68,8 @@ export const VALID_AGENT_TYPES = [
   'openapi',
   'state-machines',
   'pagination',
+  'marketing-pain-points',
+  'developer-pain-points',
 ] as const;
 
 export type AgentTypeValue = (typeof VALID_AGENT_TYPES)[number];

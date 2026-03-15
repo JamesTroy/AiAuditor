@@ -74,6 +74,8 @@ const PATTERN_RULES: Rule[] = [
   { pattern: /\b(monitor|metric|trace|opentelemetry|prometheus|grafana)\b/i, tags: ['observability'] },
   { pattern: /\b(CI|CD|pipeline|github.?action|deploy|Jenkinsfile)\b/i, tags: ['ci-cd'] },
   { pattern: /\b(container|k8s|kubernetes|helm|pod)\b/i, tags: ['container'] },
+  { pattern: /\b(hero|cta|landing.?page|call.?to.?action|conversion|headline|tagline|sign.?up)\b/i, tags: ['marketing'] },
+  { pattern: /\b(README|onboard|CONTRIBUTING|developer.?guide|getting.?started)\b/i, tags: ['dx'] },
 ];
 
 // Map detected tags to agent IDs
@@ -123,6 +125,8 @@ const TAG_TO_AGENTS: Record<string, string[]> = {
   'observability': ['observability', 'logging'],
   'ci-cd': ['ci-cd', 'devops'],
   'container': ['container-security', 'devops', 'cloud-infra'],
+  'marketing': ['marketing-pain-points'],
+  'dx': ['developer-pain-points'],
 };
 
 // Always-relevant agents added when any code is detected

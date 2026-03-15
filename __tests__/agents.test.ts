@@ -3,8 +3,8 @@ import { agents, getAgent } from '@/lib/agents';
 import { VALID_AGENT_TYPES } from '@/lib/schemas/auditRequest';
 
 describe('Agent registry', () => {
-  it('has 50 agents', () => {
-    expect(agents.length).toBe(50);
+  it('has 61 agents', () => {
+    expect(agents.length).toBe(61);
   });
 
   it('every agent has required fields', () => {
@@ -43,7 +43,7 @@ describe('Agent registry', () => {
   });
 
   it('every agent belongs to a known category', () => {
-    const validCategories = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure', 'Design'];
+    const validCategories = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure', 'Design', 'SEO', 'Marketing'];
     for (const agent of agents) {
       expect(validCategories).toContain(agent.category);
     }

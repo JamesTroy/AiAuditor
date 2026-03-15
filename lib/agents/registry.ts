@@ -3605,6 +3605,114 @@ Keep total under 30,000 characters.`,
 
 Keep total under 30,000 characters.`,
   },
+
+  // ─── Pain Point Audits ─────────────────────────────────────────
+  {
+    id: 'marketing-pain-points',
+    name: 'Marketing Pain Points',
+    description: 'Finds conversion killers: unclear positioning, weak CTAs, missing trust signals, and messaging friction.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-700 hover:bg-pink-600',
+    placeholder: 'Paste your landing page HTML, marketing copy, or page components...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-pain-points'],
+    prepPrompt: `I'm preparing my site for a **Marketing Pain Points** audit. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Site type: [e.g. SaaS, e-commerce, agency, marketplace]
+- Target audience: [e.g. "engineering managers at mid-size companies", "small business owners"]
+- Primary conversion goal: [e.g. free trial signup, demo request, purchase]
+- Known concerns: [e.g. "high bounce rate on landing page", "low trial-to-paid conversion"]
+
+## Content to gather
+
+### 1. Landing / home page
+- Full HTML or component source for the landing page
+- Hero section with headline, sub-headline, and CTA
+- All sections visible to a first-time visitor
+
+### 2. Key conversion pages
+- Pricing page (if applicable)
+- Signup / registration flow
+- Any "how it works" or product tour pages
+
+### 3. Marketing copy
+- Navigation labels and footer links
+- Meta titles and descriptions (what appears in Google results)
+- Any email signup or lead magnet copy
+
+### 4. Social proof
+- Testimonials, reviews, or case study sections
+- Trust badges, partner logos, or press mentions
+- Any metrics displayed ("10K users", "99.9% uptime")
+
+### 5. Competitor context (optional but valuable)
+- URLs of 2-3 direct competitors
+- Screenshots of their hero sections
+
+## Don't forget
+- [ ] Include the FULL page, not just the hero — objection handling often lives below the fold
+- [ ] Include mobile layout if different from desktop
+- [ ] Note your current conversion rate if known
+- [ ] Include any A/B test results from previous experiments
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'developer-pain-points',
+    name: 'Developer Pain Points',
+    description: 'Spots DX friction: confusing APIs, unhelpful errors, inconsistent patterns, and onboarding barriers.',
+    category: 'Code Quality',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste the code a new developer would need to understand and work with...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['developer-pain-points'],
+    prepPrompt: `I'm preparing code for a **Developer Pain Points** audit. Please help me collect the most impactful files.
+
+## Project context (fill in)
+- Language / framework: [e.g. TypeScript + Next.js, Python + Django, Go]
+- Team size: [e.g. solo, 3 devs, 15+ engineers]
+- Codebase age: [e.g. "6 months old greenfield", "3 year old monolith"]
+- Known concerns: [e.g. "new hires take 2 weeks to onboard", "nobody wants to touch the billing module"]
+
+## Files to gather
+
+### 1. Entry points & core modules
+- Main entry points and routing configuration
+- The 3-5 most-edited files (run \`git log --format=format: --name-only | sort | uniq -c | sort -rn | head -20\`)
+- Core business logic that multiple features depend on
+
+### 2. Shared utilities & config
+- Helper functions, utility libraries, shared constants
+- Configuration files and environment variable handling
+- Type definitions and shared interfaces
+
+### 3. Error-prone areas
+- Files with the most bug fixes (\`git log --all --oneline --grep="fix" -- . | head -20\`)
+- Complex conditional logic or state management
+- Integration points with external services
+
+### 4. Developer-facing APIs
+- Internal API route handlers
+- Shared component APIs (props, hooks)
+- Database query builders or ORM model definitions
+
+### 5. Onboarding-critical files
+- README or contributing guide
+- Package.json scripts / Makefile
+- CI/CD configuration
+- Environment setup (.env.example)
+
+## Don't forget
+- [ ] Include error handling code — this is where DX friction hides
+- [ ] Include any code you've heard teammates complain about
+- [ ] Show configuration files so we can assess "magic values"
+- [ ] Note any areas where you've seen repeated questions in code reviews
+
+Keep total under 30,000 characters.`,
+  },
 ];
 
 export function getAgent(id: string): AgentConfig | undefined {
