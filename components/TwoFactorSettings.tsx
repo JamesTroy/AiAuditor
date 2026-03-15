@@ -89,12 +89,17 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
       )}
 
       {step === 'idle' && (
-        <button
-          onClick={handleEnable}
-          className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
-        >
-          Enable 2FA
-        </button>
+        <div>
+          <p className="text-sm text-gray-500 dark:text-zinc-400 mb-3">
+            Add an extra layer of security with an authenticator app like Google Authenticator or 1Password.
+          </p>
+          <button
+            onClick={handleEnable}
+            className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+          >
+            Enable 2FA
+          </button>
+        </div>
       )}
 
       {step === 'loading' && (

@@ -123,13 +123,21 @@ export default async function DashboardPage({
         <h2 className="text-lg font-semibold mb-4">Recent audits</h2>
 
         {audits.length === 0 && !cursor ? (
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-8 text-center">
-            <p className="text-gray-500 dark:text-zinc-500 mb-4">No audits yet</p>
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-10 text-center">
+            <svg className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+              <rect x="9" y="3" width="6" height="4" rx="1" />
+              <path d="M9 14l2 2 4-4" />
+            </svg>
+            <p className="text-gray-900 dark:text-zinc-100 font-medium mb-1">No audits yet</p>
+            <p className="text-sm text-gray-500 dark:text-zinc-500 mb-5 max-w-xs mx-auto">
+              Run your first code audit to see severity-rated findings, scores, and trends here.
+            </p>
             <Link
               href="/site-audit"
-              className="inline-flex items-center gap-1 text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-500"
+              className="inline-block px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring"
             >
-              Run your first audit &rarr;
+              Run a Site Audit
             </Link>
           </div>
         ) : (

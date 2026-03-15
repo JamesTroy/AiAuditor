@@ -109,7 +109,37 @@ export default function SignupPage() {
             className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-colors"
             placeholder="••••••••"
           />
-          <p className="mt-1 text-xs text-gray-400 dark:text-zinc-600">Minimum 8 characters</p>
+          {password.length > 0 && (
+            <div className="mt-2 flex items-center gap-2">
+              <div className="flex-1 h-1.5 rounded-full bg-gray-200 dark:bg-zinc-800 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    password.length >= 12 && /[A-Z]/.test(password) && /[0-9]/.test(password)
+                      ? 'w-full bg-green-500'
+                      : password.length >= 8
+                        ? 'w-2/3 bg-yellow-500'
+                        : 'w-1/3 bg-red-500'
+                  }`}
+                />
+              </div>
+              <span className={`text-xs ${
+                password.length >= 12 && /[A-Z]/.test(password) && /[0-9]/.test(password)
+                  ? 'text-green-600 dark:text-green-400'
+                  : password.length >= 8
+                    ? 'text-yellow-600 dark:text-yellow-400'
+                    : 'text-red-600 dark:text-red-400'
+              }`}>
+                {password.length >= 12 && /[A-Z]/.test(password) && /[0-9]/.test(password)
+                  ? 'Strong'
+                  : password.length >= 8
+                    ? 'Fair'
+                    : 'Weak'}
+              </span>
+            </div>
+          )}
+          {password.length === 0 && (
+            <p className="mt-1 text-xs text-gray-400 dark:text-zinc-600">Minimum 8 characters</p>
+          )}
         </div>
 
         <button

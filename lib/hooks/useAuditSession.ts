@@ -9,6 +9,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { AgentConfig } from '@/lib/types';
 import { saveAudit } from '@/lib/history';
+import { friendlyError } from '@/lib/friendlyError';
 
 // SM-009: Explicit status enum distinguishes stopped from completed.
 export type AuditStatus = 'idle' | 'loading' | 'stopped' | 'complete' | 'error';
@@ -75,8 +76,12 @@ export function useAuditSession(
       });
 
       if (!res.ok || !res.body) {
-        const text = await res.text();
-        setError(text || `Error ${res.status}`);
+        if (res.status === 401 || res.status === 403) {
+          setError('Your session expired. Please sign in again to continue.');
+        } else {
+          const text = await res.text();
+          setError(friendlyError(text || `Error ${res.status}`));
+        }
         setStatus('error');
         return;
       }
@@ -142,7 +147,7 @@ export function useAuditSession(
       rafRef.current = null;
     }
     if (chunksRef.current.length > 0) {
-      setResult(chunksRef.current.join(''));
+      setResult(chunksRef.current.join('') + '\n\n---\n*Audit stopped by user.*');
     }
     setStatus('stopped');
   }, []);

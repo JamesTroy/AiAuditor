@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { agents as allAgents } from '@/lib/agents';
 import SafeMarkdown from '@/components/markdownComponents';
 import { saveAudit } from '@/lib/history';
+import { friendlyError } from '@/lib/friendlyError';
 
 const DEFAULT_IDS = new Set([
   'security',
@@ -179,9 +180,12 @@ export default function SiteAuditPage() {
       signal,
     });
 
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('Your session expired. Please sign in again to continue.');
+    }
     if (!res.ok || !res.body) {
       const text = await res.text();
-      throw new Error(text || `Error ${res.status}`);
+      throw new Error(friendlyError(text || `Error ${res.status}`));
     }
 
     const reader = res.body.getReader();
@@ -234,9 +238,14 @@ export default function SiteAuditPage() {
         signal: abortRef.current.signal,
       });
 
+      if (fetchRes.status === 401 || fetchRes.status === 403) {
+        setError('Your session expired. Please sign in again to continue.');
+        setLoading(false);
+        return;
+      }
       if (!fetchRes.ok) {
         const text = await fetchRes.text();
-        setError(text || `Error ${fetchRes.status}`);
+        setError(friendlyError(text || `Error ${fetchRes.status}`));
         setLoading(false);
         return;
       }
@@ -299,6 +308,7 @@ export default function SiteAuditPage() {
 
   function handleStop() {
     abortRef.current?.abort();
+    setResult((prev) => prev ? prev + '\n\n---\n*Audit stopped by user.*' : prev);
     setLoading(false);
     setCurrentAgentIndex(-1);
   }
@@ -599,7 +609,9 @@ export default function SiteAuditPage() {
                 {loading ? (
                   <span className="flex items-center gap-1.5 text-violet-400">
                     <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
-                    Streaming · {selectedAgents[currentAgentIndex]?.name ?? 'Fetching site'}
+                    {currentAgentIndex >= 0
+                      ? `Running: ${selectedAgents[currentAgentIndex]?.name} (${currentAgentIndex + 1} of ${selectedAgents.length})`
+                      : 'Fetching site…'}
                   </span>
                 ) : (
                   'Site Audit Results'

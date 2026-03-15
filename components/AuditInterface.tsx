@@ -11,8 +11,9 @@ import { ALLOWED_URL_DESCRIPTION } from '@/lib/config/urlAllowlist';
 import { useAuditSession } from '@/lib/hooks/useAuditSession';
 import { detectAgents } from '@/lib/detectAgents';
 import { parseAuditResult } from '@/lib/parseAuditResult';
+import { friendlyError } from '@/lib/friendlyError';
 
-const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure', 'Design'] as const;
+const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure', 'Design', 'SEO', 'Marketing'] as const;
 
 const ACCEPTED_EXTENSIONS = '.js,.ts,.tsx,.jsx,.html,.css,.py,.go,.java,.rb,.php,.md,.txt';
 const MAX_CHARS = 30_000;
@@ -203,7 +204,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: trimmed }),
         });
-        if (!res.ok) { setInputFetchError(await res.text()); return; }
+        if (!res.ok) { setInputFetchError(friendlyError(await res.text())); return; }
         const text = await res.text();
         setInput(text.slice(0, MAX_CHARS));
       } else if (inputPanel === 'pr') {
@@ -212,7 +213,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: trimmed }),
         });
-        if (!res.ok) { setInputFetchError(await res.text()); return; }
+        if (!res.ok) { setInputFetchError(friendlyError(await res.text())); return; }
         const data = await res.json();
         const header = `# PR: ${data.title}\n# Author: ${data.author}\n# Branch: ${data.branch} → ${data.baseBranch}\n# Changed files: ${data.changedFiles} (+${data.additions} -${data.deletions})\n${data.truncated ? '# Note: Diff truncated to 100KB\n' : ''}\n`;
         setInput((header + data.diff).slice(0, MAX_CHARS));
@@ -292,6 +293,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
 
     const userMsg: ChatMessage = { role: 'user', content: trimmed, status: 'done' };
     setChatMessages((prev) => [...prev, userMsg]);
+    const savedInput = chatInput;
     setChatInput('');
     setChatLoading(true);
 
@@ -308,7 +310,8 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
 
       if (!res.ok || !res.body) {
         const errText = await res.text();
-        setChatMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${errText || res.status}`, status: 'error' }]);
+        setChatMessages((prev) => [...prev, { role: 'assistant', content: friendlyError(errText || `Error ${res.status}`), status: 'error' }]);
+        setChatInput(savedInput);
         return;
       }
 
@@ -494,6 +497,13 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
           aria-label="Audit input"
         />
       </div>
+
+      {/* Min input hint */}
+      {input.length > 0 && input.length < 200 && !loading && !result && (
+        <p className="text-xs text-gray-400 dark:text-zinc-600 mt-1">
+          Tip: Include more code for a more thorough audit. The best results come from complete files or modules.
+        </p>
+      )}
 
       {/* Smart suggestions */}
       {suggestedAgents.length > 0 && !loading && !result && (
