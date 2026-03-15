@@ -5,7 +5,13 @@ export const dynamic = 'force-static';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
-  description: 'How Claudit collects, uses, and protects your data.',
+  description: 'How Claudit collects, uses, and protects your data. GDPR-compliant, no tracking, EU-hosted.',
+  alternates: { canonical: '/privacy' },
+  openGraph: {
+    title: 'Privacy Policy — Claudit',
+    description: 'How Claudit collects, uses, and protects your data. GDPR-compliant, no tracking, EU-hosted.',
+    url: '/privacy',
+  },
 };
 
 export default function PrivacyPage() {

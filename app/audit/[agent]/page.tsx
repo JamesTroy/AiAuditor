@@ -26,6 +26,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: agent.description.slice(0, 155),
       url: `/audit/${agent.id}`,
     },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${agent.name} Audit — Claudit`,
+      description: agent.description.slice(0, 155),
+    },
   };
 }
 

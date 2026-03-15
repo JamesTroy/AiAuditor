@@ -31,14 +31,14 @@ export const metadata: Metadata = {
     description:
       'Run instant AI code audits across security, quality, and performance — 50 specialized agents, results in seconds. Try it free.',
     url: BASE_URL,
-    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'Claudit — AI Code Audit Tool' }],
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Claudit — AI Code Audit Tool' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'AI Code Audit Tool — Claudit',
     description:
       'Run instant AI code audits across security, quality, and performance — 50 specialized agents, results in seconds.',
-    images: ['/og-default.png'],
+    images: ['/opengraph-image'],
   },
   robots: {
     index: true,

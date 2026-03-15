@@ -5,6 +5,17 @@ export const dynamic = 'force-static';
 export const metadata: Metadata = {
   title: 'How It Works',
   description: 'How Claudit works — AI-powered code audits with 50 specialized agents, real-time streaming results, and enterprise-grade security.',
+  alternates: { canonical: '/how-it-works' },
+  openGraph: {
+    title: 'How It Works — Claudit',
+    description: 'Paste code or enter a URL, choose from 50 AI audit agents, and get severity-rated findings in seconds.',
+    url: '/how-it-works',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'How It Works — Claudit',
+    description: 'Paste code or enter a URL, choose from 50 AI audit agents, and get severity-rated findings in seconds.',
+  },
 };
 
 const CHECK = '✓';

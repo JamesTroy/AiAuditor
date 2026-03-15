@@ -10,6 +10,11 @@ import { eq, desc } from 'drizzle-orm';
 export const metadata: Metadata = {
   title: 'Dashboard',
   description: 'View your audit history, scores, and trends.',
+  openGraph: {
+    title: 'Dashboard — Claudit',
+    description: 'Track your code audit results, scores, and improvement trends.',
+    url: '/dashboard',
+  },
 };
 
 export default async function DashboardPage() {
