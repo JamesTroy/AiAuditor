@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { agents } from '@/lib/agents';
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://claudit.dev';
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://claudit.consulting';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes: MetadataRoute.Sitemap = [

@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://claudit.dev';
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://claudit.consulting';
 
 interface JsonLdProps {
   data: Record<string, unknown>;

@@ -10,7 +10,7 @@ import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://claudit.dev';
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://claudit.consulting';
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),

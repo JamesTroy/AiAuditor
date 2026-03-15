@@ -42,7 +42,7 @@ export default async function AgentPage({ params }: Props) {
   const agent = getAgent(agentId);
   if (!agent) notFound();
 
-  const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://claudit.dev';
+  const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://claudit.consulting';
 
   // Related agents: same category, excluding self
   const relatedAgents = agents
