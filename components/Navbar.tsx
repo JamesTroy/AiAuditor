@@ -6,18 +6,25 @@ import { usePathname } from 'next/navigation';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
 import UserNav from '@/components/UserNav';
+import { useSession } from '@/lib/auth-client';
 
-const NAV_LINKS = [
+const PUBLIC_LINKS = [
   { href: '/', label: 'Audit Studio' },
   { href: '/site-audit', label: 'Site Audit' },
+] as const;
+
+const AUTH_LINKS = [
   { href: '/dashboard', label: 'Dashboard' },
 ] as const;
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const NAV_LINKS = session ? [...PUBLIC_LINKS, ...AUTH_LINKS] : PUBLIC_LINKS;
 
   const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
