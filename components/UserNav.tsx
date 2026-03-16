@@ -21,10 +21,6 @@ export default function UserNav() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  if (isPending) {
-    return <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-zinc-800 animate-pulse" />;
-  }
-
   if (!session) {
     return (
       <Link
