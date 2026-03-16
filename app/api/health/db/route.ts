@@ -38,7 +38,9 @@ export async function GET(req: NextRequest) {
     }
 
     return Response.json({ db: 'connected' });
-  } catch {
+  } catch (err) {
+    // Temporary debug logging — remove after Railway DB issue resolved.
+    console.error('[DEBUG] DB connection error:', err instanceof Error ? err.message : String(err));
     // RL-013: Do not leak error details, host, or error codes to public callers.
     if (isAuthorized) {
       return Response.json({ db: 'error' }, { status: 500 });
