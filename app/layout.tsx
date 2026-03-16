@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 
 import { GlobalJsonLd } from '@/components/JsonLd';
 import Analytics from '@/components/Analytics';
+import SmoothScroll from '@/components/SmoothScroll';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -63,6 +64,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className={`${inter.className} bg-gray-50 dark:bg-zinc-950`}>
         <ThemeProvider>
+          <SmoothScroll />
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <main id="main-content" role="main" tabIndex={-1} className="flex-1">{children}</main>
