@@ -40,7 +40,14 @@ export async function GET(req: NextRequest) {
     return Response.json({ db: 'connected' });
   } catch (err) {
     // Temporary debug logging — remove after Railway DB issue resolved.
-    console.error('[DEBUG] DB connection error:', err instanceof Error ? err.message : String(err));
+    const errObj = err as Record<string, unknown>;
+    console.error('[DEBUG] DB error:', JSON.stringify({
+      message: errObj?.message,
+      code: errObj?.code,
+      errno: errObj?.errno,
+      cause: errObj?.cause instanceof Error ? errObj.cause.message : String(errObj?.cause ?? ''),
+      stack: (errObj?.stack as string)?.split('\n').slice(0, 3).join(' | '),
+    }));
     // RL-013: Do not leak error details, host, or error codes to public callers.
     if (isAuthorized) {
       return Response.json({ db: 'error' }, { status: 500 });
