@@ -73,7 +73,7 @@ export default function Home() {
         {/* Example finding */}
         <section className="mb-16 max-w-3xl mx-auto">
           <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-4 text-center">Example finding from a real audit</h2>
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center gap-2 px-5 py-3 border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/80">
               <span className="w-2 h-2 rounded-full bg-red-500" aria-hidden="true" />
               <span className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">Critical</span>
@@ -105,7 +105,7 @@ export default function Home() {
             {CATEGORIES.map((cat) => (
               <span
                 key={cat.name}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 text-xs text-gray-600 dark:text-zinc-400"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 text-xs text-gray-600 dark:text-zinc-400 hover:border-violet-500/40 hover:shadow-sm transition-all"
               >
                 <span className={`w-2 h-2 rounded-full ${cat.color}`} aria-hidden="true" />
                 {cat.name}

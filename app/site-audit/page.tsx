@@ -581,9 +581,9 @@ export default function SiteAuditPage() {
                     {completedIndices.size}/{selectedAgents.length} complete
                   </span>
                 </div>
-                <div className="w-full h-1.5 bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-violet-500 rounded-full transition-all duration-500 ease-out"
+                    className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-500 ease-out"
                     style={{ width: `${(completedIndices.size / selectedAgents.length) * 100}%` }}
                   />
                 </div>
@@ -650,7 +650,7 @@ export default function SiteAuditPage() {
 
         {/* Error */}
         {error && (
-          <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-600 dark:text-red-300 text-sm mb-6">
+          <div role="alert" className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-600 dark:text-red-300 text-sm mb-6 motion-safe:animate-fade-up">
             {error}
           </div>
         )}
@@ -735,7 +735,7 @@ export default function SiteAuditPage() {
             )}
 
             {synthError && (
-              <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-600 dark:text-red-300 text-sm mt-3">
+              <div role="alert" className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-600 dark:text-red-300 text-sm mt-3 motion-safe:animate-fade-up">
                 {synthError}
               </div>
             )}

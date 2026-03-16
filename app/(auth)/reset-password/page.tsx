@@ -34,7 +34,10 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-8 shadow-sm text-center">
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-8 shadow-sm text-center motion-safe:animate-fade-up">
+        <div className="flex justify-center mb-4">
+          <svg className="w-10 h-10 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+        </div>
         <h2 className="text-xl font-semibold text-gray-900 dark:text-zinc-100 mb-2">Password reset</h2>
         <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">
           Your password has been updated. You can now sign in with your new password.
@@ -91,7 +94,7 @@ export default function ResetPasswordPage() {
       </p>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm">
+        <div role="alert" className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm motion-safe:animate-fade-up">
           {error}
         </div>
       )}
@@ -105,6 +108,7 @@ export default function ResetPasswordPage() {
             id="password"
             type="password"
             required
+            autoComplete="new-password"
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -121,6 +125,7 @@ export default function ResetPasswordPage() {
             id="confirmPassword"
             type="password"
             required
+            autoComplete="new-password"
             minLength={8}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -132,8 +137,11 @@ export default function ResetPasswordPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-violet-600 hover:bg-violet-500 disabled-muted text-white font-medium rounded-xl px-4 py-2.5 text-sm transition-colors"
+          className="w-full inline-flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 disabled-muted text-white font-medium rounded-xl px-4 py-2.5 min-h-[44px] text-sm transition-colors focus-ring"
         >
+          {loading && (
+            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+          )}
           {loading ? 'Resetting...' : 'Reset password'}
         </button>
       </form>

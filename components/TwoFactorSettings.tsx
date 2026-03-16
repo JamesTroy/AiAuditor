@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { authClient } from '@/lib/auth-client';
 
@@ -15,6 +15,12 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [disablePassword, setDisablePassword] = useState('');
+  const [codesCopied, setCodesCopied] = useState(false);
+  const codesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => { if (codesTimerRef.current) clearTimeout(codesTimerRef.current); };
+  }, []);
 
   async function handleEnable() {
     setError('');
@@ -85,7 +91,7 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
       </p>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm">
+        <div role="alert" className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm motion-safe:animate-fade-up">
           {error}
         </div>
       )}
@@ -97,7 +103,7 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
           </p>
           <button
             onClick={handleEnable}
-            className="bg-violet-600 hover:bg-violet-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+            className="bg-violet-600 hover:bg-violet-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 min-h-[44px] text-sm transition-colors focus-ring"
           >
             Enable 2FA
           </button>
@@ -105,7 +111,10 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
       )}
 
       {step === 'loading' && (
-        <p className="text-sm text-gray-500 dark:text-zinc-400 animate-pulse">Setting up...</p>
+        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-zinc-400">
+          <svg className="w-4 h-4 animate-spin text-violet-500" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+          Setting up...
+        </div>
       )}
 
       {step === 'setup' && (
@@ -145,10 +154,16 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
               </div>
               <button
                 type="button"
-                onClick={() => { navigator.clipboard.writeText(backupCodes.join('\n')).catch(() => {}); }}
-                className="text-xs text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-200 underline"
+                onClick={() => {
+                  navigator.clipboard.writeText(backupCodes.join('\n')).then(() => {
+                    setCodesCopied(true);
+                    if (codesTimerRef.current) clearTimeout(codesTimerRef.current);
+                    codesTimerRef.current = setTimeout(() => setCodesCopied(false), 2000);
+                  }).catch(() => {});
+                }}
+                className="text-xs text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-200 underline min-h-[44px] inline-flex items-center"
               >
-                Copy all codes
+                {codesCopied ? '✓ Copied!' : 'Copy all codes'}
               </button>
             </div>
           )}
@@ -175,14 +190,14 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
               <button
                 type="submit"
                 disabled={otp.length !== 6}
-                className="bg-violet-600 hover:bg-violet-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+                className="bg-violet-600 hover:bg-violet-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 min-h-[44px] text-sm transition-colors focus-ring"
               >
                 Verify and enable
               </button>
               <button
                 type="button"
                 onClick={() => { setStep('idle'); setTotpURI(''); setOtp(''); setError(''); }}
-                className="text-sm text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"
+                className="text-sm text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 min-h-[44px] px-2 transition-colors"
               >
                 Cancel
               </button>
@@ -219,7 +234,7 @@ export default function TwoFactorSettings({ twoFactorEnabled }: { twoFactorEnabl
             <button
               type="submit"
               disabled={!disablePassword}
-              className="bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600 disabled-muted-light text-gray-700 dark:text-zinc-300 font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+              className="bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600 disabled-muted-light text-gray-700 dark:text-zinc-300 font-medium rounded-xl px-4 py-2 min-h-[44px] text-sm transition-colors focus-ring"
             >
               Disable 2FA
             </button>

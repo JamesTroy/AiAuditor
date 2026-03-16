@@ -105,7 +105,7 @@ export default function HowItWorksPage() {
 
 function StepCard({ step, title, description }: { step: number; title: string; description: string }) {
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 relative">
+    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 relative hover:shadow-md hover:border-violet-500/20 transition-all motion-safe:animate-fade-up" style={{ animationDelay: `${(step - 1) * 100}ms`, animationFillMode: 'both' }}>
       <div className="flex items-center gap-3 mb-3">
         <div className="w-8 h-8 rounded-full bg-violet-600 text-white text-sm font-bold flex items-center justify-center shrink-0">
           {step}
@@ -119,7 +119,7 @@ function StepCard({ step, title, description }: { step: number; title: string; d
 
 function FeatureRow({ title, items }: { title: string; items: string[] }) {
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5">
+    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 hover:shadow-md hover:border-violet-500/20 transition-all">
       <p className="text-sm font-bold text-gray-900 dark:text-zinc-100 mb-2">{title}</p>
       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
         {items.map((item) => (

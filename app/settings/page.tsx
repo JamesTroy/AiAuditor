@@ -44,8 +44,22 @@ export default function SettingsPage() {
 
   if (isPending) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="animate-pulse text-gray-400">Loading...</div>
+      <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
+        <div className="max-w-2xl mx-auto">
+          <div className="mb-8">
+            <div className="h-8 w-32 rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+            <div className="h-4 w-64 mt-2 rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+          </div>
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">
+              <div className="h-5 w-24 mb-4 rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+              <div className="space-y-4">
+                <div className="h-10 rounded-xl bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+                <div className="h-10 rounded-xl bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -116,6 +130,7 @@ export default function SettingsPage() {
               <input
                 id="name"
                 type="text"
+                autoComplete="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-colors"
@@ -136,12 +151,15 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={profileStatus === 'saving'}
-                className="bg-violet-600 hover:bg-violet-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+                className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 min-h-[44px] text-sm transition-colors focus-ring"
               >
+                {profileStatus === 'saving' && (
+                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                )}
                 {profileStatus === 'saving' ? 'Saving...' : 'Save changes'}
               </button>
               {profileStatus === 'saved' && (
-                <span className="text-sm text-green-600 dark:text-green-400">Saved!</span>
+                <span className="text-sm text-green-600 dark:text-green-400 motion-safe:animate-fade-up">Saved!</span>
               )}
             </div>
           </form>
@@ -152,7 +170,7 @@ export default function SettingsPage() {
           <h2 className="text-lg font-semibold mb-4">Change password</h2>
 
           {passwordError && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm">
+            <div role="alert" className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm motion-safe:animate-fade-up">
               {passwordError}
             </div>
           )}
@@ -165,6 +183,7 @@ export default function SettingsPage() {
               <input
                 id="currentPassword"
                 type="password"
+                autoComplete="current-password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
@@ -178,6 +197,7 @@ export default function SettingsPage() {
               <input
                 id="newPassword"
                 type="password"
+                autoComplete="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
@@ -189,12 +209,15 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={passwordStatus === 'saving'}
-                className="bg-violet-600 hover:bg-violet-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+                className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 min-h-[44px] text-sm transition-colors focus-ring"
               >
+                {passwordStatus === 'saving' && (
+                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                )}
                 {passwordStatus === 'saving' ? 'Changing...' : 'Change password'}
               </button>
               {passwordStatus === 'saved' && (
-                <span className="text-sm text-green-600 dark:text-green-400">Password updated!</span>
+                <span className="text-sm text-green-600 dark:text-green-400 motion-safe:animate-fade-up">Password updated!</span>
               )}
             </div>
           </form>
@@ -216,7 +239,7 @@ export default function SettingsPage() {
           {!showDeleteConfirm ? (
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="bg-red-600 hover:bg-red-500 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+              className="bg-red-600 hover:bg-red-500 text-white font-medium rounded-xl px-4 py-2 min-h-[44px] text-sm transition-colors focus-ring"
             >
               Delete account
             </button>
@@ -244,7 +267,7 @@ export default function SettingsPage() {
               className="space-y-3"
             >
               {deleteError && (
-                <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm">
+                <div role="alert" className="p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm motion-safe:animate-fade-up">
                   {deleteError}
                 </div>
               )}
@@ -266,14 +289,17 @@ export default function SettingsPage() {
                 <button
                   type="submit"
                   disabled={deleteLoading || !deletePassword}
-                  className="bg-red-600 hover:bg-red-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+                  className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 min-h-[44px] text-sm transition-colors focus-ring"
                 >
+                  {deleteLoading && (
+                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  )}
                   {deleteLoading ? 'Deleting...' : 'Confirm deletion'}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setShowDeleteConfirm(false); setDeletePassword(''); setDeleteError(''); }}
-                  className="text-sm text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"
+                  className="text-sm text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 min-h-[44px] px-2 transition-colors"
                 >
                   Cancel
                 </button>

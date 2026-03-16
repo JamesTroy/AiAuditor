@@ -7,6 +7,7 @@ import { db } from '@/lib/db';
 import { audit } from '@/lib/auth-schema';
 import { eq, desc, lt, count, and, isNotNull } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
+import { scoreColorClass, relativeTime } from '@/lib/ui';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -23,7 +24,7 @@ const PAGE_SIZE = 20;
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cursor?: string }>;
+  searchParams: Promise<{ cursor?: string; status?: string }>;
 }) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -33,13 +34,17 @@ export default async function DashboardPage({
 
   const params = await searchParams;
   const cursor = params.cursor;
+  const statusFilter = params.status; // 'completed' | 'failed' | undefined (all)
 
   // PERF-016: Run all dashboard queries in parallel instead of sequentially.
   // Merges score stats + trend into one query to reduce from 4 → 3 queries.
   const cursorDate = cursor ? new Date(cursor) : null;
-  const paginationWhere = cursorDate
-    ? and(eq(audit.userId, session.user.id), lt(audit.createdAt, cursorDate))
-    : eq(audit.userId, session.user.id);
+  const conditions = [eq(audit.userId, session.user.id)];
+  if (cursorDate) conditions.push(lt(audit.createdAt, cursorDate));
+  if (statusFilter && ['completed', 'failed', 'running'].includes(statusFilter)) {
+    conditions.push(eq(audit.status, statusFilter));
+  }
+  const paginationWhere = conditions.length === 1 ? conditions[0] : and(...conditions);
 
   // PERF-031: Cache aggregate stats (count + scores) with 60s TTL.
   // Paginated list is NOT cached since it depends on cursor.
@@ -107,19 +112,32 @@ export default async function DashboardPage({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 border-l-2 border-l-violet-500 rounded-xl p-5">
+          <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 border-l-2 border-l-violet-500 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
             <p className="text-2xl font-bold">{totalCount}</p>
             <p className="text-xs text-gray-500 dark:text-zinc-500 mt-1">Total audits</p>
           </div>
-          <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 border-l-2 border-l-emerald-500 rounded-xl p-5">
+          <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 border-l-2 border-l-emerald-500 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
             <p className="text-2xl font-bold">{pageCompleted}</p>
             <p className="text-xs text-gray-500 dark:text-zinc-500 mt-1">Completed</p>
           </div>
-          <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 border-l-2 border-l-blue-500 rounded-xl p-5">
+          <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 border-l-2 border-l-blue-500 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold">{avgScore ?? '—'}</p>
-                <p className="text-xs text-gray-500 dark:text-zinc-500 mt-1">Avg score</p>
+                <p className={`text-2xl font-bold ${avgScore != null ? scoreColorClass(avgScore) : ''}`}>
+                  {avgScore ?? '—'}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-zinc-500 mt-1">
+                  Avg score
+                  {trendScores.length >= 2 && (() => {
+                    const delta = trendScores[trendScores.length - 1] - trendScores[0];
+                    if (delta === 0) return null;
+                    return (
+                      <span className={`ml-1.5 ${delta > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {delta > 0 ? '+' : ''}{delta} pts
+                      </span>
+                    );
+                  })()}
+                </p>
               </div>
               {trendScores.length >= 2 && (
                 <ScoreSparkline scores={trendScores} />
@@ -128,7 +146,41 @@ export default async function DashboardPage({
           </div>
         </div>
 
-        <h2 className="text-lg font-semibold mb-4">Recent audits</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <h2 className="text-lg font-semibold">Recent audits</h2>
+          <div className="flex items-center gap-2">
+            {totalCount > 0 && (
+              <div className="flex items-center gap-1 text-xs">
+                {[
+                  { label: 'All', value: undefined },
+                  { label: 'Completed', value: 'completed' },
+                  { label: 'Failed', value: 'failed' },
+                ].map(({ label, value }) => {
+                  const isActive = statusFilter === value || (!statusFilter && !value);
+                  const href = value ? `/dashboard?status=${value}` : '/dashboard';
+                  return (
+                    <Link
+                      key={label}
+                      href={href}
+                      className={`px-2.5 py-1 rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300 font-medium'
+                          : 'text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
+                      }`}
+                    >
+                      {label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+            {totalCount > 0 && (
+              <p className="text-xs text-gray-400 dark:text-zinc-500 ml-2">
+                {audits.length} of {totalCount}
+              </p>
+            )}
+          </div>
+        </div>
 
         {audits.length === 0 && !cursor ? (
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-10 text-center">
@@ -155,21 +207,28 @@ export default async function DashboardPage({
                 <Link
                   key={a.id}
                   href={`/dashboard/audit/${a.id}`}
-                  className="block bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-5 py-4 flex items-center justify-between hover:border-violet-500/30 transition-colors"
+                  className="group block bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-5 py-4 flex items-center justify-between hover:border-violet-500/30 hover:shadow-md hover:-translate-y-px transition-all"
                 >
-                  <div>
-                    <p className="text-sm font-medium">{a.agentName}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{a.agentName}</p>
                     <p className="text-xs text-gray-500 dark:text-zinc-500 mt-0.5">
-                      {new Date(a.createdAt).toLocaleDateString()} &middot;{' '}
+                      {relativeTime(new Date(a.createdAt))} &middot;{' '}
                       {a.durationMs ? `${(a.durationMs / 1000).toFixed(1)}s` : '—'}
+                      {a.status === 'failed' && (
+                        <span className="ml-1.5 text-red-500 dark:text-red-400">
+                          {a.durationMs && a.durationMs > 120000 ? '· Timed out' : '· Error encountered'}
+                        </span>
+                      )}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 shrink-0 ml-4">
                     {a.score != null && (
-                      <span className="text-sm font-mono font-bold">{a.score}/100</span>
+                      <span className={`text-sm font-mono font-bold ${scoreColorClass(a.score)}`}>
+                        {a.score}/100
+                      </span>
                     )}
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${
                         a.status === 'completed'
                           ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400'
                           : a.status === 'failed'
@@ -177,8 +236,18 @@ export default async function DashboardPage({
                             : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400'
                       }`}
                     >
+                      {a.status === 'completed' && (
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                      )}
+                      {a.status === 'failed' && (
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                      )}
+                      {a.status === 'running' && (
+                        <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>
+                      )}
                       {a.status}
                     </span>
+                    <svg className="w-4 h-4 text-gray-300 dark:text-zinc-600 group-hover:text-violet-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6" /></svg>
                   </div>
                 </Link>
               ))}
@@ -187,7 +256,7 @@ export default async function DashboardPage({
             {nextCursor && (
               <div className="mt-6 text-center">
                 <Link
-                  href={`/dashboard?cursor=${encodeURIComponent(nextCursor)}`}
+                  href={`/dashboard?cursor=${encodeURIComponent(nextCursor)}${statusFilter ? `&status=${statusFilter}` : ''}`}
                   className="inline-flex items-center gap-1 text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-500 transition-colors"
                 >
                   Load more audits &rarr;
@@ -201,38 +270,44 @@ export default async function DashboardPage({
   );
 }
 
-// TREND-001: Minimal SVG sparkline for score trend visualization.
+// TREND-001: SVG sparkline with area fill for score trend visualization.
 function ScoreSparkline({ scores }: { scores: number[] }) {
-  const w = 80;
-  const h = 32;
+  const w = 120;
+  const h = 48;
   const pad = 2;
   const min = Math.min(...scores);
   const max = Math.max(...scores);
   const range = max - min || 1;
 
-  const points = scores.map((s, i) => {
-    const x = pad + (i / (scores.length - 1)) * (w - pad * 2);
-    const y = pad + (1 - (s - min) / range) * (h - pad * 2);
-    return `${x},${y}`;
-  });
+  const coords = scores.map((s, i) => ({
+    x: pad + (i / (scores.length - 1)) * (w - pad * 2),
+    y: pad + (1 - (s - min) / range) * (h - pad * 2),
+  }));
+
+  const linePoints = coords.map((c) => `${c.x},${c.y}`).join(' ');
+  const areaPoints = `${pad},${h - pad} ${linePoints} ${w - pad},${h - pad}`;
 
   const last = scores[scores.length - 1];
   const prev = scores[scores.length - 2];
   const improving = last >= prev;
+  const strokeColor = improving ? '#22c55e' : '#ef4444';
+  const fillColor = improving ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)';
   const trending = improving ? 'text-green-500' : 'text-red-500';
   const trendLabel = improving ? 'Trend: improving' : 'Trend: declining';
 
   return (
     <span className={`inline-flex items-center gap-1 ${trending}`}>
       <svg width={w} height={h} aria-hidden="true">
+        <polygon fill={fillColor} points={areaPoints} />
         <polyline
           fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
+          stroke={strokeColor}
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          points={points.join(' ')}
+          points={linePoints}
         />
+        <circle cx={coords[coords.length - 1].x} cy={coords[coords.length - 1].y} r="3" fill={strokeColor} />
       </svg>
       <span aria-hidden="true" className="text-sm">{improving ? '↑' : '↓'}</span>
       <span className="sr-only">{trendLabel}</span>

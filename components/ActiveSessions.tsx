@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
+import { relativeTime } from '@/lib/ui';
 
 interface Session {
   id: string;
@@ -65,9 +66,21 @@ export default function ActiveSessions({ currentSessionToken }: { currentSession
       </p>
 
       {loading ? (
-        <p className="text-sm text-gray-400 dark:text-zinc-500 animate-pulse">Loading sessions...</p>
+        <div className="space-y-2">
+          {[1, 2].map((i) => (
+            <div key={i} className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-zinc-800/50 rounded-lg">
+              <div className="space-y-1.5 flex-1">
+                <div className="h-4 w-24 rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-700 dark:via-zinc-600 dark:to-zinc-700 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+                <div className="h-3 w-40 rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-700 dark:via-zinc-600 dark:to-zinc-700 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : sessions.length === 0 ? (
-        <p className="text-sm text-gray-500 dark:text-zinc-500">No active sessions found.</p>
+        <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-zinc-800/50 rounded-lg">
+          <svg className="w-5 h-5 text-gray-400 dark:text-zinc-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
+          <p className="text-sm text-gray-500 dark:text-zinc-500">No active sessions found.</p>
+        </div>
       ) : (
         <div className="space-y-2">
           {sessions.map((s) => {
@@ -75,7 +88,7 @@ export default function ActiveSessions({ currentSessionToken }: { currentSession
             return (
               <div
                 key={s.id}
-                className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-zinc-800/50 rounded-lg"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 py-3 bg-gray-50 dark:bg-zinc-800/50 rounded-lg"
               >
                 <div>
                   <p className="text-sm font-medium text-gray-900 dark:text-zinc-100">
@@ -88,14 +101,14 @@ export default function ActiveSessions({ currentSessionToken }: { currentSession
                   </p>
                   <p className="text-xs text-gray-500 dark:text-zinc-500 mt-0.5">
                     {s.ipAddress ?? 'Unknown IP'} &middot; Last active{' '}
-                    {new Date(s.updatedAt).toLocaleDateString()}
+                    {relativeTime(new Date(s.updatedAt))}
                   </p>
                 </div>
                 {!isCurrent && (
                   <button
                     onClick={() => handleRevoke(s.token)}
                     disabled={revoking === s.token}
-                    className="text-xs text-red-600 dark:text-red-400 hover:text-red-500 disabled:text-red-800 disabled:dark:text-red-600 disabled:cursor-not-allowed font-medium"
+                    className="text-xs text-red-600 dark:text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:text-red-800 disabled:dark:text-red-600 disabled:cursor-not-allowed font-medium rounded-lg px-2.5 py-1.5 min-h-[44px] inline-flex items-center transition-colors shrink-0"
                   >
                     {revoking === s.token ? 'Revoking...' : 'Revoke'}
                   </button>

@@ -12,9 +12,10 @@ interface Props {
   agentId: string;
   input: string;
   status?: string;
+  createdDate?: string;
 }
 
-export default function AuditResultView({ result, agentName, agentId, input, status }: Props) {
+export default function AuditResultView({ result, agentName, agentId, input, status, createdDate }: Props) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
 
@@ -46,7 +47,8 @@ export default function AuditResultView({ result, agentName, agentId, input, sta
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${agentName.toLowerCase().replace(/\s+/g, '-')}-audit.md`;
+    const dateSuffix = createdDate ? `-${createdDate}` : '';
+    a.download = `${agentName.toLowerCase().replace(/\s+/g, '-')}${dateSuffix}-audit.md`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -63,7 +65,7 @@ export default function AuditResultView({ result, agentName, agentId, input, sta
 
   return (
     <>
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         <button
           onClick={() => {
             setChainInput(input);

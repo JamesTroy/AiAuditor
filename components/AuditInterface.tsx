@@ -610,7 +610,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-600 dark:text-red-300 text-sm">
+        <div role="alert" className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-600 dark:text-red-300 text-sm motion-safe:animate-fade-up">
           {error}
         </div>
       )}
@@ -647,24 +647,28 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => runAudit(buildAuditInput())}
+                  aria-label="Re-run this audit"
                   className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[44px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                 >
                   Re-audit
                 </button>
                 <button
                   onClick={handleCopy}
+                  aria-label="Copy result to clipboard"
                   className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[44px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                 >
                   {copied ? '✓ Copied' : 'Copy'}
                 </button>
                 <button
                   onClick={handleDownload}
+                  aria-label="Download as Markdown"
                   className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[44px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                 >
                   Download .md
                 </button>
                 <button
                   onClick={handleDownloadJson}
+                  aria-label="Download as JSON"
                   className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[44px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                 >
                   Download .json
@@ -824,9 +828,12 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
             <button
               onClick={sendChat}
               disabled={chatLoading || !chatInput.trim()}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 transition-colors disabled-muted-light focus-ring"
+              aria-label="Send follow-up question"
+              className="inline-flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-lg text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 transition-colors disabled-muted focus-ring"
             >
-              {chatLoading ? '…' : 'Ask'}
+              {chatLoading ? (
+                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+              ) : 'Ask'}
             </button>
           </div>
         </div>
