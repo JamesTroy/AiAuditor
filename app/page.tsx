@@ -48,10 +48,10 @@ export default function Home() {
           </div>
 
           <p className="text-gray-800 dark:text-zinc-200 text-[clamp(1.25rem,2.5vw+0.5rem,2rem)] font-semibold max-w-2xl mx-auto mb-3 leading-tight">
-            AI-powered code audits that catch what reviewers miss.
+            Find what your code review missed.
           </p>
           <p className="text-gray-500 dark:text-zinc-400 text-base sm:text-lg max-w-xl mx-auto mb-10">
-            Paste your code or enter a URL. Get severity-rated security, performance, and accessibility reports in under 60 seconds.
+            Paste your code or drop in a URL. Get a severity-rated report covering security, performance, and accessibility — in under a minute.
           </p>
 
           {/* Primary CTAs */}
@@ -105,8 +105,8 @@ export default function Home() {
               },
               {
                 step: '2',
-                title: 'AI agents analyze it',
-                desc: 'Specialized agents scan for security flaws, performance issues, accessibility gaps, and more.',
+                title: 'We scan it deeply',
+                desc: 'Specialized auditors check for security flaws, performance issues, accessibility gaps, and more — all at once.',
               },
               {
                 step: '3',
