@@ -13,18 +13,40 @@ export async function POST(req: NextRequest) {
     // Browsers send either { "csp-report": { ... } } (report-uri format)
     // or an array of Reporting API v1 objects (report-to format).
     const report = body?.['csp-report'] ?? body;
+    if (typeof report !== 'object' || report === null) return new Response(null, { status: 204 });
+
+    const blockedUri: string = (report['blocked-uri'] ?? report.blockedURL ?? '').toString();
+    const violatedDirective: string = (report['violated-directive'] ?? report.effectiveDirective ?? '').toString();
+    const documentUri: string = (report['document-uri'] ?? report.documentURL ?? '').toString();
+    const sourceFile: string = (report['source-file'] ?? report.sourceFile ?? '').toString();
+
+    // Filter out false positives from browser extensions, built-ins, and bots.
+    const noisePatterns = [
+      /^chrome-extension:\/\//,
+      /^moz-extension:\/\//,
+      /^safari-extension:\/\//,
+      /^ms-browser-extension:\/\//,
+      /^about:/,
+      /^blob:/,
+      /^data:/,
+      /^inline$/,          // generic "inline" with no useful context
+      /^eval$/,            // extension-injected eval
+    ];
+
+    const urisToCheck = [blockedUri, sourceFile];
+    if (urisToCheck.some(uri => noisePatterns.some(p => p.test(uri)))) {
+      return new Response(null, { status: 204 });
+    }
 
     // eslint-disable-next-line no-console
     console.log(JSON.stringify({
       ts: new Date().toISOString(),
       level: 'warn',
       event: 'csp_violation',
-      ...typeof report === 'object' && report !== null ? {
-        blockedUri: report['blocked-uri'] ?? report.blockedURL,
-        violatedDirective: report['violated-directive'] ?? report.effectiveDirective,
-        documentUri: report['document-uri'] ?? report.documentURL,
-        disposition: report.disposition,
-      } : {},
+      blockedUri,
+      violatedDirective,
+      documentUri,
+      disposition: report.disposition,
     }));
   } catch {
     // Malformed report — ignore silently
