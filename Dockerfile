@@ -19,6 +19,10 @@ ENV ANTHROPIC_API_KEY=dummy_key_for_build
 ENV BETTER_AUTH_SECRET=dummy_secret_for_build_only_00000000
 ENV DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
 ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* vars are inlined into the JS bundle at build time by Next.js.
+# They MUST be set here — runtime env vars are too late for client-side code.
+ARG NEXT_PUBLIC_APP_URL=https://claudit.consulting
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 
 RUN npm run build
 
