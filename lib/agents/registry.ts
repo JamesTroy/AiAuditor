@@ -2990,6 +2990,805 @@ Keep total under 30,000 characters.`,
 Keep total under 30,000 characters.`,
   },
   {
+    id: 'api-security',
+    name: 'API Security',
+    description: 'Audits OWASP API Top 10, endpoint hardening, BOLA/BFLA, input validation, and API abuse vectors.',
+    category: 'Security & Privacy',
+    accentClass: 'text-red-400 hover:bg-red-500/10',
+    buttonClass: 'bg-red-700 hover:bg-red-600',
+    placeholder: 'Paste your API route handlers, middleware, OpenAPI spec, or endpoint definitions...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['api-security'],
+    prepPrompt: `I'm preparing API code for an **API Security** audit (OWASP API Top 10). Please help me collect the relevant files.
+
+## API context (fill in)
+- Framework: [e.g. Express, Fastify, Django REST, FastAPI, Spring Boot, Next.js API routes]
+- API style: [REST / GraphQL / gRPC / WebSocket]
+- Authentication: [e.g. JWT Bearer, API keys, OAuth2, session cookies]
+- Authorization: [e.g. RBAC, ABAC, per-resource checks, none]
+- Known concerns: [e.g. "no rate limiting", "users can access other users' data", "no input validation"]
+
+## Files to gather
+
+### 1. API route handlers (ALL of them)
+- Every endpoint handler — not just the "risky" ones
+- Include the full request → validate → authorize → process → respond flow
+- Show how path/query/body parameters are used
+
+### 2. Authentication middleware
+- How tokens/sessions are verified
+- How user identity is extracted from requests
+- Any API key validation logic
+
+### 3. Authorization logic
+- Per-endpoint permission checks
+- Object-level access control (does the user own this resource?)
+- Function-level access control (is the user allowed to call this endpoint?)
+- Admin vs. user role separation
+
+### 4. Input validation
+- Request body schemas (Zod, Joi, class-validator, Pydantic, etc.)
+- Query parameter validation
+- Path parameter validation
+- File upload handling
+
+### 5. Rate limiting & abuse prevention
+- Rate limiter configuration
+- Per-endpoint throttling rules
+- API key usage limits
+
+### 6. API specification (if available)
+- OpenAPI/Swagger definition
+- GraphQL schema
+- Postman collection
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- routes/users.ts (user endpoints) ---
+--- middleware/auth.ts (authentication) ---
+--- middleware/validate.ts (input validation) ---
+--- lib/permissions.ts (authorization) ---
+\`\`\`
+
+## Don't forget
+- [ ] Include ALL endpoints — the audit finds risks you didn't expect
+- [ ] Show both the route definition AND the handler implementation
+- [ ] Include error responses — these can leak internal information
+- [ ] Show how object IDs in URLs are validated against the authenticated user
+- [ ] Include any admin-only endpoints and how they're protected
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'secrets-scanner',
+    name: 'Secrets Scanner',
+    description: 'Scans for leaked API keys, tokens, credentials, .env contents, and hardcoded secrets.',
+    category: 'Security & Privacy',
+    accentClass: 'text-rose-400 hover:bg-rose-500/10',
+    buttonClass: 'bg-rose-800 hover:bg-rose-700',
+    placeholder: 'Paste your source code, configuration files, or .env.example for secrets scanning...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['secrets-scanner'],
+    prepPrompt: `I'm preparing code for a **Secrets Scanner** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Language / framework: [e.g. Node.js + Next.js, Python + Django, Go]
+- Secrets management: [e.g. env vars, HashiCorp Vault, AWS Secrets Manager, .env files, none]
+- Cloud provider: [e.g. AWS, GCP, Azure — this helps identify key formats]
+- Known concerns: [e.g. "old API key might be in git history", "not sure if .env is gitignored", "test files use real credentials"]
+
+## Files to gather
+
+### 1. Configuration files
+- .env.example (NEVER the real .env — but note if .env is gitignored)
+- .gitignore (to verify secret files are excluded)
+- docker-compose.yml (environment sections)
+- CI/CD workflow files (secret references)
+
+### 2. Source code with potential secrets
+- Database connection setup files
+- API client initialization (where API keys are set)
+- Authentication configuration (JWT secrets, OAuth client secrets)
+- Email/SMS service setup (SendGrid, Twilio, etc.)
+- Payment processing setup (Stripe, etc.)
+- Any file referencing process.env, os.environ, or similar
+
+### 3. Test and seed files
+- Test fixtures and factories
+- Database seed scripts
+- Mock/stub configurations
+- Integration test setup
+
+### 4. Infrastructure files
+- Terraform / CloudFormation / Pulumi files
+- Kubernetes manifests (secrets, configmaps)
+- Ansible playbooks / Chef recipes
+- Any scripts that handle credentials
+
+### 5. Pre-commit configuration
+- .pre-commit-config.yaml
+- Any secret scanning tool config (detect-secrets baseline, gitleaks.toml)
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- .env.example ---
+--- .gitignore ---
+--- lib/db.ts (database connection) ---
+--- lib/stripe.ts (payment setup) ---
+--- docker-compose.yml ---
+\`\`\`
+
+## Don't forget
+- [ ] NEVER paste real secrets — use .env.example or redact values
+- [ ] Include .gitignore to verify secret file exclusion
+- [ ] Show ALL files that read environment variables
+- [ ] Include test files — they often contain real credentials
+- [ ] Note if git history might contain previously committed secrets
+- [ ] Include any existing secret scanning configuration
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'xss-prevention',
+    name: 'XSS Prevention',
+    description: 'Analyzes DOM XSS, reflected/stored XSS, mutation XSS, CSP, and output encoding.',
+    category: 'Security & Privacy',
+    accentClass: 'text-red-400 hover:bg-red-500/10',
+    buttonClass: 'bg-red-800 hover:bg-red-700',
+    placeholder: 'Paste your frontend code, templates, rendering logic, or CSP configuration...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['xss-prevention'],
+    prepPrompt: `I'm preparing code for an **XSS Prevention** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. React, Vue, Angular, Next.js, Django templates, Jinja2, EJS, raw HTML]
+- Auto-escaping: [yes/no — does the template engine auto-escape by default?]
+- CSP: [yes/no — is Content Security Policy configured?]
+- Known concerns: [e.g. "using dangerouslySetInnerHTML", "rendering user-generated HTML", "no CSP"]
+
+## Files to gather
+
+### 1. User input rendering
+- ALL components/templates that display user-provided content
+- Markdown or rich text rendering code
+- Comment/review/message display components
+- Profile pages that show user-submitted data
+- Search results pages (reflected input)
+
+### 2. Escape hatch usage
+- Any use of dangerouslySetInnerHTML (React)
+- Any use of v-html (Vue)
+- Any use of {!! !!} or |raw (Blade/Twig)
+- Any use of |safe or mark_safe (Django/Jinja2)
+- Any use of innerHTML, outerHTML, document.write in JS
+
+### 3. DOM manipulation
+- JavaScript that modifies the DOM with user input
+- URL parameter reading (location.search, URLSearchParams)
+- postMessage handlers
+- localStorage/sessionStorage reads rendered to DOM
+
+### 4. CSP and security headers
+- Content-Security-Policy configuration
+- next.config.ts headers section
+- helmet.js or similar middleware
+- meta CSP tags in HTML
+
+### 5. Sanitization libraries
+- DOMPurify, sanitize-html, or similar library usage
+- Custom sanitization functions
+- Input validation that filters HTML/script content
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- components/Comment.tsx (renders user content) ---
+--- lib/sanitize.ts (HTML sanitization) ---
+--- middleware.ts (CSP headers) ---
+--- pages/search.tsx (URL params in output) ---
+\`\`\`
+
+## Don't forget
+- [ ] Include ALL places where user content is rendered — not just "obvious" ones
+- [ ] Show the full data path from user input to rendering
+- [ ] Include CSP configuration from ALL sources (headers, meta tags, CDN)
+- [ ] Note any third-party widgets that inject HTML (ads, embeds, chat widgets)
+- [ ] Include any sanitization library configuration
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'csrf-ssrf',
+    name: 'CSRF & SSRF',
+    description: 'Audits request forgery vectors, SameSite cookies, CSRF tokens, SSRF to internal services.',
+    category: 'Security & Privacy',
+    accentClass: 'text-rose-400 hover:bg-rose-500/10',
+    buttonClass: 'bg-rose-700 hover:bg-rose-600',
+    placeholder: 'Paste your form handlers, cookie config, server-side HTTP requests, or URL fetching logic...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['csrf-ssrf'],
+    prepPrompt: `I'm preparing code for a **CSRF & SSRF** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js, Express, Django, Rails, Spring Boot]
+- Cookie strategy: [e.g. SameSite=Lax, SameSite=Strict, no SameSite attribute]
+- Anti-CSRF: [e.g. CSRF tokens, double-submit cookie, none]
+- Server-side fetching: [e.g. "we fetch user-provided URLs", "webhook delivery", "image proxy"]
+- Known concerns: [e.g. "no CSRF tokens on forms", "URL parameter used in fetch()", "webhook URL not validated"]
+
+## Files to gather
+
+### 1. CSRF-relevant code
+- All state-changing form handlers (POST, PUT, DELETE endpoints)
+- Cookie configuration (session cookies, auth cookies)
+- CSRF token generation and validation middleware
+- Form components showing CSRF token inclusion
+- Any SameSite cookie configuration
+
+### 2. SSRF-relevant code
+- Any server-side HTTP requests (fetch, axios, got, httpx, requests)
+- Webhook delivery code
+- URL/image proxy endpoints
+- OAuth callback handlers that fetch provider URLs
+- Any code that takes a URL as user input and fetches it
+- PDF generation from URLs
+- Screenshot/preview services
+
+### 3. Origin validation
+- Origin/Referer header checking middleware
+- CORS configuration (related to CSRF bypass)
+- Any allowlist/blocklist for URLs
+
+### 4. Network configuration
+- Firewall rules or security groups
+- Internal service URLs and how they're accessed
+- Cloud metadata endpoint blocking (169.254.169.254)
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- middleware/csrf.ts (CSRF protection) ---
+--- lib/cookies.ts (cookie configuration) ---
+--- api/webhooks/route.ts (webhook delivery) ---
+--- lib/fetch.ts (server-side HTTP client) ---
+\`\`\`
+
+## Don't forget
+- [ ] Include ALL state-changing endpoints (POST/PUT/DELETE)
+- [ ] Show cookie attributes (SameSite, Secure, HttpOnly)
+- [ ] Include EVERY place the server makes outbound HTTP requests
+- [ ] Note if any endpoint accepts a URL parameter from the user
+- [ ] Include network/firewall configuration if available
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'cryptography',
+    name: 'Cryptography Audit',
+    description: 'Audits encryption algorithms, key sizes, TLS config, password hashing, and RNG usage.',
+    category: 'Security & Privacy',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-800 hover:bg-orange-700',
+    placeholder: 'Paste your encryption code, TLS configuration, password hashing, or key management setup...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['cryptography'],
+    prepPrompt: `I'm preparing code for a **Cryptography** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Language / framework: [e.g. Node.js + crypto, Python + cryptography, Java + BouncyCastle]
+- Encryption use cases: [e.g. password hashing, field-level encryption, TLS, JWT signing, file encryption]
+- Compliance: [e.g. FIPS 140-2, PCI DSS, HIPAA — these affect algorithm requirements]
+- Known concerns: [e.g. "using MD5 somewhere", "not sure about TLS version", "hardcoded encryption key"]
+
+## Files to gather
+
+### 1. Encryption and hashing code
+- Password hashing (bcrypt, argon2, PBKDF2 calls)
+- Data encryption (AES, RSA usage)
+- JWT signing and verification (algorithm selection, key handling)
+- HMAC generation
+- Any use of crypto/subtle, node:crypto, cryptography, javax.crypto
+
+### 2. TLS/SSL configuration
+- HTTPS server setup
+- TLS certificate configuration
+- Minimum TLS version settings
+- Cipher suite configuration
+- mTLS setup (if applicable)
+
+### 3. Key management
+- Where encryption keys are stored
+- Key generation code
+- Key rotation scripts or automation
+- KMS/Vault integration
+- .env.example showing key-related variables
+
+### 4. Random number generation
+- Token generation (session IDs, password reset tokens, API keys)
+- Nonce or IV generation
+- Any use of Math.random() or similar non-crypto RNG
+
+### 5. Certificate handling
+- Certificate loading and validation
+- Certificate pinning configuration
+- HSTS configuration
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- lib/crypto.ts (encryption utilities) ---
+--- lib/auth/password.ts (password hashing) ---
+--- lib/jwt.ts (JWT signing) ---
+--- server.ts (TLS configuration) ---
+--- .env.example (key variables) ---
+\`\`\`
+
+## Don't forget
+- [ ] Include ALL files that import crypto libraries
+- [ ] Show the full password hashing flow (hash + verify)
+- [ ] Include TLS configuration from ALL layers (app, reverse proxy, CDN)
+- [ ] Note any FIPS or compliance requirements that constrain algorithm choices
+- [ ] Include random token generation for ALL security purposes
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'cloud-iam',
+    name: 'Cloud IAM',
+    description: 'Audits AWS/GCP/Azure IAM permissions, least privilege, role sprawl, and trust policies.',
+    category: 'Security & Privacy',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-800 hover:bg-amber-700',
+    placeholder: 'Paste your IAM policies, Terraform IAM resources, role definitions, or cloud config...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['cloud-iam'],
+    prepPrompt: `I'm preparing cloud IAM configuration for a **Cloud IAM** audit. Please help me collect the relevant files.
+
+## Cloud context (fill in)
+- Cloud provider(s): [e.g. AWS, GCP, Azure, multi-cloud]
+- IaC tool: [e.g. Terraform, CloudFormation, Pulumi, CDK, none]
+- Account structure: [e.g. single account, AWS Organizations, GCP Organization]
+- Identity provider: [e.g. AWS SSO, Azure AD/Entra, Google Workspace, Okta]
+- Known concerns: [e.g. "too many admin users", "wildcard permissions", "no MFA enforcement"]
+
+## Files to gather
+
+### 1. IAM policies
+- ALL IAM policy documents (inline and managed)
+- Terraform/CloudFormation IAM resources (aws_iam_policy, aws_iam_role, etc.)
+- Role trust policies (AssumeRole conditions)
+- Service control policies (SCPs) if applicable
+- Permission boundaries
+
+### 2. User and role inventory
+- IAM user list with group memberships
+- IAM role list with attached policies
+- Service accounts / machine identities
+- Cross-account role assumptions
+
+### 3. Resource policies
+- S3 bucket policies
+- KMS key policies
+- Lambda resource policies
+- API Gateway resource policies
+- Any resource-based policy
+
+### 4. Identity federation
+- SSO configuration
+- SAML/OIDC provider setup
+- External identity provider integration
+- Group-to-role mappings
+
+### 5. Credential management
+- Access key age and rotation
+- MFA enforcement configuration
+- Password policy
+- Programmatic access patterns
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- terraform/iam.tf (IAM roles and policies) ---
+--- policies/admin-policy.json (admin policy) ---
+--- terraform/scp.tf (service control policies) ---
+--- terraform/s3.tf (bucket policies) ---
+\`\`\`
+
+## Don't forget
+- [ ] Include ALL IAM policies — not just the ones you think are risky
+- [ ] Show role trust policies (who can assume each role)
+- [ ] Include resource-based policies (S3, KMS, Lambda)
+- [ ] Note any cross-account access patterns
+- [ ] Include MFA and password policy configuration
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'secure-sdlc',
+    name: 'Secure SDLC',
+    description: 'Audits CI/CD security, code signing, artifact integrity, SLSA compliance, and supply chain.',
+    category: 'Security & Privacy',
+    accentClass: 'text-red-400 hover:bg-red-500/10',
+    buttonClass: 'bg-red-800 hover:bg-red-700',
+    placeholder: 'Paste your CI/CD workflows, build scripts, deployment config, or branch protection settings...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['secure-sdlc'],
+    prepPrompt: `I'm preparing CI/CD configuration for a **Secure SDLC** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- CI/CD platform: [e.g. GitHub Actions, GitLab CI, CircleCI, Jenkins]
+- Artifact registry: [e.g. npm, Docker Hub, ECR, GCR, Artifactory]
+- Deployment target: [e.g. Kubernetes, Vercel, AWS ECS, bare metal]
+- Code signing: [yes/no — commit signing, artifact signing]
+- Known concerns: [e.g. "no artifact signing", "secrets in CI logs", "no branch protection"]
+
+## Files to gather
+
+### 1. CI/CD pipeline configuration
+- ALL workflow/pipeline files (.github/workflows/*.yml, .gitlab-ci.yml)
+- Build scripts (Makefile, build.sh, package.json scripts)
+- Deployment scripts and configuration
+- Any custom CI actions or plugins
+
+### 2. Branch protection and code review
+- Branch protection rules (describe or screenshot from Settings)
+- CODEOWNERS file
+- PR template
+- Required reviewers configuration
+
+### 3. Artifact management
+- Dockerfile(s) — how images are built
+- Container registry authentication
+- Package publishing configuration (npm publish, Docker push)
+- Any artifact signing configuration (cosign, Notation, GPG)
+
+### 4. Secret management in CI
+- How secrets are injected into pipelines
+- Secret rotation automation
+- Environment separation (dev/staging/prod secrets)
+- Any secrets that appear in build logs
+
+### 5. Dependency management
+- Lockfile presence and integrity
+- Dependabot/Renovate configuration
+- Pre-commit hooks (.husky, .pre-commit-config.yaml)
+- SBOM generation configuration
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- .github/workflows/ci.yml ---
+--- .github/workflows/deploy.yml ---
+--- Dockerfile ---
+--- CODEOWNERS ---
+--- .pre-commit-config.yaml ---
+\`\`\`
+
+## Don't forget
+- [ ] Include ALL CI/CD workflow files
+- [ ] Show how secrets flow from storage to pipeline to deployment
+- [ ] Include branch protection rules (describe if can't export)
+- [ ] Note any manual approval steps in the deployment process
+- [ ] Include any artifact signing or SBOM generation configuration
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'threat-modeling',
+    name: 'Threat Modeling',
+    description: 'Performs STRIDE analysis, attack trees, trust boundary mapping, and MITRE ATT&CK alignment.',
+    category: 'Security & Privacy',
+    accentClass: 'text-rose-400 hover:bg-rose-500/10',
+    buttonClass: 'bg-rose-800 hover:bg-rose-700',
+    placeholder: 'Paste your architecture description, system design, data flow, or infrastructure code...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['threat-modeling'],
+    prepPrompt: `I'm preparing a system description for a **Threat Modeling** exercise. Please help me collect the relevant information.
+
+## System context (fill in)
+- System name: [e.g. "Customer Portal", "Payment API", "Internal Dashboard"]
+- System type: [e.g. web app, API service, microservices, mobile backend]
+- Users: [e.g. external customers, internal employees, API consumers, admins]
+- Data sensitivity: [e.g. PII, payment data, health records, public data]
+- Known threat actors: [e.g. external attackers, malicious insiders, nation-state, script kiddies]
+- Known concerns: [e.g. "recently added third-party integration", "handling payment data for the first time"]
+
+## Information to gather
+
+### 1. Architecture overview
+- System architecture diagram (or textual description of components)
+- List of all services/components and their responsibilities
+- External dependencies and third-party integrations
+- Data stores and what they contain
+
+### 2. Data flows
+- How data enters the system (user inputs, API calls, file uploads, webhooks)
+- How data moves between components (API calls, message queues, shared databases)
+- How data leaves the system (API responses, exports, third-party API calls)
+- What data is stored where and for how long
+
+### 3. Trust boundaries
+- Where authenticated and unauthenticated zones divide
+- Where internal and external networks divide
+- Where different trust levels exist (admin vs user vs anonymous)
+- Third-party service integration points
+
+### 4. Authentication and authorization
+- How users authenticate
+- How services authenticate to each other
+- How authorization decisions are made
+- Admin access patterns
+
+### 5. Infrastructure
+- Network topology (VPC, subnets, security groups)
+- Deployment architecture (containers, serverless, VMs)
+- Cloud services used
+- CDN, WAF, load balancer configuration
+
+### 6. Source code (key files)
+- API route handlers (shows attack surface)
+- Authentication middleware
+- Authorization logic
+- Data model definitions
+
+## Formatting rules
+
+Describe the architecture clearly:
+\`\`\`
+--- Architecture Description ---
+--- Data Flow Description ---
+--- api/routes.ts (attack surface) ---
+--- middleware/auth.ts (trust boundary) ---
+--- terraform/main.tf (infrastructure) ---
+\`\`\`
+
+## Don't forget
+- [ ] Include ALL components, even "boring" internal ones — they're attack targets too
+- [ ] Describe ALL data flows, especially across trust boundaries
+- [ ] Note all third-party integrations and what access they have
+- [ ] Include the network topology and segmentation
+- [ ] Describe who the users are and what they can do
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'zero-trust',
+    name: 'Zero Trust Audit',
+    description: 'Audits network segmentation, mTLS, identity-based access, and implicit trust assumptions.',
+    category: 'Security & Privacy',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-700 hover:bg-orange-600',
+    placeholder: 'Paste your network config, service mesh setup, access policies, or infrastructure code...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['zero-trust'],
+    prepPrompt: `I'm preparing infrastructure configuration for a **Zero Trust** audit. Please help me collect the relevant files.
+
+## Infrastructure context (fill in)
+- Architecture: [e.g. microservices on Kubernetes, monolith on EC2, serverless on Lambda]
+- Service mesh: [e.g. Istio, Linkerd, Consul Connect, none]
+- Identity provider: [e.g. SPIFFE/SPIRE, Kubernetes ServiceAccounts, AWS IAM roles]
+- Network: [e.g. VPC with security groups, flat network, on-premise]
+- Known concerns: [e.g. "services talk directly to DB", "no mTLS", "IP-based allowlists"]
+
+## Files to gather
+
+### 1. Network configuration
+- VPC / subnet definitions
+- Security groups / firewall rules
+- Network policies (Kubernetes NetworkPolicy, Calico, Cilium)
+- Load balancer and ingress configuration
+
+### 2. Service-to-service authentication
+- Service mesh configuration (Istio PeerAuthentication, AuthorizationPolicy)
+- mTLS setup and certificate management
+- Service account / identity configuration
+- API authentication between services
+
+### 3. Access control policies
+- OPA/Rego policies
+- Kubernetes RBAC
+- IAM roles for service accounts
+- Any identity-aware proxy configuration (BeyondCorp, Cloudflare Access, Tailscale)
+
+### 4. Data flow encryption
+- TLS termination points
+- Internal communication encryption
+- Database connection encryption
+- Message queue encryption
+
+### 5. Monitoring and verification
+- Network traffic monitoring
+- Access logs for service-to-service calls
+- Policy enforcement logging
+- Anomaly detection configuration
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- kubernetes/network-policies.yaml ---
+--- istio/peer-authentication.yaml ---
+--- istio/authorization-policy.yaml ---
+--- terraform/vpc.tf (network config) ---
+--- opa/policies/access.rego ---
+\`\`\`
+
+## Don't forget
+- [ ] Include ALL network policies and security groups
+- [ ] Show how services authenticate to each other (not just to users)
+- [ ] Include internal service communication patterns
+- [ ] Note any services that talk directly to databases without auth
+- [ ] Include any IP-based allowlists (these are anti-patterns in zero trust)
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'incident-response',
+    name: 'Incident Response',
+    description: 'Audits IR playbooks, logging coverage, detection gaps, and forensic readiness.',
+    category: 'Security & Privacy',
+    accentClass: 'text-red-400 hover:bg-red-500/10',
+    buttonClass: 'bg-red-700 hover:bg-red-600',
+    placeholder: 'Paste your logging config, alerting rules, IR playbooks, or monitoring setup...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['incident-response'],
+    prepPrompt: `I'm preparing logging and monitoring configuration for an **Incident Response** readiness audit. Please help me collect the relevant files.
+
+## System context (fill in)
+- Application type: [e.g. SaaS platform, API service, e-commerce, fintech]
+- Logging platform: [e.g. Datadog, Splunk, ELK, CloudWatch, Loki, none]
+- Alerting: [e.g. PagerDuty, OpsGenie, Slack alerts, none]
+- IR process: [e.g. "we have runbooks", "ad-hoc", "no formal process"]
+- Compliance: [e.g. SOC 2, PCI DSS, HIPAA — these mandate logging requirements]
+- Known concerns: [e.g. "no logging on auth events", "can't investigate incidents", "alerts are noisy"]
+
+## Files to gather
+
+### 1. Application logging
+- Logger configuration (winston, pino, logback, structlog)
+- Where logs are written (stdout, file, remote service)
+- What events are logged (auth, errors, access, admin actions)
+- Log format and fields included
+- Any PII redaction in logs
+
+### 2. Security event logging
+- Authentication event logging (login, logout, failed login, MFA)
+- Authorization failure logging (access denied events)
+- Admin action audit trail
+- Data access logging
+- Configuration change logging
+
+### 3. Infrastructure monitoring
+- APM configuration (Datadog, New Relic, etc.)
+- Metrics collection (Prometheus, CloudWatch)
+- Health check endpoints
+- Uptime monitoring
+
+### 4. Alerting configuration
+- Alert rules and thresholds
+- Notification channels
+- Escalation policies
+- On-call rotation
+
+### 5. IR documentation (if it exists)
+- Incident response plan or runbooks
+- Communication templates
+- Severity classification criteria
+- Post-incident review process
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- lib/logger.ts (logging configuration) ---
+--- middleware/auditLog.ts (security events) ---
+--- monitoring/alerts.yml (alerting rules) ---
+--- docs/incident-response.md (IR plan, if exists) ---
+\`\`\`
+
+## Don't forget
+- [ ] Include ALL logging configuration — application, access, error, and security logs
+- [ ] Show what fields are captured in each log event
+- [ ] Include alerting rules and who gets notified
+- [ ] Note log retention periods
+- [ ] Include any existing IR documentation or runbooks
+- [ ] Show how logs are protected from tampering
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'compliance-audit',
+    name: 'Compliance Audit',
+    description: 'Maps controls to SOC 2, ISO 27001, PCI DSS, HIPAA, and identifies compliance gaps.',
+    category: 'Security & Privacy',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-800 hover:bg-amber-700',
+    placeholder: 'Paste your security controls, policies, infrastructure config, or access control setup...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['compliance-audit'],
+    prepPrompt: `I'm preparing for a **Compliance Audit** readiness assessment. Please help me collect the relevant files and information.
+
+## Compliance context (fill in)
+- Target frameworks: [e.g. SOC 2 Type II, ISO 27001, PCI DSS v4.0, HIPAA, GDPR]
+- Current status: [e.g. "pursuing SOC 2 for first time", "ISO 27001 certified, recertifying", "no formal compliance"]
+- Industry: [e.g. SaaS, fintech, healthcare, e-commerce]
+- Data types: [e.g. PII, payment card data, PHI, business data only]
+- Known concerns: [e.g. "no formal access reviews", "logging is incomplete", "no change management process"]
+
+## Files to gather
+
+### 1. Access control
+- Authentication configuration (MFA, password policy)
+- Authorization model (RBAC, ABAC definitions)
+- User provisioning and deprovisioning process
+- Access review configuration or scripts
+- Admin access patterns
+
+### 2. Data protection
+- Encryption at rest configuration
+- Encryption in transit (TLS) configuration
+- Key management setup (KMS, Vault)
+- Backup configuration and encryption
+- Data retention policies (code or config)
+
+### 3. Logging and monitoring
+- Audit log configuration
+- Security event logging
+- Log retention settings
+- Alerting rules
+- SIEM integration
+
+### 4. Change management
+- CI/CD pipeline configuration
+- Code review / PR requirements
+- Branch protection rules
+- Deployment approval process
+- Rollback procedures
+
+### 5. Infrastructure security
+- Network security (firewalls, security groups, network policies)
+- Vulnerability scanning configuration
+- Patch management process
+- Container/image scanning
+
+### 6. Policies and documentation (if they exist)
+- Information security policy
+- Incident response plan
+- Business continuity plan
+- Data classification policy
+- Acceptable use policy
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- terraform/iam.tf (access control) ---
+--- lib/encryption.ts (data protection) ---
+--- lib/logger.ts (audit logging) ---
+--- .github/workflows/deploy.yml (change management) ---
+--- docs/security-policy.md (policies, if exists) ---
+\`\`\`
+
+## Don't forget
+- [ ] Include access control configuration for ALL systems (app, cloud, database)
+- [ ] Show encryption configuration for data at rest AND in transit
+- [ ] Include audit logging — what events are captured and retained
+- [ ] Show the change management process (PR → review → deploy)
+- [ ] Include any existing policies or documentation
+- [ ] Note which compliance framework(s) you're targeting
+
+Keep total under 30,000 characters.`,
+  },
+  {
     id: 'seo-technical',
     name: 'SEO Technical',
     description: 'Reviews meta tags, structured data, canonical URLs, sitemap, and crawlability.',
@@ -3710,6 +4509,931 @@ Keep total under 30,000 characters.`,
 
 Keep total under 30,000 characters.`,
   },
+
+  // ─── Marketing Audits ─────────────────────────────────────────
+  {
+    id: 'marketing-copywriting',
+    name: 'Copywriting Audit',
+    description: 'Audits headlines, CTAs, value props, and persuasion structure using AIDA, PAS, and direct-response frameworks.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your marketing copy, landing page text, ad creative, or email copy...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-copywriting'],
+    prepPrompt: `I'm preparing copy for a **Copywriting Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Copy type: [e.g. landing page, ad creative, email sequence, product page]
+- Target audience: [e.g. "SaaS founders", "e-commerce shoppers", "enterprise IT buyers"]
+- Primary conversion goal: [e.g. free trial signup, purchase, demo request]
+- Known concerns: [e.g. "low click-through rate", "high bounce rate on hero section"]
+
+## Content to gather
+
+### 1. Headlines & subheads
+- All headlines, subheadlines, and section headers
+- Hero section copy (headline + subhead + CTA)
+
+### 2. Body copy
+- Full page copy in reading order
+- Feature/benefit sections
+- About or "how it works" sections
+
+### 3. CTAs & micro-copy
+- All button text and CTA copy
+- Form labels and helper text
+- Navigation labels
+
+### 4. Social proof copy
+- Testimonial text
+- Case study excerpts
+- Trust badge copy
+
+### 5. Competitor copy (optional but valuable)
+- 2-3 competitor hero sections for comparison
+
+## Don't forget
+- [ ] Include ALL copy, not just the hero — persuasion structure matters end-to-end
+- [ ] Note which copy is performing poorly (low CTR, high bounce)
+- [ ] Include the CTA button text AND surrounding context
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-landing-pages',
+    name: 'Landing Page Audit',
+    description: 'Optimizes landing pages for conversion: layout, messaging hierarchy, CTAs, trust signals, and mobile experience.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your landing page HTML, component code, or page copy...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-landing-pages'],
+    prepPrompt: `I'm preparing a landing page for a **Landing Page Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Page type: [e.g. product landing page, lead gen page, pricing page, webinar registration]
+- Primary traffic source: [e.g. Google Ads, organic search, email campaign, social media]
+- Conversion goal: [e.g. free trial, demo request, email signup, purchase]
+- Current conversion rate: [if known]
+
+## Content to gather
+
+### 1. Full page source
+- Complete HTML or component source code
+- Or the full page copy in reading order (hero → sections → footer)
+
+### 2. Above-the-fold elements
+- Hero headline, subhead, CTA, and imagery description
+- Navigation structure
+
+### 3. Page sections (in order)
+- Each content section with headers and body copy
+- Feature/benefit blocks
+- Social proof sections
+- FAQ or objection-handling sections
+
+### 4. Conversion elements
+- All CTA buttons and their surrounding context
+- Forms with field names and labels
+- Any multi-step flows
+
+### 5. Traffic context (optional but valuable)
+- Ad copy or email that drives traffic to this page
+- Analytics data (bounce rate, time on page, scroll depth)
+
+## Don't forget
+- [ ] Include the COMPLETE page, not just the hero
+- [ ] Note any A/B test history on this page
+- [ ] Include mobile-specific layouts if they differ
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-email-campaigns',
+    name: 'Email Campaign Audit',
+    description: 'Audits email campaigns for subject lines, deliverability, copy persuasion, CTA effectiveness, and segmentation.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your email HTML, subject lines, campaign copy, or email sequence...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-email-campaigns'],
+    prepPrompt: `I'm preparing emails for an **Email Campaign Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Email type: [e.g. welcome sequence, promotional campaign, newsletter, re-engagement]
+- Audience segment: [e.g. "new signups", "trial users", "churned customers"]
+- ESP/tool: [e.g. Mailchimp, SendGrid, HubSpot, Customer.io]
+- Known concerns: [e.g. "low open rates", "high unsubscribe rate", "landing in spam"]
+
+## Content to gather
+
+### 1. Email content
+- Subject lines and preview text for each email
+- Full email HTML or copy
+- From name and email address
+
+### 2. Campaign structure
+- Sequence timing (when each email sends)
+- Trigger conditions (what causes the email to send)
+- Segment definitions
+
+### 3. Performance data (if available)
+- Open rates, click rates, unsubscribe rates
+- Deliverability metrics
+- Conversion rates from email
+
+### 4. Technical setup
+- Authentication records (SPF, DKIM, DMARC) if known
+- List hygiene practices
+- Suppression list management
+
+## Don't forget
+- [ ] Include subject lines AND preview text for every email
+- [ ] Include the full email, not just the hero section
+- [ ] Note any deliverability issues you've experienced
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-social-media',
+    name: 'Social Media Audit',
+    description: 'Evaluates social media profiles, content strategy, engagement patterns, and growth tactics across platforms.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your social media profiles, recent posts, content calendar, or analytics...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-social-media'],
+    prepPrompt: `I'm preparing for a **Social Media Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Platforms active on: [e.g. LinkedIn, Twitter/X, Instagram, TikTok]
+- Target audience: [e.g. "B2B SaaS decision-makers", "DTC consumers age 25-35"]
+- Business goals: [e.g. brand awareness, lead generation, community building]
+- Known concerns: [e.g. "low engagement", "not growing followers", "unclear content strategy"]
+
+## Content to gather
+
+### 1. Profile information
+- Bio text for each platform
+- Profile/banner images (describe them)
+- Link in bio content
+
+### 2. Recent content (last 10-20 posts per platform)
+- Post copy and format (image, video, carousel, text)
+- Engagement metrics (likes, comments, shares, saves)
+- Posting frequency and timing
+
+### 3. Content strategy (if documented)
+- Content pillars or themes
+- Content calendar
+- Brand voice guidelines
+
+### 4. Analytics overview
+- Follower count and growth trend
+- Engagement rate by post type
+- Top-performing content
+
+## Don't forget
+- [ ] Include posts that performed well AND poorly
+- [ ] Include your bio/profile text for each platform
+- [ ] Note any paid social campaigns running
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-brand-voice',
+    name: 'Brand Voice Audit',
+    description: 'Assesses tone consistency, messaging alignment, and brand personality across all touchpoints.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste copy from multiple touchpoints: website, emails, social posts, product UI...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-brand-voice'],
+    prepPrompt: `I'm preparing for a **Brand Voice Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Brand/company: [name and industry]
+- Target audience: [who you're writing for]
+- Intended voice traits: [e.g. "professional but approachable", "bold and irreverent"]
+- Known concerns: [e.g. "voice feels inconsistent", "different teams write differently"]
+
+## Content to gather (from multiple touchpoints)
+
+### 1. Website copy
+- Homepage hero and key sections
+- Product/features page
+- About page
+- Blog posts (2-3 samples)
+
+### 2. Email copy
+- Welcome email
+- Marketing/promotional email
+- Transactional email (confirmation, receipt)
+
+### 3. Social media
+- 5-10 recent social posts across platforms
+- Social bio text
+
+### 4. Product/UI copy
+- Error messages
+- Empty states
+- Onboarding text
+- Notification copy
+
+### 5. Existing guidelines (if any)
+- Brand voice guidelines document
+- Style guide
+- Tone of voice examples
+
+## Don't forget
+- [ ] Include copy from DIFFERENT touchpoints — consistency is what we're measuring
+- [ ] Include functional copy (errors, confirmations), not just marketing copy
+- [ ] Note which pieces were written by different teams/people
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-competitor-analysis',
+    name: 'Competitor Analysis',
+    description: 'Analyzes competitive positioning, messaging gaps, feature differentiation, and strategic white space.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your marketing materials alongside competitor content for comparison...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-competitor-analysis'],
+    prepPrompt: `I'm preparing for a **Competitor Analysis**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Your product/company: [name and one-line description]
+- Target market: [who you're selling to]
+- Key competitors: [list 2-5 direct competitors]
+- Known concerns: [e.g. "losing deals to Competitor X", "unclear differentiation"]
+
+## Content to gather
+
+### 1. Your materials
+- Homepage hero section and key messaging
+- Pricing page
+- Feature/product page
+- Key value proposition statements
+
+### 2. Competitor materials (for each competitor)
+- Homepage hero and key messaging
+- Pricing structure
+- Feature highlights
+- Taglines and positioning statements
+
+### 3. Market context
+- Category you compete in
+- Common buyer objections you hear in sales
+- Win/loss reasons (if known)
+
+### 4. Feature comparison (if available)
+- Feature comparison matrix
+- Areas where you're stronger/weaker
+
+## Don't forget
+- [ ] Include YOUR materials, not just competitor materials
+- [ ] Focus on messaging and positioning, not just features
+- [ ] Include pricing information for meaningful comparison
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-pricing-page',
+    name: 'Pricing Page Audit',
+    description: 'Audits pricing psychology, tier structure, objection handling, and decision architecture to maximize revenue.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your pricing page HTML, pricing structure, or feature comparison matrix...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-pricing-page'],
+    prepPrompt: `I'm preparing for a **Pricing Page Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Product type: [e.g. SaaS, marketplace, e-commerce]
+- Pricing model: [e.g. tiered subscription, usage-based, freemium, one-time]
+- Target buyer: [e.g. "SMB owners", "enterprise procurement"]
+- Known concerns: [e.g. "users choose cheapest tier", "high pricing page bounce rate"]
+
+## Content to gather
+
+### 1. Pricing page
+- Full pricing page HTML or copy
+- All tier names, prices, and feature lists
+- Any toggle (monthly/annual) and pricing math
+
+### 2. Feature comparison
+- Feature comparison matrix
+- What's included/excluded per tier
+- Any usage limits per tier
+
+### 3. Conversion elements
+- CTA text for each tier
+- FAQ section
+- Trust signals (guarantee, testimonials near pricing)
+
+### 4. Competitor pricing (optional)
+- 2-3 competitor pricing pages for context
+
+## Don't forget
+- [ ] Include the FULL pricing page, including FAQ and footer
+- [ ] Note which tier is most popular currently
+- [ ] Include any annual vs. monthly pricing differences
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-onboarding',
+    name: 'Onboarding Flow Audit',
+    description: 'Evaluates activation flow for time-to-value, progressive disclosure, motivation design, and retention mechanics.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your onboarding flow code, screen copy, user journey, or wireframes...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-onboarding'],
+    prepPrompt: `I'm preparing for an **Onboarding Flow Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Product type: [e.g. SaaS tool, marketplace, mobile app]
+- "Aha moment": [what action represents first value? e.g. "runs first audit", "sends first message"]
+- Current activation rate: [% of signups who reach aha moment, if known]
+- Known concerns: [e.g. "50% drop off at step 3", "users don't complete setup"]
+
+## Content to gather
+
+### 1. Signup flow
+- Registration form (fields required)
+- Social/SSO login options
+- Any verification steps
+
+### 2. First-run experience
+- Welcome screen or modal
+- Onboarding wizard/checklist
+- Each step with copy and UI description
+
+### 3. Activation path
+- Steps from signup to first value moment
+- Any setup requirements before using core features
+- Empty states and first-use prompts
+
+### 4. Supporting communications
+- Welcome email sequence
+- In-app tooltips or guided tours
+- Push notifications during onboarding
+
+## Don't forget
+- [ ] Include EVERY step from signup to first value
+- [ ] Note where users currently drop off (if known)
+- [ ] Include both the UI copy and the flow logic
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-analytics',
+    name: 'Marketing Analytics Audit',
+    description: 'Audits tracking implementation, attribution models, funnel instrumentation, and KPI frameworks.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your analytics configuration, tracking code, GTM setup, or measurement plan...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-analytics'],
+    prepPrompt: `I'm preparing for a **Marketing Analytics Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Analytics stack: [e.g. GA4 + GTM, Segment + Mixpanel, HubSpot]
+- Website platform: [e.g. Next.js, WordPress, Shopify]
+- Key conversion events: [e.g. signup, purchase, demo request]
+- Known concerns: [e.g. "can't attribute revenue to channels", "tracking seems broken"]
+
+## Content to gather
+
+### 1. Tracking implementation
+- Google Tag Manager container export (or equivalent)
+- Analytics initialization code
+- Custom event tracking code
+
+### 2. Event inventory
+- List of all tracked events and their properties
+- Conversion event definitions
+- Funnel step definitions
+
+### 3. Attribution setup
+- UTM parameter conventions
+- Attribution model configuration
+- Channel grouping definitions
+
+### 4. Reporting
+- Key dashboards or report screenshots
+- KPI definitions
+- Reporting cadence and audience
+
+## Don't forget
+- [ ] Include the actual tracking CODE, not just what you think is tracked
+- [ ] Note any known gaps or broken tracking
+- [ ] Include consent/privacy implementation if relevant
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-content-strategy',
+    name: 'Content Strategy Audit',
+    description: 'Evaluates topic clusters, content gaps, funnel-stage coverage, SEO alignment, and content distribution.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your content inventory, blog posts, content calendar, or sitemap...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-content-strategy'],
+    prepPrompt: `I'm preparing for a **Content Strategy Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Business type: [e.g. B2B SaaS, e-commerce, agency]
+- Target audience: [who reads your content]
+- Content goal: [e.g. organic traffic, thought leadership, lead generation]
+- Known concerns: [e.g. "traffic not growing", "content doesn't convert", "no clear strategy"]
+
+## Content to gather
+
+### 1. Content inventory
+- List of published content (titles, URLs, dates, categories)
+- Or sitemap/blog index
+- Top 10 performing and bottom 10 performing pieces
+
+### 2. Sample content
+- 3-5 representative blog posts or articles (full text)
+- Pillar/cornerstone content pieces
+- Landing pages with content
+
+### 3. Strategy documents (if they exist)
+- Content calendar
+- Editorial guidelines
+- Topic/keyword research
+- Content pillar definitions
+
+### 4. Performance data (if available)
+- Traffic by content piece
+- Keyword rankings
+- Conversion data from content
+
+## Don't forget
+- [ ] Include content ACROSS funnel stages, not just blog posts
+- [ ] Note your primary content distribution channels
+- [ ] Include any competitor content you admire
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-conversion-rate',
+    name: 'Conversion Rate Audit',
+    description: 'Identifies conversion blockers using LIFT model, ICE scoring, and recommends A/B tests for key funnel steps.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your conversion funnel code, analytics data, or user flow descriptions...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-conversion-rate'],
+    prepPrompt: `I'm preparing for a **Conversion Rate Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Site type: [e.g. SaaS, e-commerce, lead gen]
+- Primary conversion: [e.g. signup, purchase, demo request]
+- Current conversion rate: [if known]
+- Known concerns: [e.g. "high cart abandonment", "low trial-to-paid", "form drop-off"]
+
+## Content to gather
+
+### 1. Conversion pages
+- Landing page(s) driving to conversion
+- Signup/checkout flow (all steps)
+- Thank you / confirmation page
+
+### 2. Funnel data (if available)
+- Conversion rate at each funnel step
+- Drop-off rates between steps
+- Heatmap or session recording insights
+
+### 3. Trust & objection elements
+- Testimonials, reviews, trust badges
+- FAQ sections
+- Guarantee/refund policy
+
+### 4. Previous test results (if any)
+- Past A/B test results and learnings
+- Changes that improved/hurt conversion
+
+## Don't forget
+- [ ] Include the FULL conversion path, not just one page
+- [ ] Note the primary traffic source for conversion pages
+- [ ] Include form fields and their labels
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-product-positioning',
+    name: 'Product Positioning Audit',
+    description: 'Evaluates ICP fit, competitive frame, differentiation, and messaging using Obviously Awesome and JTBD frameworks.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your product marketing materials, positioning docs, or website copy...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-product-positioning'],
+    prepPrompt: `I'm preparing for a **Product Positioning Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Product: [name and one-line description]
+- Target customer: [who is the ideal buyer]
+- Main competitors: [2-3 alternatives your buyers consider]
+- Known concerns: [e.g. "prospects don't understand what we do", "losing to competitor X"]
+
+## Content to gather
+
+### 1. Your messaging
+- Homepage copy (full)
+- Product/features page
+- "How it works" content
+- Tagline and elevator pitch
+
+### 2. Customer context
+- Customer testimonials or case studies
+- Common objections from sales calls
+- Why customers chose you (win reasons)
+- Why prospects chose competitors (loss reasons)
+
+### 3. Competitive context
+- Competitor homepages and positioning
+- How you currently differentiate
+- Category you compete in
+
+### 4. Internal docs (if available)
+- Positioning document
+- Messaging framework
+- ICP definition
+- Sales deck
+
+## Don't forget
+- [ ] Include what your CUSTOMERS say about you, not just what you say
+- [ ] Note your top 3 differentiators as you understand them
+- [ ] Include competitor positioning for comparison
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-growth-loops',
+    name: 'Growth Loops Audit',
+    description: 'Maps viral mechanics, referral programs, content loops, and network effects for compounding growth.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your product code, referral system, sharing mechanics, or growth strategy docs...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-growth-loops'],
+    prepPrompt: `I'm preparing for a **Growth Loops Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Product type: [e.g. SaaS, marketplace, social platform, tool]
+- Current acquisition channels: [e.g. paid ads, organic, referral, word of mouth]
+- Growth stage: [e.g. pre-PMF, scaling, mature]
+- Known concerns: [e.g. "growth depends entirely on paid ads", "referral program underperforms"]
+
+## Content to gather
+
+### 1. Referral/invite mechanics
+- Referral program code or flow
+- Invite mechanisms
+- Sharing features
+
+### 2. Content/SEO loops
+- User-generated content features
+- Public profiles or pages
+- Embed/widget code
+
+### 3. Product virality
+- Collaboration features
+- Output that gets shared externally
+- Integrations that expose the product
+
+### 4. Growth metrics (if available)
+- Referral conversion rates
+- Viral coefficient (K-factor)
+- Organic vs. paid acquisition mix
+
+## Don't forget
+- [ ] Include code for sharing/referral features
+- [ ] Note any growth experiments you've run
+- [ ] Describe the moment users naturally want to share
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-retention',
+    name: 'Retention Audit',
+    description: 'Identifies churn signals, evaluates engagement loops, lifecycle communication, and win-back strategies.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your lifecycle emails, engagement data, cancellation flow, or retention strategy...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-retention'],
+    prepPrompt: `I'm preparing for a **Retention Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Product type: [e.g. SaaS subscription, marketplace, consumer app]
+- Billing model: [e.g. monthly, annual, usage-based]
+- Current churn rate: [if known]
+- Known concerns: [e.g. "high churn at month 3", "users stop logging in after week 1"]
+
+## Content to gather
+
+### 1. Lifecycle communications
+- Onboarding email sequence
+- Re-engagement emails
+- Usage milestone notifications
+- Renewal/upgrade prompts
+
+### 2. Engagement features
+- Core product loops (what brings users back)
+- Notification system (email, push, in-app)
+- Usage dashboards or reports
+
+### 3. Cancellation/churn
+- Cancellation flow and save offers
+- Offboarding survey
+- Win-back email sequence
+
+### 4. Retention data (if available)
+- Cohort retention curves
+- Feature usage by retained vs. churned users
+- Churn reasons from surveys
+
+## Don't forget
+- [ ] Include the cancellation flow — this is critical
+- [ ] Note what "active usage" means for your product
+- [ ] Include any health score or engagement scoring logic
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-ab-testing',
+    name: 'A/B Testing Strategy',
+    description: 'Evaluates experimentation maturity: hypothesis quality, statistical rigor, test prioritization, and learning culture.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your test results, experimentation docs, hypothesis backlog, or testing tool config...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-ab-testing'],
+    prepPrompt: `I'm preparing for an **A/B Testing Strategy** audit. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Testing tool: [e.g. Optimizely, VWO, LaunchDarkly, custom]
+- Monthly traffic: [approximate unique visitors to test pages]
+- Testing cadence: [e.g. "2 tests/month", "sporadic", "none yet"]
+- Known concerns: [e.g. "tests never reach significance", "not sure what to test"]
+
+## Content to gather
+
+### 1. Past test results
+- 5-10 most recent A/B test results with metrics
+- Test hypotheses and what was changed
+- Sample sizes and confidence levels
+
+### 2. Testing process
+- How test ideas are generated and prioritized
+- Who designs and implements tests
+- How results are analyzed and shared
+
+### 3. Current test pipeline
+- Test backlog or idea list
+- Upcoming planned tests
+- Areas of the site being considered
+
+### 4. Analytics foundation
+- Key conversion metrics being tracked
+- Funnel data for pages being tested
+- Segmentation capabilities
+
+## Don't forget
+- [ ] Include BOTH winning and losing test results
+- [ ] Note sample sizes and how long tests ran
+- [ ] Include the hypothesis for each test, not just the result
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-funnel',
+    name: 'Marketing Funnel Audit',
+    description: 'Analyzes full-funnel health: TOFU traffic, MOFU nurture, BOFU conversion, and stage transition rates.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your funnel data, marketing strategy, campaign materials, or analytics...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-funnel'],
+    prepPrompt: `I'm preparing for a **Marketing Funnel Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Business model: [e.g. B2B SaaS, e-commerce, marketplace]
+- Sales motion: [e.g. self-serve/PLG, inside sales, enterprise sales]
+- Funnel stages: [e.g. visitor → lead → MQL → SQL → customer]
+- Known concerns: [e.g. "plenty of traffic but no leads", "leads don't convert to customers"]
+
+## Content to gather
+
+### 1. TOFU (awareness)
+- Traffic sources and volumes
+- Content/SEO performance
+- Paid campaign overview
+
+### 2. MOFU (consideration)
+- Lead capture mechanisms (forms, gated content)
+- Email nurture sequences
+- Lead magnet content
+- Lead scoring criteria
+
+### 3. BOFU (decision)
+- Sales pages, pricing, demo booking
+- Sales collateral
+- Objection handling content
+
+### 4. Funnel metrics (if available)
+- Conversion rates between each stage
+- Average time between stages
+- Drop-off rates
+
+### 5. Post-purchase
+- Onboarding communications
+- Upsell/cross-sell touchpoints
+- Referral/advocacy programs
+
+## Don't forget
+- [ ] Include conversion rates between EVERY stage
+- [ ] Note where the biggest absolute drop-off occurs
+- [ ] Include nurture email sequences, not just landing pages
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-value-proposition',
+    name: 'Value Proposition Audit',
+    description: 'Evaluates unique selling points, benefit clarity, customer-problem fit, and differentiation using the Value Proposition Canvas.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your product messaging, marketing materials, or value proposition statements...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-value-proposition'],
+    prepPrompt: `I'm preparing for a **Value Proposition Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Product/service: [name and brief description]
+- Target customer: [who is the primary buyer]
+- Core problem solved: [the main pain point]
+- Known concerns: [e.g. "prospects don't see why we're different", "value prop feels generic"]
+
+## Content to gather
+
+### 1. Value proposition materials
+- Homepage headline and subhead
+- "How it works" or product tour content
+- Feature/benefit descriptions
+- Tagline and elevator pitch
+
+### 2. Customer evidence
+- Testimonials and case studies
+- Customer interview quotes or feedback
+- Reviews (G2, Capterra, App Store, etc.)
+
+### 3. Competitive context
+- How competitors describe similar products
+- Your current differentiation claims
+- Why customers chose you (or didn't)
+
+### 4. Internal framing
+- Sales deck or pitch materials
+- One-pager or product brief
+- Positioning document (if exists)
+
+## Don't forget
+- [ ] Include what CUSTOMERS say the value is, not just internal messaging
+- [ ] Include competitor value propositions for comparison
+- [ ] Note your top 3 claimed benefits
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-user-research',
+    name: 'User Research Audit',
+    description: 'Assesses persona quality, JTBD alignment, research methodology, and insight-to-action pipeline.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your personas, research findings, survey results, or interview transcripts...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-user-research'],
+    prepPrompt: `I'm preparing for a **User Research Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Product: [name and type]
+- Research maturity: [e.g. "no formal research", "occasional surveys", "continuous research program"]
+- Target audience: [who you believe your customers are]
+- Known concerns: [e.g. "personas feel like guesses", "research doesn't influence decisions"]
+
+## Content to gather
+
+### 1. Personas / segments
+- All persona documents or descriptions
+- Segment definitions
+- ICP (Ideal Customer Profile) document
+
+### 2. Research data
+- Survey results and questions
+- Interview transcripts or summaries
+- Usability test findings
+- NPS or CSAT data
+
+### 3. Customer feedback
+- Support ticket themes
+- Feature request patterns
+- Review and rating data
+- Sales call notes or objection logs
+
+### 4. Research process
+- How research is planned and conducted
+- How insights are shared with teams
+- Research repository or wiki (if exists)
+
+## Don't forget
+- [ ] Include the actual PERSONA documents, not just a summary
+- [ ] Include raw customer quotes where possible
+- [ ] Note what decisions were made based on this research
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'marketing-gtm-strategy',
+    name: 'Go-to-Market Strategy Audit',
+    description: 'Evaluates launch readiness: market definition, channel strategy, sales enablement, and execution sequencing.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-800 hover:bg-pink-700',
+    placeholder: 'Paste your GTM strategy, launch plan, marketing materials, or product brief...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['marketing-gtm-strategy'],
+    prepPrompt: `I'm preparing for a **Go-to-Market Strategy Audit**. Please help me collect the relevant materials.
+
+## Project context (fill in)
+- Product/feature: [what is being launched]
+- Launch stage: [e.g. pre-launch planning, soft launch, scaling]
+- Target market: [who you're going after first]
+- Known concerns: [e.g. "not sure about channel strategy", "launch timeline is aggressive"]
+
+## Content to gather
+
+### 1. Market definition
+- Target market sizing and segmentation
+- Beachhead market definition
+- Buyer personas and decision-making unit (DMU) mapping
+
+### 2. Positioning & messaging
+- Positioning statement or document
+- Messaging framework
+- Key differentiators
+- Competitive narrative
+
+### 3. Channel strategy
+- Planned acquisition channels
+- Channel-specific tactics and budgets
+- Partnership or distribution plans
+
+### 4. Sales readiness
+- Sales deck or pitch materials
+- Pricing and packaging
+- Objection handling guide
+- Case studies or proof points
+
+### 5. Launch plan
+- Launch timeline and milestones
+- Success metrics and targets
+- Pre-launch activities (waitlist, beta, etc.)
+
+## Don't forget
+- [ ] Include your market sizing assumptions
+- [ ] Note which channels have been validated vs. assumed
+- [ ] Include success metrics and how you'll measure them
+
+Keep total under 30,000 characters.`,
+  },
   {
     id: 'developer-pain-points',
     name: 'Developer Pain Points',
@@ -3764,6 +5488,792 @@ Keep total under 30,000 characters.`,
 
 Keep total under 30,000 characters.`,
   },
+
+  // ─── New Performance Agents ─────────────────────────────────────
+  {
+    id: 'network-performance',
+    name: 'Network Performance',
+    description: 'Audits HTTP/2, connection pooling, DNS resolution, CDN config, prefetch hints, and request waterfalls.',
+    category: 'Performance',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-800 hover:bg-amber-700',
+    placeholder: 'Paste your HTML head, server config, resource loading code, or Lighthouse network report...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['network-performance'],
+    prepPrompt: `I'm preparing my application for a **Network Performance** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Hosting / CDN: [e.g. Vercel, Cloudflare, AWS CloudFront, Netlify]
+- Protocol: [e.g. HTTP/2, HTTP/3, unsure]
+- Known concerns: [e.g. "slow TTFB", "too many third-party requests", "no CDN configured"]
+
+## Files to gather
+- HTML \`<head>\` section (resource hints: preconnect, preload, dns-prefetch)
+- Server configuration (nginx.conf, Caddyfile, vercel.json, next.config.ts)
+- Third-party script loading code (analytics, chat widgets, ads)
+- Any fetch/HTTP client configuration (connection pooling, keep-alive settings)
+- Lighthouse or WebPageTest network waterfall screenshots
+- Cache-Control and CDN header configuration
+
+## Don't forget
+- [ ] Include ALL third-party script tags and their loading attributes
+- [ ] Note the number of unique domains your page loads resources from
+- [ ] Include any redirect chains (HTTP->HTTPS, www->non-www)
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'database-performance',
+    name: 'Database Performance',
+    description: 'Detects N+1 queries, missing indexes, full table scans, connection pool issues, and query anti-patterns.',
+    category: 'Performance',
+    accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
+    buttonClass: 'bg-yellow-800 hover:bg-yellow-700',
+    placeholder: 'Paste your ORM models, database queries, API route handlers, or EXPLAIN output...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['database-performance'],
+    prepPrompt: `I'm preparing my application for a **Database Performance** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Database: [e.g. PostgreSQL 16, MySQL 8, MongoDB 7, SQLite]
+- ORM/query builder: [e.g. Prisma, Drizzle, Sequelize, TypeORM, raw SQL]
+- Table sizes: [e.g. "users: 100K rows, orders: 5M rows, logs: 50M rows"]
+- Known concerns: [e.g. "slow API endpoints", "suspected N+1", "high DB CPU"]
+
+## Files to gather
+- ALL ORM model definitions / schema files
+- API route handlers that query the database
+- Any repository or data access layer code
+- Database migration files (for index definitions)
+- Connection pool configuration
+- Any raw SQL queries
+
+## Don't forget
+- [ ] Include the FULL API handler, not just the query — context matters for N+1
+- [ ] Note table sizes and growth rates
+- [ ] Include index definitions (or migration files that create indexes)
+- [ ] Show any caching layer between your app and the database
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'image-optimization',
+    name: 'Image Optimization',
+    description: 'Reviews image formats, responsive sizing, lazy loading, CDN delivery, and LCP image optimization.',
+    category: 'Performance',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-800 hover:bg-amber-700',
+    placeholder: 'Paste your image components, HTML with img tags, or image loading configuration...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['image-optimization'],
+    prepPrompt: `I'm preparing my site for an **Image Optimization** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js 15, Astro, plain HTML, WordPress]
+- Image component: [e.g. next/image, custom img tags, Cloudinary SDK]
+- Image CDN: [e.g. Cloudinary, Imgix, Vercel Image Optimization, none]
+- Known concerns: [e.g. "slow LCP", "huge page weight", "no lazy loading"]
+
+## Files to gather
+- All components that render images (img tags, Image components, CSS backgrounds)
+- Image configuration (next.config.ts images section, CDN settings)
+- Hero / above-the-fold page templates
+- Any image upload or processing code
+- HTML \`<head>\` section (preload hints for images)
+
+## Don't forget
+- [ ] Include the hero/LCP image implementation specifically
+- [ ] Note which images are above-the-fold vs below-the-fold
+- [ ] Include any image processing pipeline (upload -> resize -> serve)
+- [ ] Show the rendered HTML for image-heavy pages
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'ssr-performance',
+    name: 'SSR Performance',
+    description: 'Analyzes streaming SSR, selective hydration, server timing, TTFB, and rendering strategy selection.',
+    category: 'Performance',
+    accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
+    buttonClass: 'bg-yellow-800 hover:bg-yellow-700',
+    placeholder: 'Paste your page components, data fetching logic, layout files, and server configuration...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['ssr-performance'],
+    prepPrompt: `I'm preparing my application for an **SSR Performance** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js 15 App Router, Nuxt 3, Remix, Astro, SvelteKit]
+- Rendering strategies used: [e.g. SSR, SSG, ISR, streaming, RSC]
+- Current TTFB: [e.g. "~800ms", "varies", "don't know"]
+- Known concerns: [e.g. "slow initial page load", "hydration errors", "TTFB spikes"]
+
+## Files to gather
+- ALL page/route components (page.tsx, +page.svelte, etc.)
+- Layout components (layout.tsx, +layout.svelte)
+- Data fetching code (getServerSideProps, server loaders, async server components)
+- loading.tsx / Suspense boundary files
+- Server configuration and middleware
+- "use client" boundary components
+
+## Don't forget
+- [ ] Include EVERY page component (SSR strategy varies per page)
+- [ ] Show the data fetching for each page (what blocks the response?)
+- [ ] Include Suspense/loading boundaries
+- [ ] Note which components are server vs client components
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'api-performance',
+    name: 'API Performance',
+    description: 'Reviews response times, payload sizes, batching, caching headers, and serialization efficiency.',
+    category: 'Performance',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-800 hover:bg-amber-700',
+    placeholder: 'Paste your API route handlers, middleware, serialization logic, or OpenAPI spec...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['api-performance'],
+    prepPrompt: `I'm preparing my API for a **Performance** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js API routes, Express, Fastify, Django REST, Go net/http]
+- API style: [REST, GraphQL, tRPC, gRPC]
+- Traffic: [e.g. "1K req/min", "10K req/min", "just launched"]
+- Known concerns: [e.g. "slow endpoints", "large payloads", "no caching"]
+
+## Files to gather
+- ALL API route handlers / controllers
+- Middleware chain (auth, validation, logging, CORS)
+- Serialization logic (how objects become JSON responses)
+- Response type definitions / schemas
+- Any caching layer (Redis, in-memory, CDN config)
+- Rate limiting configuration
+
+## Don't forget
+- [ ] Include the FULL middleware chain (each layer adds latency)
+- [ ] Show the actual response shape for key endpoints
+- [ ] Note any endpoints known to be slow
+- [ ] Include pagination implementation
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'css-performance',
+    name: 'CSS Performance',
+    description: 'Audits critical CSS, unused styles, selector complexity, layout thrashing, and CLS-causing patterns.',
+    category: 'Performance',
+    accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
+    buttonClass: 'bg-yellow-800 hover:bg-yellow-700',
+    placeholder: 'Paste your CSS files, styled components, Tailwind config, or component styling code...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['css-performance'],
+    prepPrompt: `I'm preparing my styles for a **CSS Performance** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Styling approach: [e.g. Tailwind CSS, CSS Modules, styled-components, vanilla CSS, Sass]
+- Framework: [e.g. Next.js, Vite + React, plain HTML]
+- Total CSS size: [e.g. "don't know", "~200KB", "using Tailwind JIT"]
+- Known concerns: [e.g. "large CSS bundle", "layout shifts", "slow style changes"]
+
+## Files to gather
+- Global CSS files (globals.css, reset.css, theme.css)
+- Tailwind config (tailwind.config.ts) or CSS framework config
+- Components with inline styles or CSS-in-JS
+- Layout components (especially above-the-fold)
+- Any CSS that runs during animations or scroll
+- HTML \`<head>\` showing stylesheet loading order
+
+## Don't forget
+- [ ] Include ALL CSS loading (link tags, @import, CSS-in-JS)
+- [ ] Show any JavaScript that reads/writes layout properties
+- [ ] Include font loading configuration
+- [ ] Note any known layout shift issues
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'javascript-performance',
+    name: 'JavaScript Performance',
+    description: 'Analyzes main thread blocking, long tasks, code splitting, tree-shaking, and script loading strategy.',
+    category: 'Performance',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-800 hover:bg-amber-700',
+    placeholder: 'Paste your JS/TS entry points, component code, build config, or bundle analysis output...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['javascript-performance'],
+    prepPrompt: `I'm preparing my JavaScript for a **Performance** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js 15, React + Vite, Vue + Nuxt, vanilla JS]
+- Bundler: [e.g. webpack, Vite/Rollup, Turbopack, esbuild]
+- Total JS size: [e.g. "~500KB", "don't know", "Lighthouse says 1.2MB"]
+- Known concerns: [e.g. "slow interactions", "large bundle", "jank on mobile"]
+
+## Files to gather
+- Entry point files (app.tsx, main.ts, _app.tsx)
+- Largest page components
+- Import statements from key modules (to trace dependency weight)
+- Build configuration (next.config.ts, vite.config.ts, webpack.config.js)
+- package.json (full dependencies)
+- Any Web Worker code
+- Third-party script loading
+
+## Don't forget
+- [ ] Include build output showing chunk/page sizes
+- [ ] List ALL dependencies from package.json
+- [ ] Show dynamic import() usage (or lack thereof)
+- [ ] Note any known slow interactions
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'animation-performance',
+    name: 'Animation Performance',
+    description: 'Reviews GPU compositing, jank prevention, requestAnimationFrame usage, will-change, and scroll effects.',
+    category: 'Performance',
+    accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
+    buttonClass: 'bg-yellow-800 hover:bg-yellow-700',
+    placeholder: 'Paste your animation code, CSS transitions, scroll handlers, or Framer Motion components...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['animation-performance'],
+    prepPrompt: `I'm preparing my animations for a **Performance** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Animation library: [e.g. CSS transitions, Framer Motion, GSAP, anime.js, Lottie, none]
+- Framework: [e.g. React, Vue, Svelte, vanilla JS]
+- Known concerns: [e.g. "janky scroll animations", "slow page transitions", "mobile stuttering"]
+
+## Files to gather
+- ALL components with animations or transitions
+- CSS files with @keyframes, transitions, or will-change
+- Scroll event handlers and scroll-linked effects
+- Page transition components
+- Any requestAnimationFrame usage
+- Loading/skeleton animation components
+
+## Don't forget
+- [ ] Include ALL scroll event listeners
+- [ ] Show any JavaScript that reads layout properties during animation
+- [ ] Include CSS with will-change or transform: translateZ(0) hacks
+- [ ] Note which animations run on mobile (where GPU is weaker)
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'web-vitals',
+    name: 'Core Web Vitals',
+    description: 'Optimizes LCP, INP, CLS, FCP, and TTFB against Google thresholds with specific remediation steps.',
+    category: 'Performance',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-800 hover:bg-amber-700',
+    placeholder: 'Paste your page components, Lighthouse report, or PageSpeed Insights results...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['web-vitals'],
+    prepPrompt: `I'm preparing my site for a **Core Web Vitals** audit. Please help me collect the relevant files and data.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js 15, Nuxt 3, WordPress, static HTML]
+- Current scores: [e.g. "LCP 3.2s, CLS 0.15, INP unknown" or "don't know"]
+- Target: [e.g. "pass all CWV for Google Search ranking", "improve mobile scores"]
+- Known concerns: [e.g. "LCP image is slow", "layout shifts on load", "slow interactions"]
+
+## Files to gather
+- Above-the-fold page components (the LCP element lives here)
+- HTML \`<head>\` section (resource loading order)
+- Image components (especially hero/LCP images)
+- Font loading configuration
+- JavaScript entry points (what blocks interactivity)
+- Any web-vitals.js integration code
+
+## Don't forget
+- [ ] Identify the LCP element (Chrome DevTools > Performance > LCP marker)
+- [ ] Note any layout shifts visible during page load
+- [ ] Include Lighthouse report if available
+- [ ] Test on mobile (CWV thresholds are for mobile by default)
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'runtime-performance',
+    name: 'Runtime Performance',
+    description: 'Detects memory leaks, GC pressure, event listener accumulation, closure captures, and unbounded caches.',
+    category: 'Performance',
+    accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
+    buttonClass: 'bg-yellow-800 hover:bg-yellow-700',
+    placeholder: 'Paste your components, event handlers, subscription code, or memory-intensive modules...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['runtime-performance'],
+    prepPrompt: `I'm preparing my application for a **Runtime Performance** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Runtime: [e.g. browser, Node.js 22, Deno, Bun]
+- Framework: [e.g. React 19, Vue 3, Express, Fastify]
+- Process lifetime: [e.g. "serverless (short-lived)", "long-running server", "SPA users stay 30+ min"]
+- Known concerns: [e.g. "memory grows over time", "event listener warnings", "GC pauses"]
+
+## Files to gather
+- Components with useEffect / lifecycle hooks (cleanup logic)
+- Event listener registration code (addEventListener, EventEmitter.on)
+- Timer code (setInterval, setTimeout, requestAnimationFrame)
+- Subscription/observable code (WebSocket, SSE, RxJS, pub/sub)
+- In-memory cache implementations (Map, WeakMap, LRU)
+- Global state management (Redux stores, Zustand, Context)
+
+## Don't forget
+- [ ] Include cleanup/teardown code for every subscription
+- [ ] Show component unmount logic (useEffect return functions)
+- [ ] Include any global Maps, Sets, or arrays that grow over time
+- [ ] Note any "Maximum call stack" or "heap out of memory" errors
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'build-performance',
+    name: 'Build Performance',
+    description: 'Optimizes compile times, HMR speed, bundler config, caching strategies, and CI build pipelines.',
+    category: 'Performance',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-800 hover:bg-amber-700',
+    placeholder: 'Paste your build config, tsconfig, CI pipeline, or npm run build output...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['build-performance'],
+    prepPrompt: `I'm preparing my build system for a **Build Performance** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Build tool: [e.g. Next.js + Turbopack, Vite, webpack, esbuild]
+- TypeScript: [yes/no, with SWC or tsc]
+- Current build time: [e.g. "3 minutes", "45 seconds", "don't know"]
+- HMR speed: [e.g. "instant", "2-3 seconds", "full page refresh"]
+- Known concerns: [e.g. "slow CI builds", "HMR is sluggish", "builds OOM sometimes"]
+
+## Files to gather
+- Build configuration (next.config.ts, vite.config.ts, webpack.config.js)
+- TypeScript config (tsconfig.json, tsconfig.build.json)
+- Package manager config (package.json, pnpm-workspace.yaml, turbo.json)
+- CI/CD pipeline (.github/workflows/*.yml, Dockerfile)
+- PostCSS / Tailwind config
+- Any custom build scripts
+
+## Don't forget
+- [ ] Include the FULL build output (chunk sizes, warnings, timing)
+- [ ] Include CI pipeline configuration
+- [ ] Note if builds are slower on CI vs local
+- [ ] Include monorepo config if applicable (turbo.json, nx.json)
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'navigation-ux',
+    name: 'Navigation UX',
+    description: 'Audits information architecture, wayfinding, breadcrumbs, menus, and deep-linking patterns.',
+    category: 'Design',
+    accentClass: 'text-violet-400 hover:bg-violet-500/10',
+    buttonClass: 'bg-violet-700 hover:bg-violet-600',
+    placeholder: 'Paste your navigation markup, site map structure, menu components, or route configuration...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['navigation-ux'],
+    prepPrompt: `I'm preparing navigation for a **Navigation UX** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- App type: [e.g. SaaS dashboard, e-commerce, content site, admin panel]
+- Navigation pattern: [e.g. sidebar, top bar, hamburger, tabbed, bottom nav]
+- Page count: [e.g. ~20 pages, 100+ pages]
+- Known concerns: [e.g. "users can't find settings", "too many menu levels", "no breadcrumbs"]
+
+## Files to gather
+- Main navigation component (header, sidebar, bottom nav)
+- Route/page configuration (Next.js app router, React Router config)
+- Breadcrumb component (if it exists)
+- Search/command palette component (if it exists)
+- Mobile navigation component
+- Any sitemap or IA documentation
+
+## Don't forget
+- [ ] Include ALL navigation variants (desktop, mobile, tablet)
+- [ ] Show the full menu hierarchy (all levels, all items)
+- [ ] Include breadcrumb implementation
+- [ ] Note any pages users report difficulty finding
+- [ ] Include URL structure for key pages
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'micro-interactions',
+    name: 'Micro-interactions',
+    description: 'Reviews feedback patterns, loading states, transitions, empty states, and state change animations.',
+    category: 'Design',
+    accentClass: 'text-purple-400 hover:bg-purple-500/10',
+    buttonClass: 'bg-purple-700 hover:bg-purple-600',
+    placeholder: 'Paste your UI components with state handling, loading patterns, empty states, or transition code...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['micro-interactions'],
+    prepPrompt: `I'm preparing UI components for a **Micro-interactions** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- UI framework: [e.g. React, Vue, Svelte]
+- Animation library: [e.g. Framer Motion, CSS transitions, GSAP, none]
+- Known concerns: [e.g. "no loading states", "jarring page transitions", "empty states are blank"]
+
+## Files to gather
+- Components with loading states (spinners, skeletons, progress bars)
+- Empty state components
+- Toast/notification components
+- Button components (showing click/loading/success states)
+- Page transition wrappers
+- Any animation utility files
+
+## Don't forget
+- [ ] Show ALL states of each component (default, loading, success, error, empty)
+- [ ] Include hover/focus/active styles
+- [ ] Show how success/error feedback is communicated to users
+- [ ] Include any prefers-reduced-motion handling
+- [ ] Note which actions lack feedback entirely
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'error-ux',
+    name: 'Error UX',
+    description: 'Evaluates error messages, recovery flows, 404/500 pages, validation UX, and graceful degradation.',
+    category: 'Design',
+    accentClass: 'text-violet-400 hover:bg-violet-500/10',
+    buttonClass: 'bg-violet-700 hover:bg-violet-600',
+    placeholder: 'Paste your error pages, validation components, error boundary code, or error message patterns...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['error-ux'],
+    prepPrompt: `I'm preparing error handling UI for an **Error UX** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js, React, Vue]
+- Error handling approach: [e.g. error boundaries, try-catch, global handler]
+- Known concerns: [e.g. "generic error messages", "no 404 page", "users don't know what went wrong"]
+
+## Files to gather
+- Custom error pages (404, 500, 403)
+- Error boundary components
+- Form validation and error display components
+- Toast/alert error notification components
+- Offline/network error handling
+- API error response handling
+
+## Don't forget
+- [ ] Include ALL error pages (404, 500, 403, etc.)
+- [ ] Show every type of error message users can see
+- [ ] Include form validation error patterns
+- [ ] Show how network/API errors are handled in the UI
+- [ ] Note any places where errors are silently swallowed
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'mobile-ux',
+    name: 'Mobile UX',
+    description: 'Audits touch targets, gesture design, thumb zones, bottom sheets, and mobile-first interaction patterns.',
+    category: 'Design',
+    accentClass: 'text-fuchsia-400 hover:bg-fuchsia-500/10',
+    buttonClass: 'bg-fuchsia-700 hover:bg-fuchsia-600',
+    placeholder: 'Paste your mobile layouts, touch-interactive components, responsive CSS, or viewport configuration...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['mobile-ux'],
+    prepPrompt: `I'm preparing mobile UI for a **Mobile UX** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Mobile approach: [e.g. responsive web, PWA, React Native, hybrid]
+- Primary device context: [e.g. mobile-first, desktop-first, both equal]
+- Known concerns: [e.g. "buttons too small", "can't reach top nav", "forms painful on mobile"]
+
+## Files to gather
+- Mobile navigation components (bottom nav, hamburger menu)
+- Touch-interactive components (swipeable lists, bottom sheets, modals)
+- Form components used on mobile
+- Viewport meta tag and responsive CSS
+- Any mobile-specific components or breakpoint logic
+
+## Don't forget
+- [ ] Include the viewport meta tag configuration
+- [ ] Show components at mobile widths (375px, 428px)
+- [ ] Include touch target sizes (measure buttons, links, tap areas)
+- [ ] Show how forms behave with mobile keyboards
+- [ ] Note any horizontal scrolling issues
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'data-visualization',
+    name: 'Data Visualization',
+    description: 'Reviews charts, graphs, dashboards, and visual data accessibility for clarity and correctness.',
+    category: 'Design',
+    accentClass: 'text-purple-400 hover:bg-purple-500/10',
+    buttonClass: 'bg-purple-700 hover:bg-purple-600',
+    placeholder: 'Paste your chart components, dashboard layouts, D3/Recharts/Chart.js code, or visualization configs...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['data-visualization'],
+    prepPrompt: `I'm preparing data visualizations for a **Data Visualization** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Visualization library: [e.g. D3.js, Recharts, Chart.js, Plotly, Nivo]
+- Chart types used: [e.g. bar, line, pie, scatter, dashboard KPIs]
+- Data domain: [e.g. financial, analytics, scientific, operational]
+- Known concerns: [e.g. "charts not accessible", "colors hard to distinguish", "dashboard too cluttered"]
+
+## Files to gather
+- All chart/graph components
+- Dashboard layout components
+- Color palette / theme configuration for charts
+- Any data transformation utilities for chart data
+- Tooltip and legend components
+
+## Don't forget
+- [ ] Include ALL chart types used in the application
+- [ ] Show the color palette used for data series
+- [ ] Include any accessibility accommodations (alt text, data tables)
+- [ ] Show how charts behave on mobile / small screens
+- [ ] Note any interactive features (zoom, filter, drill-down)
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'content-design',
+    name: 'Content Design',
+    description: 'Audits microcopy, labels, help text, progressive disclosure, and content readability.',
+    category: 'Design',
+    accentClass: 'text-violet-400 hover:bg-violet-500/10',
+    buttonClass: 'bg-violet-700 hover:bg-violet-600',
+    placeholder: 'Paste your UI with labels, headings, help text, error messages, tooltips, or onboarding copy...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['content-design'],
+    prepPrompt: `I'm preparing UI copy for a **Content Design** audit. Please help me collect the relevant content.
+
+## Project context (fill in)
+- Product type: [e.g. SaaS, e-commerce, developer tool, consumer app]
+- Target audience: [e.g. non-technical users, developers, enterprise admins]
+- Voice/tone guide: [e.g. "friendly and casual", "professional and precise", "none exists"]
+- Known concerns: [e.g. "users don't understand labels", "too much jargon", "inconsistent terminology"]
+
+## Content to gather
+- Key pages with their full copy (headings, labels, descriptions, CTAs)
+- All error messages and success messages
+- Tooltip and help text content
+- Onboarding/tutorial copy
+- Empty state messages
+- Form labels and placeholder text
+
+## Don't forget
+- [ ] Include the ACTUAL copy users see, not just the code
+- [ ] Show error messages in context (near the triggering element)
+- [ ] Include tooltips and help text
+- [ ] Note any terminology that users have asked about
+- [ ] Include any existing voice/tone guidelines
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'onboarding-ux',
+    name: 'Onboarding UX',
+    description: 'Reviews first-run experience, tutorials, tooltips, progressive revelation, and user activation flow.',
+    category: 'Design',
+    accentClass: 'text-fuchsia-400 hover:bg-fuchsia-500/10',
+    buttonClass: 'bg-fuchsia-700 hover:bg-fuchsia-600',
+    placeholder: 'Paste your onboarding flow, setup wizard, tutorial components, or first-run experience code...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['onboarding-ux'],
+    prepPrompt: `I'm preparing onboarding UI for an **Onboarding UX** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Onboarding pattern: [e.g. setup wizard, product tour, checklist, video, progressive disclosure, none]
+- Activation metric: [e.g. "created first project", "connected data source", "invited team member"]
+- Current activation rate: [e.g. "~40% complete setup", "unknown"]
+- Known concerns: [e.g. "users drop off at step 3", "too many setup steps", "no guidance after signup"]
+
+## Files to gather
+- Signup/registration flow
+- Setup wizard or onboarding steps
+- Product tour / tooltip components
+- Onboarding checklist component
+- Empty states that serve as first-use guidance
+- Any welcome email or in-app welcome screen
+
+## Don't forget
+- [ ] Include EVERY step of the onboarding flow
+- [ ] Show what happens when a user skips onboarding
+- [ ] Include empty states for key features
+- [ ] Note the minimum path to first value ("aha moment")
+- [ ] Show what returning users see if they didn't finish setup
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'search-ux',
+    name: 'Search UX',
+    description: 'Evaluates autocomplete, filters, results display, no-results handling, and search accessibility.',
+    category: 'Design',
+    accentClass: 'text-purple-400 hover:bg-purple-500/10',
+    buttonClass: 'bg-purple-700 hover:bg-purple-600',
+    placeholder: 'Paste your search components, filter UI, results display, autocomplete logic, or search config...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['search-ux'],
+    prepPrompt: `I'm preparing search UI for a **Search UX** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Search technology: [e.g. Algolia, Elasticsearch, Meilisearch, custom API, client-side filtering]
+- Search scope: [e.g. global site search, product catalog, documentation, within-page]
+- Result types: [e.g. products, articles, users, mixed]
+- Known concerns: [e.g. "no autocomplete", "poor no-results page", "filters confusing", "search too slow"]
+
+## Files to gather
+- Search input component
+- Autocomplete/suggestion component
+- Search results display component
+- Filter/facet components
+- Sorting controls
+- No-results / empty search state
+- Pagination or infinite scroll component
+
+## Don't forget
+- [ ] Include ALL search-related components
+- [ ] Show the no-results experience
+- [ ] Include filter/facet UI
+- [ ] Show how search works on mobile
+- [ ] Note search accessibility (keyboard nav, screen reader)
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'table-design',
+    name: 'Table & List Design',
+    description: 'Audits table sorting, filtering, pagination, responsive behavior, and data table accessibility.',
+    category: 'Design',
+    accentClass: 'text-violet-400 hover:bg-violet-500/10',
+    buttonClass: 'bg-violet-700 hover:bg-violet-600',
+    placeholder: 'Paste your data table components, list views, grid layouts, or tabular data display code...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['table-design'],
+    prepPrompt: `I'm preparing data tables for a **Table & List Design** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Table library: [e.g. TanStack Table, AG Grid, custom, native HTML tables]
+- Table types: [e.g. data management, read-only display, editable, comparison]
+- Row count range: [e.g. "10-50 rows", "1000+ rows with pagination", "dynamic"]
+- Known concerns: [e.g. "tables break on mobile", "no sorting", "pagination confusing", "not accessible"]
+
+## Files to gather
+- All table/data grid components
+- Pagination component
+- Sort and filter controls
+- Row selection / bulk action components
+- Mobile table adaptation (if any)
+- Empty and loading state for tables
+
+## Don't forget
+- [ ] Include ALL tables in the application
+- [ ] Show table behavior at mobile widths
+- [ ] Include sort, filter, and pagination interactions
+- [ ] Show empty and loading states for tables
+- [ ] Note any tables with accessibility issues (missing headers, no keyboard nav)
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'notification-ux',
+    name: 'Notification UX',
+    description: 'Reviews toasts, alerts, badges, interruption hierarchy, and notification accessibility.',
+    category: 'Design',
+    accentClass: 'text-fuchsia-400 hover:bg-fuchsia-500/10',
+    buttonClass: 'bg-fuchsia-700 hover:bg-fuchsia-600',
+    placeholder: 'Paste your toast/snackbar components, alert banners, badge UI, or notification system code...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['notification-ux'],
+    prepPrompt: `I'm preparing notification UI for a **Notification UX** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Notification library: [e.g. react-hot-toast, sonner, custom, native alerts]
+- Notification types: [e.g. success toasts, error alerts, badges, banners, confirmation dialogs]
+- Notification channels: [e.g. in-app only, email + in-app, push notifications]
+- Known concerns: [e.g. "toasts disappear too fast", "no error notifications", "notification overload"]
+
+## Files to gather
+- Toast/snackbar component and configuration
+- Alert/banner components
+- Badge/indicator components
+- Confirmation dialog components
+- Notification center/history (if it exists)
+- Any notification preference settings
+
+## Don't forget
+- [ ] Include ALL notification types (success, error, warning, info)
+- [ ] Show stacking/queuing behavior for multiple notifications
+- [ ] Include confirmation dialogs for destructive actions
+- [ ] Show how notifications appear on mobile
+- [ ] Note any screen reader / aria-live attributes
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'spacing-layout',
+    name: 'Spacing & Layout',
+    description: 'Audits visual rhythm, whitespace strategy, grid systems, alignment, and spacing token consistency.',
+    category: 'Design',
+    accentClass: 'text-purple-400 hover:bg-purple-500/10',
+    buttonClass: 'bg-purple-700 hover:bg-purple-600',
+    placeholder: 'Paste your CSS with spacing values, Tailwind config, layout components, or design tokens...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['spacing-layout'],
+    prepPrompt: `I'm preparing layout code for a **Spacing & Layout** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- CSS approach: [e.g. Tailwind, CSS Modules, styled-components, vanilla CSS]
+- Grid system: [e.g. CSS Grid, Flexbox, 12-column grid, none explicit]
+- Spacing scale: [e.g. "8pt grid", "Tailwind defaults", "custom scale", "ad-hoc values"]
+- Known concerns: [e.g. "inconsistent spacing", "things don't align", "too cramped on mobile"]
+
+## Files to gather
+- Tailwind config (theme.spacing, theme.extend) or CSS custom properties for spacing
+- Global CSS with layout rules
+- Key page layout components (header, sidebar, main content, footer)
+- Card, modal, and form layout components
+- Any spacing utility classes or components
+
+## Don't forget
+- [ ] Include the spacing scale / token definitions
+- [ ] Show layout at multiple viewport widths
+- [ ] Include components with the most visual spacing (cards, forms, dashboards)
+- [ ] Note any spacing values that seem inconsistent or arbitrary
+- [ ] Include responsive spacing changes across breakpoints
+
+Keep total under 30,000 characters.`,
+  },
+
+  // ─── SEO: 11 New Agents ───────────────────────────────────────
+  { id: 'seo-local', name: 'Local SEO', description: 'Audits Google Business Profile, NAP consistency, local schema, citations, and review management.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your local landing pages, schema markup, GBP data, or citation list...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-local'], prepPrompt: `I'm preparing my site for a **Local SEO** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Business type: [e.g. restaurant, law firm, plumber, retail store]\n- Locations: [e.g. single location, 5 locations, service area business]\n- Current local SEO status: [e.g. "GBP claimed but not optimized", "no local schema"]\n\n## Content to gather\n- Google Business Profile information (name, address, phone, categories, description)\n- Local landing page HTML (especially schema markup in <head>)\n- NAP as it appears on your website footer/contact page\n- List of current citations/directory listings\n- Review data (count, average rating, recent reviews)\n- Any local schema markup (JSON-LD)\n\n## Don't forget\n- [ ] Include the exact NAP from your website, GBP, and 3-5 top citations\n- [ ] Include any LocalBusiness schema markup\n- [ ] Note your target service area or neighborhoods\n\nKeep total under 30,000 characters.` },
+  { id: 'seo-ecommerce', name: 'E-commerce SEO', description: 'Reviews product pages, faceted navigation, canonical strategy, product schema, and category architecture.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your product page HTML, category pages, faceted navigation config, or schema markup...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-ecommerce'], prepPrompt: `I'm preparing my store for an **E-commerce SEO** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Platform: [e.g. Shopify, WooCommerce, Next.js custom, Magento]\n- Product count: [e.g. 50 products, 10,000 SKUs]\n- Known concerns: [e.g. "faceted nav creating duplicate URLs", "no product schema"]\n\n## Content to gather\n- Product page HTML (including <head> with schema)\n- Category/collection page HTML\n- Faceted navigation/filter URL examples\n- Product schema markup (JSON-LD)\n- Canonical tag configuration\n- Pagination implementation\n- robots.txt and sitemap\n\n## Don't forget\n- [ ] Include examples of filtered/faceted URLs\n- [ ] Show how out-of-stock products are handled\n- [ ] Include product variant URLs (color, size)\n\nKeep total under 30,000 characters.` },
+  { id: 'seo-content-audit', name: 'Content SEO Audit', description: 'Identifies thin content, keyword cannibalization, topical authority gaps, and content consolidation opportunities.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your content inventory, page titles, URLs, and sample content...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-content-audit'], prepPrompt: `I'm preparing my site for a **Content SEO Audit**. Please help me collect the relevant content.\n\n## Project context (fill in)\n- Site type: [e.g. blog, SaaS, e-commerce, news]\n- Content volume: [e.g. 30 blog posts, 200 pages]\n- Known concerns: [e.g. "thin category pages", "multiple posts targeting same keyword"]\n\n## Content to gather\n- Complete list of all page URLs with titles and H1s\n- Full content of your top 10 pages by traffic\n- Content of pages you suspect have issues\n- Any keyword tracking data\n- Google Search Console performance data\n\n## Don't forget\n- [ ] Include ALL page titles — we need to find cannibalization\n- [ ] Note pages that target the same keyword\n- [ ] Include word counts if available\n\nKeep total under 30,000 characters.` },
+  { id: 'seo-link-building', name: 'Link Profile Audit', description: 'Analyzes backlink quality, anchor text health, toxic links, internal linking structure, and link building opportunities.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your backlink data, internal link structure, anchor text report, or navigation HTML...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-link-building'], prepPrompt: `I'm preparing my site for a **Link Profile Audit**. Please help me collect the relevant data.\n\n## Project context (fill in)\n- Domain age: [e.g. 2 years, 10 years]\n- Known concerns: [e.g. "spammy backlinks", "poor internal linking", "no link building done"]\n\n## Data to gather\n- Backlink report from Ahrefs/Moz/SEMrush (top referring domains)\n- Anchor text distribution report\n- Internal linking structure (navigation HTML, sidebar links)\n- List of pages with the most/fewest internal links\n- Any disavow file if one exists\n\n## Don't forget\n- [ ] Include anchor text distribution data\n- [ ] Note any known spammy backlinks\n- [ ] Include your site navigation HTML\n\nKeep total under 30,000 characters.` },
+  { id: 'seo-mobile', name: 'Mobile SEO', description: 'Reviews mobile-first indexing readiness, responsive design, mobile page speed, and mobile usability.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your mobile viewport config, responsive CSS, or mobile page HTML output...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-mobile'], prepPrompt: `I'm preparing my site for a **Mobile SEO** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Framework: [e.g. Next.js, responsive WordPress theme, separate mobile site]\n- Mobile traffic share: [e.g. "60% mobile", "unknown"]\n- Known concerns: [e.g. "content hidden on mobile", "slow on 3G", "tap targets too small"]\n\n## Files to gather\n- Viewport meta tag configuration\n- CSS media queries and breakpoints\n- Mobile-rendered HTML for key pages\n- Mobile PageSpeed Insights results\n- Any AMP configuration (if applicable)\n\n## Don't forget\n- [ ] Include the rendered HTML as seen on mobile (not just desktop)\n- [ ] Note any content that differs between mobile and desktop\n- [ ] Include mobile Core Web Vitals data if available\n\nKeep total under 30,000 characters.` },
+  { id: 'seo-international', name: 'International SEO', description: 'Audits hreflang implementation, geo-targeting, URL structure for locales, and content localization quality.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your hreflang tags, locale URL structure, language switcher, or localized page HTML...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-international'], prepPrompt: `I'm preparing my site for an **International SEO** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Target markets: [e.g. US, UK, Germany, Japan]\n- URL strategy: [e.g. /en/, en.example.com, example.de]\n- Translation method: [e.g. professional translation, auto-translated, native content]\n\n## Files to gather\n- Hreflang tags from <head> of key pages\n- URL structure examples for each locale\n- Language switcher implementation\n- Google Search Console international targeting settings\n- Sitemap(s) per language\n\n## Don't forget\n- [ ] Include hreflang tags from at least 3 different pages\n- [ ] Show the x-default hreflang if present\n- [ ] Note any auto-redirect based on IP or browser language\n\nKeep total under 30,000 characters.` },
+  { id: 'seo-site-architecture', name: 'Site Architecture', description: 'Evaluates crawl budget, URL structure, content siloing, internal link topology, and navigation hierarchy.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your sitemap, URL list, navigation HTML, routing config, or robots.txt...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-site-architecture'], prepPrompt: `I'm preparing my site for a **Site Architecture** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Total pages: [e.g. 50 pages, 5,000 pages, 1M+ pages]\n- Framework: [e.g. Next.js with file-based routing, WordPress, custom CMS]\n- Known concerns: [e.g. "orphan pages", "deep click depth", "crawl budget waste"]\n\n## Files to gather\n- Complete sitemap.xml (or sitemap index)\n- robots.txt\n- Navigation HTML (header, footer, sidebar)\n- URL routing configuration\n- Breadcrumb implementation\n- Internal search configuration\n\n## Don't forget\n- [ ] Include the full URL list or sitemap\n- [ ] Show the navigation hierarchy\n- [ ] Note any pages only accessible via search or deep links\n\nKeep total under 30,000 characters.` },
+  { id: 'seo-core-web-vitals', name: 'SEO & Core Web Vitals', description: 'Analyzes LCP, CLS, INP as ranking factors with page experience signals and CrUX data assessment.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your PageSpeed Insights results, CrUX data, layout components, or performance config...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-core-web-vitals'], prepPrompt: `I'm preparing my site for a **Core Web Vitals SEO** audit. Please help me collect the relevant data.\n\n## Project context (fill in)\n- Framework: [e.g. Next.js, WordPress, custom React]\n- Current CWV status: [e.g. "failing LCP", "good but want to improve", "unknown"]\n- Traffic: [e.g. "100K monthly visits", "small site"]\n\n## Data to gather\n- PageSpeed Insights results for top 5 pages\n- CrUX data from Google Search Console (if available)\n- Layout components (hero, header, images above fold)\n- Font loading configuration\n- Third-party script tags\n- Image optimization configuration\n\n## Don't forget\n- [ ] Include both mobile and desktop PageSpeed results\n- [ ] Note any third-party scripts (analytics, chat widgets, ads)\n- [ ] Include your image optimization strategy\n\nKeep total under 30,000 characters.` },
+  { id: 'seo-structured-data', name: 'Structured Data', description: 'Reviews Schema.org markup, JSON-LD implementation, rich result eligibility, and knowledge graph optimization.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your JSON-LD blocks, page HTML with schema, or structured data configuration...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-structured-data'], prepPrompt: `I'm preparing my site for a **Structured Data** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Site type: [e.g. blog, e-commerce, local business, SaaS]\n- Current schema: [e.g. "basic Organization only", "product schema on all items", "none"]\n- Known concerns: [e.g. "no rich results showing", "validation errors in GSC"]\n\n## Files to gather\n- All JSON-LD blocks from your key pages\n- Page HTML showing where schema is injected\n- Schema generation code (if dynamic)\n- Google Rich Results Test output for key pages\n- Google Search Console enhancement reports\n\n## Don't forget\n- [ ] Include schema from EVERY page type (home, blog, product, about, etc.)\n- [ ] Include the full JSON-LD, not just snippets\n- [ ] Note which pages show rich results in search\n\nKeep total under 30,000 characters.` },
+  { id: 'seo-indexation', name: 'Indexation Audit', description: 'Diagnoses crawl errors, canonical conflicts, noindex issues, orphan pages, and index bloat.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your robots.txt, sitemap, canonical tags, GSC coverage report, or page headers...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-indexation'], prepPrompt: `I'm preparing my site for an **Indexation Audit**. Please help me collect the relevant data.\n\n## Project context (fill in)\n- Total pages: [e.g. 100, 10,000, 1M+]\n- Known issues: [e.g. "pages not indexed", "duplicate content warnings", "crawl errors in GSC"]\n\n## Data to gather\n- robots.txt\n- XML sitemap(s)\n- Canonical tags from key page types\n- Google Search Console Index Coverage report data\n- Meta robots tags from key pages\n- HTTP response headers (X-Robots-Tag if used)\n- Any redirect configuration\n\n## Don't forget\n- [ ] Include GSC coverage report numbers (valid, excluded, error)\n- [ ] Note pages you expect to be indexed but aren't\n- [ ] Include any redirect rules or .htaccess\n\nKeep total under 30,000 characters.` },
+  { id: 'seo-video', name: 'Video SEO', description: 'Optimizes YouTube presence, video schema markup, video sitemaps, transcripts, and video SERP features.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your video page HTML, YouTube channel data, video schema, or video sitemap...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-video'], prepPrompt: `I'm preparing my site for a **Video SEO** audit. Please help me collect the relevant data.\n\n## Project context (fill in)\n- Video hosting: [e.g. YouTube, Vimeo, self-hosted, Wistia]\n- Video count: [e.g. 10 videos, 500+ videos]\n- Known concerns: [e.g. "videos not showing in search", "no schema", "no transcripts"]\n\n## Data to gather\n- Video page HTML (showing embeds and schema)\n- Video schema markup (JSON-LD)\n- Video sitemap (if exists)\n- YouTube channel URL and key video URLs\n- Transcript/caption files\n\n## Don't forget\n- [ ] Include the VideoObject schema if present\n- [ ] Note which videos have captions/transcripts\n- [ ] Include YouTube titles, descriptions, and tags for key videos\n\nKeep total under 30,000 characters.` },
+
+  // ─── Infrastructure: 8 New Agents ─────────────────────────────
+  { id: 'kubernetes', name: 'Kubernetes', description: 'Audits K8s manifests, resource limits, RBAC, networking policies, health probes, and deployment strategy.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your Kubernetes manifests, Helm charts, or kubectl output...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['kubernetes'], prepPrompt: `I'm preparing my Kubernetes configuration for a **Kubernetes** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Cluster: [e.g. EKS, GKE, AKS, self-managed]\n- Workloads: [e.g. 5 deployments, 20 services]\n- Known concerns: [e.g. "no resource limits", "running as root", "no network policies"]\n\n## Files to gather\n- Deployment manifests (YAML)\n- Service and Ingress manifests\n- RBAC (Role, ClusterRole, RoleBinding) manifests\n- NetworkPolicy manifests\n- Helm values files\n- Namespace and ResourceQuota definitions\n\n## Don't forget\n- [ ] Include ALL deployment manifests, not just one example\n- [ ] Include any HPA/VPA configurations\n- [ ] Note which namespaces are in use\n\nKeep total under 30,000 characters.` },
+  { id: 'terraform', name: 'Terraform / IaC', description: 'Reviews state management, module design, security groups, drift detection, and provider configuration.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your Terraform files (.tf), module definitions, or tfplan output...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['terraform'], prepPrompt: `I'm preparing my infrastructure code for a **Terraform** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Cloud provider: [e.g. AWS, GCP, Azure, multi-cloud]\n- Terraform version: [e.g. 1.5, 1.7]\n- Known concerns: [e.g. "no state locking", "hardcoded values", "security groups too open"]\n\n## Files to gather\n- Main .tf files (main.tf, variables.tf, outputs.tf)\n- Module definitions\n- Backend configuration\n- Provider configuration\n- terraform.tfvars or .auto.tfvars (NO SECRETS)\n- Any .tfplan output\n\n## Don't forget\n- [ ] NEVER include actual secret values\n- [ ] Include the backend configuration for state\n- [ ] Show module structure and versioning\n\nKeep total under 30,000 characters.` },
+  { id: 'serverless', name: 'Serverless', description: 'Analyzes cold starts, timeout configuration, concurrency management, cost optimization, and event patterns.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your serverless.yml, SAM template, function code, or CloudFormation config...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['serverless'], prepPrompt: `I'm preparing my serverless architecture for a **Serverless** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Platform: [e.g. AWS Lambda, Azure Functions, Google Cloud Functions]\n- Framework: [e.g. Serverless Framework, SAM, CDK, raw CloudFormation]\n- Function count: [e.g. 5 functions, 50 functions]\n- Known concerns: [e.g. "cold starts", "high costs", "timeout issues"]\n\n## Files to gather\n- serverless.yml / template.yaml / CDK stack\n- Function handler code\n- IAM role/policy definitions\n- Event source configurations\n- Environment variable setup (NO SECRETS)\n\n## Don't forget\n- [ ] Include memory and timeout settings\n- [ ] Note any VPC configuration\n- [ ] Include provisioned concurrency settings if any\n\nKeep total under 30,000 characters.` },
+  { id: 'message-queues', name: 'Message Queues', description: 'Reviews dead letter queues, message ordering, idempotency patterns, backpressure, and error recovery.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your queue configuration, consumer/producer code, or messaging infrastructure...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['message-queues'], prepPrompt: `I'm preparing my messaging system for a **Message Queue** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Queue technology: [e.g. RabbitMQ, Kafka, SQS, Redis Streams]\n- Message volume: [e.g. 100/min, 10K/sec]\n- Known concerns: [e.g. "no DLQ", "duplicate processing", "message loss"]\n\n## Files to gather\n- Queue/topic configuration\n- Consumer code (message handlers)\n- Producer code (message publishers)\n- Dead letter queue configuration\n- Retry and error handling logic\n- Monitoring/alerting configuration\n\n## Don't forget\n- [ ] Include error handling in consumers\n- [ ] Show how idempotency is handled\n- [ ] Include DLQ configuration and reprocessing logic\n\nKeep total under 30,000 characters.` },
+  { id: 'cdn-config', name: 'CDN Configuration', description: 'Audits cache rules, purge strategy, edge functions, HTTP headers, and origin configuration.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your CDN configuration, cache rules, edge functions, or HTTP header config...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['cdn-config'], prepPrompt: `I'm preparing my CDN setup for a **CDN Configuration** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- CDN provider: [e.g. Cloudflare, CloudFront, Fastly, Vercel Edge]\n- Content types: [e.g. static site, dynamic app, mixed]\n- Known concerns: [e.g. "low cache hit ratio", "stale content issues", "no edge functions"]\n\n## Files to gather\n- CDN configuration (cache rules, page rules)\n- Cache-Control header configuration\n- Edge function/worker code\n- Origin configuration\n- Purge/invalidation setup\n- HTTP response headers for key routes\n\n## Don't forget\n- [ ] Include Cache-Control headers for different content types\n- [ ] Show any cache busting strategy\n- [ ] Include edge function code if applicable\n\nKeep total under 30,000 characters.` },
+  { id: 'load-balancing', name: 'Load Balancing', description: 'Reviews health checks, session affinity, failover strategy, auto-scaling policies, and traffic distribution.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your load balancer config, health checks, scaling policies, or target group setup...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['load-balancing'], prepPrompt: `I'm preparing my load balancing setup for an audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- LB type: [e.g. ALB, NLB, nginx, HAProxy, Cloud Load Balancer]\n- Architecture: [e.g. single region, multi-AZ, multi-region]\n- Known concerns: [e.g. "no health checks", "sticky sessions causing uneven load", "no auto-scaling"]\n\n## Files to gather\n- Load balancer configuration\n- Health check definitions\n- Target group/backend configuration\n- Auto-scaling policies\n- SSL/TLS configuration\n- DNS/failover configuration\n\n## Don't forget\n- [ ] Include health check endpoints and thresholds\n- [ ] Show auto-scaling policies and metrics\n- [ ] Note any session affinity requirements\n\nKeep total under 30,000 characters.` },
+  { id: 'backup-recovery', name: 'Backup & Recovery', description: 'Evaluates RPO/RTO coverage, backup verification, disaster recovery plans, and data replication strategy.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your backup configuration, DR plan, replication setup, or recovery procedures...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['backup-recovery'], prepPrompt: `I'm preparing my backup strategy for a **Backup & Recovery** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Data stores: [e.g. PostgreSQL, MongoDB, S3, Redis]\n- Business criticality: [e.g. "financial data, zero tolerance for loss", "content site, some loss OK"]\n- Known concerns: [e.g. "never tested restores", "no DR plan", "backups in same region"]\n\n## Data to gather\n- Backup configuration for each data store\n- Backup schedule and retention policies\n- DR plan documentation (if exists)\n- Replication configuration\n- Last restore test results\n- Monitoring/alerting for backup failures\n\n## Don't forget\n- [ ] List ALL data stores and whether each is backed up\n- [ ] Note the last time a restore was tested\n- [ ] Include RPO/RTO requirements if documented\n\nKeep total under 30,000 characters.` },
+  { id: 'monitoring-alerting', name: 'Monitoring & Alerting', description: 'Reviews SLI/SLO definitions, alert design, alert fatigue, dashboard quality, and runbook coverage.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your alert rules, SLO definitions, dashboard configs, or monitoring setup...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['monitoring-alerting'], prepPrompt: `I'm preparing my monitoring setup for a **Monitoring & Alerting** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Monitoring stack: [e.g. Datadog, Prometheus/Grafana, CloudWatch, New Relic]\n- Services monitored: [e.g. 5 microservices, monolith + database]\n- Known concerns: [e.g. "too many alerts", "no SLOs defined", "missing runbooks"]\n\n## Files to gather\n- Alert rule definitions\n- SLI/SLO definitions (if they exist)\n- Dashboard configurations or screenshots\n- Runbooks for critical alerts\n- On-call rotation setup\n- Notification channel configuration\n\n## Don't forget\n- [ ] Include the number of alerts firing per day/week\n- [ ] Note any alerts that are frequently silenced\n- [ ] Include runbooks (or note their absence)\n\nKeep total under 30,000 characters.` },
+
+  // ─── Code Quality: 7 New Agents ───────────────────────────────
+  { id: 'naming-conventions', name: 'Naming Conventions', description: 'Audits variable, function, file, and type naming for clarity, consistency, and convention adherence.', category: 'Code Quality', accentClass: 'text-blue-400 hover:bg-blue-500/10', buttonClass: 'bg-blue-800 hover:bg-blue-700', placeholder: 'Paste your source code — the more files, the better we can assess naming consistency...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['naming-conventions'], prepPrompt: `I'm preparing code for a **Naming Conventions** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Language / framework: [e.g. TypeScript + React, Python + Django, Go]\n- Team conventions: [e.g. "we follow Airbnb style guide", "no formal conventions"]\n- Known concerns: [e.g. "inconsistent naming across files", "abbreviations everywhere"]\n\n## Files to gather\n- Core source files from the module being reviewed\n- Type definitions and interfaces\n- Utility/helper files\n- Test files (to check test naming)\n- Configuration files\n\n## Don't forget\n- [ ] Include files from multiple developers if possible\n- [ ] Include both old and new files to check consistency over time\n- [ ] Note any existing naming conventions documentation\n\nKeep total under 30,000 characters.` },
+  { id: 'code-comments', name: 'Code Comments Audit', description: 'Reviews JSDoc coverage, inline comment quality, TODO debt, and self-documenting code practices.', category: 'Code Quality', accentClass: 'text-blue-400 hover:bg-blue-500/10', buttonClass: 'bg-blue-800 hover:bg-blue-700', placeholder: 'Paste your source code with its existing comments, JSDoc, and TODOs...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['code-comments'], prepPrompt: `I'm preparing code for a **Code Comments** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Language / framework: [e.g. TypeScript, Python, Java]\n- Documentation policy: [e.g. "JSDoc required for public APIs", "no policy", "minimal comments"]\n- Known concerns: [e.g. "stale comments", "too many TODOs", "no JSDoc at all"]\n\n## Files to gather\n- Core source files with their existing comments\n- Public API files (most critical for documentation)\n- Files with complex business logic\n- Any files you know have TODO/FIXME markers\n\n## Don't forget\n- [ ] Include the comments as-is — don't clean them up first\n- [ ] Include files with complex regex or algorithms\n- [ ] Note any documentation generation tools in use\n\nKeep total under 30,000 characters.` },
+  { id: 'solid-principles', name: 'SOLID Principles', description: 'Identifies violations of SRP, OCP, LSP, ISP, and DIP with refactoring guidance for each principle.', category: 'Code Quality', accentClass: 'text-blue-400 hover:bg-blue-500/10', buttonClass: 'bg-blue-800 hover:bg-blue-700', placeholder: 'Paste your classes, modules, interfaces, and their dependencies...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['solid-principles'], prepPrompt: `I'm preparing code for a **SOLID Principles** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Language / paradigm: [e.g. TypeScript OOP, Java, Python with classes]\n- Architecture: [e.g. layered, hexagonal, MVC, no clear architecture]\n- Known concerns: [e.g. "god classes", "tight coupling", "hard to test"]\n\n## Files to gather\n- Core classes/modules and their dependencies\n- Interface/type definitions\n- Dependency injection setup (if any)\n- Service classes and their consumers\n- Any base classes or abstract classes\n\n## Don't forget\n- [ ] Include import statements — they show dependency direction\n- [ ] Include the classes that consume/use other classes\n- [ ] Note any classes that are frequently modified for different reasons\n\nKeep total under 30,000 characters.` },
+  { id: 'refactoring', name: 'Refactoring Opportunities', description: 'Finds code smells, duplication, complexity hotspots, and recommends safe refactoring techniques.', category: 'Code Quality', accentClass: 'text-blue-400 hover:bg-blue-500/10', buttonClass: 'bg-blue-800 hover:bg-blue-700', placeholder: 'Paste the code you suspect needs refactoring — include related files for context...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['refactoring'], prepPrompt: `I'm preparing code for a **Refactoring** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Language / framework: [e.g. TypeScript + React, Python + FastAPI]\n- Codebase age: [e.g. 6 months, 3 years]\n- Known concerns: [e.g. "functions too long", "copy-pasted code", "complex conditionals"]\n\n## Files to gather\n- Files you suspect have code smells\n- The largest files in the codebase\n- Files with the most git churn (\`git log --format=format: --name-only | sort | uniq -c | sort -rn | head -20\`)\n- Test files (to assess refactoring safety)\n\n## Don't forget\n- [ ] Include test files so we can assess refactoring safety\n- [ ] Include files that depend on the code being refactored\n- [ ] Note any files that developers avoid touching\n\nKeep total under 30,000 characters.` },
+  { id: 'api-contracts', name: 'API Contracts', description: 'Reviews type safety at API boundaries, versioning strategy, backwards compatibility, and schema validation.', category: 'Code Quality', accentClass: 'text-blue-400 hover:bg-blue-500/10', buttonClass: 'bg-blue-800 hover:bg-blue-700', placeholder: 'Paste your API route handlers, type definitions, validation schemas, and client code...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['api-contracts'], prepPrompt: `I'm preparing my API for an **API Contracts** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- API style: [e.g. REST, GraphQL, tRPC, gRPC]\n- Framework: [e.g. Next.js API routes, Express, FastAPI]\n- Consumers: [e.g. internal frontend, mobile app, third-party developers]\n- Known concerns: [e.g. "no versioning", "types don't match runtime", "breaking changes"]\n\n## Files to gather\n- API route handlers / controllers\n- Request/response type definitions\n- Validation schemas (Zod, Joi, JSON Schema)\n- OpenAPI spec (if exists)\n- Client-side API consumption code\n- Any API versioning configuration\n\n## Don't forget\n- [ ] Include BOTH the server types AND client types\n- [ ] Include validation schemas alongside TypeScript types\n- [ ] Note any recent API changes that broke consumers\n\nKeep total under 30,000 characters.` },
+  { id: 'async-patterns', name: 'Async Patterns', description: 'Identifies race conditions, unhandled rejections, missing cancellation, and async anti-patterns.', category: 'Code Quality', accentClass: 'text-blue-400 hover:bg-blue-500/10', buttonClass: 'bg-blue-800 hover:bg-blue-700', placeholder: 'Paste your async code — API calls, database queries, event handlers, concurrent operations...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['async-patterns'], prepPrompt: `I'm preparing code for an **Async Patterns** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Language / runtime: [e.g. TypeScript + Node.js, Python asyncio, Go goroutines]\n- Async patterns used: [e.g. "async/await", "Promises", "callbacks", "RxJS"]\n- Known concerns: [e.g. "race conditions", "unhandled rejections", "memory leaks from timers"]\n\n## Files to gather\n- API call/fetch logic\n- Database query code\n- Event handlers and listeners\n- Timer/interval code\n- Any concurrent operation management\n- React hooks with async operations\n\n## Don't forget\n- [ ] Include error handling around async operations\n- [ ] Include cleanup/teardown code (useEffect returns, finally blocks)\n- [ ] Note any known race conditions or timing issues\n\nKeep total under 30,000 characters.` },
+  { id: 'testing-strategy', name: 'Testing Strategy', description: 'Evaluates test pyramid balance, coverage gaps, mocking strategy, test quality, and E2E coverage.', category: 'Code Quality', accentClass: 'text-blue-400 hover:bg-blue-500/10', buttonClass: 'bg-blue-800 hover:bg-blue-700', placeholder: 'Paste your test files alongside the source code they test...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['testing-strategy'], prepPrompt: `I'm preparing code for a **Testing Strategy** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Test framework: [e.g. Jest, Vitest, pytest, Go testing]\n- Current coverage: [e.g. "70% unit", "no E2E", "unknown"]\n- Known concerns: [e.g. "flaky tests", "too many mocks", "no integration tests"]\n\n## Files to gather\n- Test files (*.test.ts, *.spec.ts, *_test.go, etc.)\n- The source files those tests cover\n- Test utilities, factories, fixtures\n- Test configuration (jest.config, vitest.config)\n- CI test commands from package.json or CI config\n- Coverage report output (if available)\n\n## Don't forget\n- [ ] Include BOTH test files AND the source code they test\n- [ ] Include any shared test utilities or mock factories\n- [ ] Note any tests that are skipped or frequently fail\n\nKeep total under 30,000 characters.` },
 ];
 
 export function getAgent(id: string): AgentConfig | undefined {

@@ -77,6 +77,17 @@ const PATTERN_RULES: Rule[] = [
   { pattern: /\b(unused|dead.?code|deprecated|TODO|FIXME|HACK|noinspection|eslint-disable)\b/i, tags: ['bloat'] },
   { pattern: /\b(hero|cta|landing.?page|call.?to.?action|conversion|headline|tagline|sign.?up)\b/i, tags: ['marketing'] },
   { pattern: /\b(README|onboard|CONTRIBUTING|developer.?guide|getting.?started)\b/i, tags: ['dx'] },
+  { pattern: /\b(nav|sidebar|breadcrumb|menu|hamburger|drawer|tab.?bar)\b/i, tags: ['navigation'] },
+  { pattern: /\b(skeleton|spinner|loading|empty.?state|placeholder|shimmer)\b/i, tags: ['micro-interactions'] },
+  { pattern: /\b(404|500|error.?page|error.?boundary|fallback|not.?found)\b/i, tags: ['error-ux'] },
+  { pattern: /\b(touch|gesture|swipe|bottom.?sheet|thumb|mobile.?nav)\b/i, tags: ['mobile-ux'] },
+  { pattern: /\b(chart|graph|d3|recharts|plotly|dashboard|visualization)\b/i, tags: ['data-viz'] },
+  { pattern: /\b(tooltip|label|help.?text|microcopy|placeholder|description)\b/i, tags: ['content'] },
+  { pattern: /\b(onboard|wizard|tour|welcome|first.?run|setup.?flow|getting.?started)\b/i, tags: ['onboarding'] },
+  { pattern: /\b(search|autocomplete|filter|facet|typeahead|combobox)\b/i, tags: ['search'] },
+  { pattern: /\b(table|thead|tbody|DataGrid|data.?table|sortable|pagination)\b/i, tags: ['tables'] },
+  { pattern: /\b(toast|snackbar|alert|notification|badge|banner)\b/i, tags: ['notifications'] },
+  { pattern: /\b(gap|spacing|padding|margin|grid|whitespace|gutter)\b/i, tags: ['spacing'] },
 ];
 
 // Map detected tags to agent IDs
@@ -129,6 +140,17 @@ const TAG_TO_AGENTS: Record<string, string[]> = {
   'bloat': ['code-bloat', 'code-quality'],
   'marketing': ['marketing-pain-points'],
   'dx': ['developer-pain-points'],
+  'navigation': ['navigation-ux', 'ux-review'],
+  'micro-interactions': ['micro-interactions', 'ux-review'],
+  'error-ux': ['error-ux', 'error-handling'],
+  'mobile-ux': ['mobile-ux', 'responsive-design'],
+  'data-viz': ['data-visualization', 'accessibility'],
+  'content': ['content-design', 'ux-review'],
+  'onboarding': ['onboarding-ux', 'ux-review'],
+  'search': ['search-ux', 'ux-review'],
+  'tables': ['table-design', 'accessibility'],
+  'notifications': ['notification-ux', 'ux-review'],
+  'spacing': ['spacing-layout', 'responsive-design'],
 };
 
 // Always-relevant agents added when any code is detected
