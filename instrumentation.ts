@@ -6,6 +6,10 @@
 export async function register() {
   if (process.env.NODE_ENV !== 'production') return;
 
+  // Next.js calls register() during `next build` as well as server startup.
+  // Skip assertions during build — secrets are only available at runtime.
+  if (process.env.NEXT_PHASE === 'phase-production-build') return;
+
   // CLOUD-008: Security secrets that gate access controls must be set in production.
   // If absent, their respective checks are silently bypassed — an insecure default.
   const requiredSecrets = [
