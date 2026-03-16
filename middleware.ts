@@ -71,12 +71,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Only redirect away from auth routes if session cookie exists AND
-  // we're not already coming from a failed dashboard redirect (callbackUrl present).
-  // This prevents redirect loops when the cookie is stale/expired.
-  if (isAuthRoute && sessionCookie && !request.nextUrl.searchParams.has('callbackUrl')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
+  // NOTE: We intentionally do NOT redirect logged-in users away from auth routes.
+  // The session cookie may be stale/expired, which causes a redirect loop:
+  // /login → (middleware: cookie exists) → /dashboard → (no valid session) → /login.
+  // Let the login page handle already-authenticated users client-side instead.
 
   // ── CSP nonce ──────────────────────────────────────────────────
   // PERF-020: Use UUID directly as nonce — 122 bits of entropy is sufficient.
