@@ -1,10 +1,12 @@
 FROM node:22-alpine AS base
+# Ensure SSL certificates are available for Supabase/external API connections
+RUN apk add --no-cache libc6-compat
 
 # --- Dependencies ---
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
+RUN npm ci
 
 # --- Build ---
 FROM base AS builder
