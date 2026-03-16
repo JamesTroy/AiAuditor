@@ -14,6 +14,8 @@ COPY . .
 
 # Build-time env vars (dummy values — real secrets injected at runtime by Railway)
 ENV ANTHROPIC_API_KEY=dummy_key_for_build
+ENV BETTER_AUTH_SECRET=dummy_secret_for_build_only_00000000
+ENV DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
