@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { AIProvider } from './provider';
+import { anthropicCircuitBreaker } from './circuitBreaker';
 
 const MODEL = 'claude-sonnet-4-6';
 const MAX_TOKENS = 16384;
@@ -54,6 +55,12 @@ export class AnthropicProvider implements AIProvider {
 
     return new ReadableStream<Uint8Array>({
       async start(controller) {
+        // CLOUD-030: Check circuit breaker before making API call.
+        if (!anthropicCircuitBreaker.allowRequest()) {
+          controller.error(new Error('Circuit breaker open: Anthropic API unavailable. Try again later.'));
+          return;
+        }
+
         let attempt = 0;
 
         while (true) {
@@ -89,13 +96,17 @@ export class AnthropicProvider implements AIProvider {
             }
 
             // Stream completed successfully.
+            anthropicCircuitBreaker.onSuccess();
             break;
           } catch (err) {
             // Do not retry if the AbortSignal fired — caller timed out.
             if (options?.signal?.aborted) {
+              // Timeouts are not API failures — don't count against circuit breaker.
               controller.error(err);
               return;
             }
+
+            anthropicCircuitBreaker.onFailure();
 
             if (attempt < MAX_RETRIES && isRetryable(err)) {
               const delay = RETRY_BASE_MS * 2 ** (attempt - 1);
@@ -122,6 +133,12 @@ export class AnthropicProvider implements AIProvider {
 
     return new ReadableStream<Uint8Array>({
       async start(controller) {
+        // CLOUD-030: Check circuit breaker before making API call.
+        if (!anthropicCircuitBreaker.allowRequest()) {
+          controller.error(new Error('Circuit breaker open: Anthropic API unavailable. Try again later.'));
+          return;
+        }
+
         let attempt = 0;
 
         while (true) {
@@ -155,12 +172,15 @@ export class AnthropicProvider implements AIProvider {
               }
             }
 
+            anthropicCircuitBreaker.onSuccess();
             break;
           } catch (err) {
             if (options?.signal?.aborted) {
               controller.error(err);
               return;
             }
+
+            anthropicCircuitBreaker.onFailure();
 
             if (attempt < MAX_RETRIES && isRetryable(err)) {
               const delay = RETRY_BASE_MS * 2 ** (attempt - 1);

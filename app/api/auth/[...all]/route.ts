@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { createHash } from 'crypto';
 import { auth } from '@/lib/auth';
 import { toNextJsHandler } from 'better-auth/next-js';
 import {
@@ -8,6 +9,7 @@ import {
   authResetLimiter,
   auth2faLimiter,
   authGeneralLimiter,
+  perEmailLoginLimiter,
 } from '@/lib/rateLimit';
 
 const { GET: authGet, POST: authPost } = toNextJsHandler(auth);
@@ -33,15 +35,46 @@ function getLimiterForPath(pathname: string): RateLimiter {
   return authGeneralLimiter;
 }
 
+// Paths that accept email in the request body for per-email rate limiting.
+const EMAIL_RATE_LIMITED_PATHS = ['/sign-in/email', '/sign-up/email'];
+
 export async function POST(req: NextRequest) {
   const limiter = getLimiterForPath(req.nextUrl.pathname);
-  const rl = limiter.check(getIp(req));
+  const rl = await limiter.check(getIp(req));
   if (!rl.allowed) {
     return new Response('Too many requests. Please try again later.', {
       status: 429,
       headers: rl.headers,
     });
   }
+
+  // CLOUD-014: Per-email rate limiting for login and signup endpoints.
+  // Mitigates distributed credential stuffing that bypasses IP-based limits.
+  const needsEmailCheck = EMAIL_RATE_LIMITED_PATHS.some((p) =>
+    req.nextUrl.pathname.endsWith(p),
+  );
+  if (needsEmailCheck) {
+    try {
+      const clone = req.clone();
+      const body = await clone.json();
+      if (typeof body?.email === 'string' && body.email.length > 0) {
+        // Hash email to avoid storing PII in Redis.
+        const emailKey = createHash('sha256')
+          .update(body.email.toLowerCase().trim())
+          .digest('hex');
+        const emailRl = await perEmailLoginLimiter.check(emailKey);
+        if (!emailRl.allowed) {
+          return new Response(
+            'Too many attempts for this account. Please try again later.',
+            { status: 429, headers: emailRl.headers },
+          );
+        }
+      }
+    } catch {
+      // Body parse failed — let better-auth handle the error.
+    }
+  }
+
   return authPost(req);
 }
 

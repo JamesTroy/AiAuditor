@@ -13,8 +13,8 @@ updates:
         update-types:
           - "minor"
           - "patch"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+    # CLOUD-024: Removed blanket major version ignore.
+    # Major version updates (including security patches that require breaking changes)
+    # are now surfaced by Dependabot. Review and merge on a case-by-case basis.
     labels:
       - "dependencies"

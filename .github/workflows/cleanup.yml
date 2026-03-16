@@ -1,0 +1,28 @@
+# CLOUD-006/017: Daily cleanup of expired sessions and old audit records.
+# Calls the admin cleanup endpoint via REVALIDATION_SECRET.
+
+name: Daily Cleanup
+
+on:
+  schedule:
+    # Run daily at 2:00 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  cleanup:
+    name: Clean expired data
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call cleanup endpoint
+        run: |
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${{ secrets.REVALIDATION_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/admin/cleanup")
+          echo "Status: $RESPONSE"
+          if [ "$RESPONSE" != "200" ]; then
+            echo "Cleanup failed with HTTP $RESPONSE"
+            exit 1
+          fi
+          echo "Cleanup completed successfully"

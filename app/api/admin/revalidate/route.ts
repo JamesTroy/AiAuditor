@@ -2,10 +2,10 @@ import { NextRequest } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { agents } from '@/lib/agents/registry';
 import { API_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
+import { requireAdminRole } from '@/lib/middleware/requireAdmin';
 
 // CACHE-011/021: Admin endpoint for on-demand cache invalidation.
-// Protected by a shared secret (REVALIDATION_SECRET env var).
-// Called from deploy hooks or manually for emergency content corrections.
+// Protected by REVALIDATION_SECRET (for deploy hooks/cron) OR admin RBAC (CLOUD-015).
 //
 // Usage:
 //   POST /api/admin/revalidate
@@ -20,20 +20,14 @@ import { API_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
 const VALID_TARGETS = new Set(['agent-pages', 'static-pages', 'all']);
 
 export async function POST(req: NextRequest) {
+  // CLOUD-015: Allow access via bearer secret OR authenticated admin session.
   const secret = process.env.REVALIDATION_SECRET;
-  if (!secret) {
-    return new Response('REVALIDATION_SECRET not configured', {
-      status: 503,
-      headers: API_RESPONSE_HEADERS,
-    });
-  }
-
   const authHeader = req.headers.get('authorization');
-  if (authHeader !== `Bearer ${secret}`) {
-    return new Response('Unauthorized', {
-      status: 401,
-      headers: API_RESPONSE_HEADERS,
-    });
+  const isSecretAuth = secret && authHeader === `Bearer ${secret}`;
+
+  if (!isSecretAuth) {
+    const forbidden = await requireAdminRole(req);
+    if (forbidden) return forbidden;
   }
 
   let body: { targets?: unknown };

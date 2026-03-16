@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     req.headers.get('x-real-ip') ??
     '127.0.0.1';
 
-  const rl = auditLimiter.check(ip);
+  const rl = await auditLimiter.check(ip);
   if (!rl.allowed) {
     return new Response('Too many requests.', { status: 429, headers: rl.headers });
   }

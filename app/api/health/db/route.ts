@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     req.headers.get('x-real-ip') ??
     '127.0.0.1';
 
-  const rl = authGeneralLimiter.check(ip);
+  const rl = await authGeneralLimiter.check(ip);
   if (!rl.allowed) {
     return new Response('Too many requests.', { status: 429, headers: rl.headers });
   }

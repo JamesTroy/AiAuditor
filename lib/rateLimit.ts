@@ -1,23 +1,26 @@
-// Custom in-memory sliding-window rate limiter.
+// CLOUD-019: Hybrid rate limiter — uses Upstash Redis when available for
+// cross-replica consistency, falls back to in-memory sliding window.
 //
 // Design:
 //   - Each RateLimiter instance tracks a map of key → timestamp[] where the
-//     key is typically an IP address.
-//   - A sliding window keeps only timestamps within the last `windowMs` ms,
-//     so the counter naturally decays without a hard reset boundary.
-//   - A background cleanup interval evicts entries that have no timestamps in
-//     the current window, bounding memory to active keys only.
-//   - A hard cap (`maxEntries`) prevents a memory-DoS from a flood of unique IPs.
-//     Once the cap is reached, new IPs are rejected until space opens up.
-//   - `check()` returns standard rate-limit HTTP headers ready to attach to any
-//     response, including 429s and successful responses (so clients know their
-//     remaining budget).
-//
-// KNOWN LIMITATION: This store is process-scoped (Node.js module memory).
-// In multi-worker / serverless deployments each worker has its own counter,
-// making the effective limit N × maxRequests across N workers.
-// Replace with a Redis/Upstash atomic counter (INCR + EXPIRE) for
-// shared-state rate limiting across workers.
+//     key is typically an IP address (in-memory mode).
+//   - When Redis is available, uses @upstash/ratelimit sliding window for
+//     shared state across all Railway replicas.
+//   - Falls back to in-memory on Redis error or missing credentials.
+//   - A hard cap (`maxEntries`) prevents memory-DoS from unique IP floods.
+//   - `check()` is async to support the Redis path.
+
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+// Initialize shared Redis client if credentials are available.
+const redis =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      })
+    : null;
 
 export interface RateLimiterConfig {
   /** Length of the sliding window in milliseconds. */
@@ -35,6 +38,8 @@ export interface RateLimiterConfig {
    * Default: windowMs (entries stay at most one window after going idle).
    */
   cleanupIntervalMs?: number;
+  /** Redis key prefix (e.g., 'audit', 'auth-login'). Required for Redis mode. */
+  prefix?: string;
 }
 
 export interface RateLimitResult {
@@ -55,12 +60,22 @@ export interface RateLimitResult {
   headers: Record<string, string>;
 }
 
+/** Convert milliseconds to @upstash/ratelimit Duration string. */
+function toDuration(ms: number): string {
+  if (ms >= 86400000 && ms % 86400000 === 0) return `${ms / 86400000} d`;
+  if (ms >= 3600000 && ms % 3600000 === 0) return `${ms / 3600000} h`;
+  if (ms >= 60000 && ms % 60000 === 0) return `${ms / 60000} m`;
+  if (ms >= 1000 && ms % 1000 === 0) return `${ms / 1000} s`;
+  return `${ms} ms`;
+}
+
 export class RateLimiter {
   private readonly windowMs: number;
-  private readonly maxRequests: number;
+  readonly maxRequests: number;
   private readonly maxEntries: number;
   private readonly store = new Map<string, { timestamps: number[]; head: number }>();
   private readonly timer: ReturnType<typeof setInterval>;
+  private readonly redisLimiter: Ratelimit | null;
 
   constructor(config: RateLimiterConfig) {
     this.windowMs = config.windowMs;
@@ -71,15 +86,46 @@ export class RateLimiter {
     this.timer = setInterval(() => this.cleanup(), cleanupMs);
     // Don't hold the Node.js event loop open just for cleanup.
     if (typeof this.timer.unref === 'function') this.timer.unref();
+
+    // CLOUD-019: Create Redis-backed limiter when available.
+    this.redisLimiter =
+      redis && config.prefix
+        ? new Ratelimit({
+            redis,
+            limiter: Ratelimit.slidingWindow(
+              config.maxRequests,
+              toDuration(config.windowMs) as Parameters<typeof Ratelimit.slidingWindow>[1],
+            ),
+            prefix: `rl:${config.prefix}`,
+            analytics: false,
+          })
+        : null;
   }
 
   /**
    * Record a request for `key` and return the rate-limit decision.
-   * Always records the request first; the caller must honour `allowed`.
+   * Uses Redis when available; falls back to in-memory on error.
    */
+  async check(key: string): Promise<RateLimitResult> {
+    if (this.redisLimiter) {
+      try {
+        const result = await this.redisLimiter.limit(key);
+        return {
+          allowed: result.success,
+          remaining: result.remaining,
+          resetAt: result.reset,
+          headers: this.buildHeaders(result.success, result.remaining, result.reset),
+        };
+      } catch {
+        // Redis error — fall back to in-memory
+      }
+    }
+    return this.checkLocal(key);
+  }
+
+  /** In-memory sliding window implementation (original algorithm). */
   // PERF-008: Pointer-based eviction instead of .filter() or .shift() per call.
-  // Timestamps are chronologically ordered — advance a head pointer past expired entries.
-  check(key: string): RateLimitResult {
+  private checkLocal(key: string): RateLimitResult {
     const now = Date.now();
     const windowStart = now - this.windowMs;
 
@@ -173,48 +219,56 @@ export class RateLimiter {
 export const auditLimiter = new RateLimiter({
   windowMs: 60_000,
   maxRequests: 10,
+  prefix: 'audit',
 });
 
 /** Site audit batch: 30 requests per minute per IP (higher cap for sequential multi-agent runs). */
 export const siteAuditLimiter = new RateLimiter({
   windowMs: 60_000,
   maxRequests: 30,
+  prefix: 'site-audit',
 });
 
 /** URL-fetch endpoint: 30 requests per minute per IP (cheaper operation). */
 export const fetchUrlLimiter = new RateLimiter({
   windowMs: 60_000,
   maxRequests: 30,
+  prefix: 'fetch-url',
 });
 
 // RL-001: Login brute-force protection — 5 attempts per 15 min per IP.
 export const authLoginLimiter = new RateLimiter({
   windowMs: 15 * 60_000,
   maxRequests: 5,
+  prefix: 'auth-login',
 });
 
 // RL-002: Account creation spam — 3 sign-ups per hour per IP.
 export const authSignupLimiter = new RateLimiter({
   windowMs: 60 * 60_000,
   maxRequests: 3,
+  prefix: 'auth-signup',
 });
 
 // RL-003: Password reset email bomb — 3 resets per hour per IP.
 export const authResetLimiter = new RateLimiter({
   windowMs: 60 * 60_000,
   maxRequests: 3,
+  prefix: 'auth-reset',
 });
 
 // RL-004: 2FA OTP brute-force — 5 attempts per 15 min per IP.
 export const auth2faLimiter = new RateLimiter({
   windowMs: 15 * 60_000,
   maxRequests: 5,
+  prefix: 'auth-2fa',
 });
 
 // General auth fallback — 30 req/min for all other auth routes.
 export const authGeneralLimiter = new RateLimiter({
   windowMs: 60_000,
   maxRequests: 30,
+  prefix: 'auth-general',
 });
 
 // RL-010: Global daily audit call budget (in-memory; replace with Redis for multi-instance).
@@ -223,6 +277,7 @@ export const dailyAuditBudget = new RateLimiter({
   maxRequests: 500,
   maxEntries: 1, // single "global" key
   cleanupIntervalMs: 60 * 60_000,
+  prefix: 'daily-budget',
 });
 
 // RL-011: Per-user daily audit limit — 50 audits per day per authenticated user.
@@ -230,4 +285,13 @@ export const userDailyAuditLimiter = new RateLimiter({
   windowMs: 24 * 60 * 60_000,
   maxRequests: 50,
   cleanupIntervalMs: 60 * 60_000,
+  prefix: 'user-daily',
+});
+
+// CLOUD-014: Per-email login rate limiter — 10 attempts per hour per email.
+// Mitigates distributed credential stuffing that bypasses IP-based limits.
+export const perEmailLoginLimiter = new RateLimiter({
+  windowMs: 60 * 60_000,
+  maxRequests: 10,
+  prefix: 'login-email',
 });

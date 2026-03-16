@@ -70,7 +70,7 @@ export const auth = betterAuth({
     updateAge: 60 * 60 * 24,        // Renew if used within 24h (sliding window)
     cookieCache: {
       enabled: true,
-      maxAge: 5 * 60,               // Re-validate from DB every 5 minutes
+      maxAge: 60,                    // CLOUD-016: Re-validate from DB every 60 seconds (reduced from 5 min for faster session revocation)
     },
   },
 
@@ -79,7 +79,11 @@ export const auth = betterAuth({
     // AUTH-005: Server-side password length enforcement.
     minPasswordLength: 8,
     maxPasswordLength: 128,
-    requireEmailVerification: false, // AUTH-004: Enable when Resend is confirmed in prod
+    // CLOUD-013: Enable email verification when Resend is configured in production.
+    // In dev, allow unverified for convenience.
+    requireEmailVerification: process.env.NODE_ENV === 'production'
+      ? !!process.env.RESEND_API_KEY
+      : false,
     sendResetPassword: async ({ user, url }) => {
       await sendEmail(
         user.email,

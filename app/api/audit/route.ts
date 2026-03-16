@@ -277,7 +277,7 @@ export async function POST(req: NextRequest) {
   // fire many sequential requests from a single user action.
   const isSiteAudit = 'siteAudit' in data && data.siteAudit === true;
   const limiter = isSiteAudit ? siteAuditLimiter : auditLimiter;
-  const rl = limiter.check(ip);
+  const rl = await limiter.check(ip);
   if (!rl.allowed) {
     log('warn', 'rate_limit_exceeded', { requestId, ip: anonIp, siteAudit: isSiteAudit });
     return new Response('Too many requests. Please wait a moment.', {
@@ -287,7 +287,7 @@ export async function POST(req: NextRequest) {
   }
 
   // RL-010: Global daily audit call budget (500 calls/day across all users).
-  const dailyBudget = dailyAuditBudget.check('global');
+  const dailyBudget = await dailyAuditBudget.check('global');
   if (!dailyBudget.allowed) {
     log('warn', 'daily_audit_budget_exceeded', { requestId, ip: anonIp });
     return new Response('Daily audit limit reached. Please try again tomorrow.', {
@@ -310,7 +310,7 @@ export async function POST(req: NextRequest) {
 
   // RL-011: Per-user daily audit limit (50/day) for authenticated users.
   if (userId) {
-    const userRl = userDailyAuditLimiter.check(userId);
+    const userRl = await userDailyAuditLimiter.check(userId);
     if (!userRl.allowed) {
       log('warn', 'user_daily_limit_exceeded', { requestId, ip: anonIp, userId });
       return new Response('You have reached your daily audit limit. Please try again tomorrow.', {

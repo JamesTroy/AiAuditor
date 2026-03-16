@@ -6,11 +6,8 @@ import type { NextConfig } from 'next';
 // 'unsafe-inline' from script-src for nonce-aware browsers.
 // All other security headers remain here since they are static and need no nonce.
 const securityHeaders = [
-  // HSTS — instructs browsers to always use HTTPS.
-  {
-    key: 'Strict-Transport-Security',
-    value: 'max-age=63072000; includeSubDomains',
-  },
+  // CLOUD-021: HSTS removed from here — middleware.ts sets the stronger policy
+  // (with preload + includeSubDomains) and is the single source of truth.
   // Belt-and-suspenders clickjacking protection for browsers that predate CSP frame-ancestors.
   {
     key: 'X-Frame-Options',

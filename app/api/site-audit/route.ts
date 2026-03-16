@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     req.headers.get('x-real-ip') ??
     '127.0.0.1';
 
-  const rl = fetchUrlLimiter.check(ip);
+  const rl = await fetchUrlLimiter.check(ip);
   if (!rl.allowed) {
     return new Response('Too many requests. Please wait a moment.', {
       status: 429,

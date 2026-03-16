@@ -1,5 +1,6 @@
 import { pgTable, text, boolean, timestamp, integer, index, check } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import { encryptedText } from '@/lib/crypto';
 
 // ─── Better Auth core tables ────────────────────────────────────
 
@@ -43,12 +44,12 @@ export const account = pgTable('account', {
     .references(() => user.id, { onDelete: 'cascade' }),
   accountId: text('accountId').notNull(),
   providerId: text('providerId').notNull(),
-  accessToken: text('accessToken'),
-  refreshToken: text('refreshToken'),
+  accessToken: encryptedText('accessToken'),
+  refreshToken: encryptedText('refreshToken'),
   accessTokenExpiresAt: timestamp('accessTokenExpiresAt', { withTimezone: true }),
   refreshTokenExpiresAt: timestamp('refreshTokenExpiresAt', { withTimezone: true }),
   scope: text('scope'),
-  idToken: text('idToken'),
+  idToken: encryptedText('idToken'),
   password: text('password'),
   createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
@@ -75,8 +76,8 @@ export const twoFactorTable = pgTable('twoFactor', {
   userId: text('userId')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-  secret: text('secret').notNull(),
-  backupCodes: text('backupCodes').notNull(),
+  secret: encryptedText('secret').notNull(),
+  backupCodes: encryptedText('backupCodes').notNull(),
   createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

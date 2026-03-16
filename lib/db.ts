@@ -4,8 +4,11 @@ import * as schema from '@/lib/auth-schema';
 
 const isPooler = (process.env.DATABASE_URL ?? '').includes('pooler.supabase.com');
 
+// CLOUD-031: Tune pool size to avoid exhausting Supabase connection limits.
+// PgBouncer pooler: max 2 per replica (multiplexing handles the rest).
+// Direct connection: max 5 (was 10; reduces risk at 7+ replicas).
 const client = postgres(process.env.DATABASE_URL!, {
-  max: isPooler ? 5 : 10,
+  max: isPooler ? 2 : 5,
   idle_timeout: 20,
   connect_timeout: 10,
   max_lifetime: 60 * 30,
