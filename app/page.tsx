@@ -51,7 +51,7 @@ export default function Home() {
             Find what your code review missed.
           </p>
           <p className="text-gray-500 dark:text-zinc-400 text-base sm:text-lg max-w-xl mx-auto mb-10">
-            Paste your code or drop in a URL. Get a severity-rated report covering security, performance, and accessibility — in under a minute.
+            Paste your code or drop in a URL. Get a severity-rated report covering security, performance, and accessibility — with results streaming in real time.
           </p>
 
           {/* Primary CTAs */}
@@ -83,8 +83,8 @@ export default function Home() {
             </div>
             <span className="hidden sm:block w-px h-4 bg-gray-300 dark:bg-zinc-700" aria-hidden="true" />
             <div className="flex items-center gap-2">
-              <span className="text-violet-600 dark:text-violet-400 font-bold text-lg">&lt;60s</span>
-              <span>per report</span>
+              <span className="text-violet-600 dark:text-violet-400 font-bold text-lg">Real-time</span>
+              <span>streaming results</span>
             </div>
           </div>
         </div>
