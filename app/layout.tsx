@@ -45,6 +45,9 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+    'max-snippet': -1,
+    'max-image-preview': 'large' as const,
+    'max-video-preview': -1,
   },
 };
 
@@ -55,7 +58,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   await headers();
 
   return (
-    <html lang="en" className="dark">
+    <html lang="en-US" className="dark">
       <head>
         <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
         <meta name="theme-color" content="#f9fafb" media="(prefers-color-scheme: light)" />
@@ -68,6 +71,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <main id="main-content" role="main" tabIndex={-1} className="flex-1">{children}</main>
+            <noscript>
+              <div className="fixed inset-0 z-[200] bg-white dark:bg-zinc-950 flex items-center justify-center p-8">
+                <div className="text-center max-w-md">
+                  <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-zinc-100">JavaScript Required</h1>
+                  <p className="text-gray-600 dark:text-zinc-400 mb-6">Claudit requires JavaScript to run audits and display results. Please enable JavaScript in your browser settings.</p>
+                  <nav className="space-y-2 text-sm">
+                    <a href="/site-audit" className="block text-violet-600 underline">Site Audit</a>
+                    <a href="/about" className="block text-violet-600 underline">About</a>
+                    <a href="/privacy" className="block text-violet-600 underline">Privacy Policy</a>
+                    <a href="/terms" className="block text-violet-600 underline">Terms of Service</a>
+                  </nav>
+                </div>
+              </div>
+            </noscript>
             <Footer />
           </div>
         </ThemeProvider>

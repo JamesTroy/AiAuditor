@@ -36,17 +36,17 @@ export default function Home() {
       <div className="max-w-5xl mx-auto">
         {/* Hero */}
         <div className="text-center mb-16 relative">
-          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[min(288px,80vw)] h-72 bg-violet-500/20 blur-3xl rounded-full -z-10 motion-safe:animate-pulse-slow" />
-          <div className="absolute top-10 left-1/3 w-[min(384px,90vw)] h-64 bg-indigo-500/15 blur-3xl rounded-full -z-10 motion-safe:animate-pulse-slow" style={{ animationDelay: '3s' }} />
+          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[min(288px,80vw)] h-72 bg-violet-500/20 blur-3xl rounded-full -z-10 motion-safe:animate-pulse-slow will-change-[opacity]" />
+          <div className="absolute top-10 left-1/3 w-[min(384px,90vw)] h-[min(256px,40vh)] bg-indigo-500/15 blur-3xl rounded-full -z-10 motion-safe:animate-pulse-slow will-change-[opacity] [animation-delay:3s]" />
           <div className="absolute inset-0 bg-grid-pattern -z-10 opacity-50" />
 
           <div className="flex items-center justify-center gap-3 mb-4">
             <Logo size={48} />
-            <h1 className="text-[clamp(1.875rem,4vw+0.5rem,3.5rem)] font-bold tracking-tight dark:text-gradient">
+            <h1 className="text-[clamp(1.5rem,4vw+0.5rem,3.5rem)] font-bold tracking-tight dark:text-gradient">
               Claudit
             </h1>
           </div>
-          <p className="text-gray-800 dark:text-zinc-200 text-xl sm:text-2xl font-semibold max-w-2xl mx-auto mb-3">
+          <p className="text-gray-800 dark:text-zinc-200 text-[clamp(1.125rem,2.5vw+0.5rem,1.5rem)] font-semibold max-w-2xl mx-auto mb-3">
             Find what your code review missed.
           </p>
           <p className="text-gray-500 dark:text-zinc-400 text-sm sm:text-base max-w-xl mx-auto mb-8">
@@ -75,14 +75,14 @@ export default function Home() {
           <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-4 text-center">Example finding from a real audit</h2>
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden">
             <div className="flex items-center gap-2 px-5 py-3 border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/80">
-              <span className="w-2 h-2 rounded-full bg-red-500" />
+              <span className="w-2 h-2 rounded-full bg-red-500" aria-hidden="true" />
               <span className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">Critical</span>
               <span className="text-xs text-gray-400 dark:text-zinc-500 mx-1">&middot;</span>
               <span className="text-xs text-gray-500 dark:text-zinc-400">Security Audit</span>
             </div>
             <div className="px-5 py-4 space-y-3">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">SQL Injection via unsanitized query parameter</h3>
-              <div className="bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-3 font-mono text-xs text-gray-700 dark:text-zinc-300 overflow-x-auto">
+              <div className="relative bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-3 font-mono text-xs leading-relaxed text-gray-700 dark:text-zinc-300 overflow-x-auto">
                 <span className="text-gray-400 dark:text-zinc-500 select-none">app/api/users/route.ts:42 &nbsp;</span>
                 <span className="text-red-600 dark:text-red-400">const result = await db.execute(</span><br />
                 <span className="text-gray-400 dark:text-zinc-500 select-none">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
@@ -107,7 +107,7 @@ export default function Home() {
                 key={cat.name}
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 text-xs text-gray-600 dark:text-zinc-400"
               >
-                <span className={`w-2 h-2 rounded-full ${cat.color}`} />
+                <span className={`w-2 h-2 rounded-full ${cat.color}`} aria-hidden="true" />
                 {cat.name}
                 <span className="text-gray-400 dark:text-zinc-500">{categoryCounts[cat.name] ?? 0}</span>
               </span>

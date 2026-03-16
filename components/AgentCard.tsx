@@ -125,10 +125,10 @@ export default memo(function AgentCard({ agent, href, index = 0, onEdit, onDelet
             )}
           </div>
         </div>
-        <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-zinc-100 group-hover:text-black dark:group-hover:text-white transition-colors">
+        <h3 className="text-lg sm:text-xl font-semibold mb-2 text-gray-900 dark:text-zinc-100 group-hover:text-black dark:group-hover:text-white transition-colors">
           {agent.name}
         </h3>
-        <p className="text-gray-600 dark:text-zinc-400 text-sm leading-relaxed">{agent.description}</p>
+        <p className="text-gray-600 dark:text-zinc-400 text-sm sm:text-base leading-relaxed">{agent.description}</p>
         <div className={`mt-4 text-xs font-medium uppercase tracking-widest ${accentTextClass} flex items-center gap-1`}>
           Start audit <span className="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
         </div>

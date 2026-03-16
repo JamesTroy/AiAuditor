@@ -7,24 +7,24 @@ export default function Footer() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-2 py-2 text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">
           <Logo size={20} />
-          <span className="text-xs font-medium">Claudit</span>
+          <span className="text-sm font-medium">Claudit</span>
         </Link>
 
-        <p className="text-xs text-gray-500 dark:text-zinc-500">
+        <p className="text-sm text-gray-500 dark:text-zinc-500">
           Automated code auditing
         </p>
 
-        <nav className="flex items-center gap-4" aria-label="Footer">
-          <Link href="/about" className="text-xs py-2 px-1 text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">
+        <nav className="flex flex-wrap items-center justify-center gap-2 sm:gap-4" aria-label="Footer">
+          <Link href="/about" className="text-sm py-3 px-2 min-h-[44px] inline-flex items-center text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">
             About
           </Link>
-          <Link href="/how-it-works" className="text-xs py-2 px-1 text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">
+          <Link href="/how-it-works" className="text-sm py-3 px-2 min-h-[44px] inline-flex items-center text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">
             How It Works
           </Link>
-          <Link href="/privacy" className="text-xs py-2 px-1 text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">
+          <Link href="/privacy" className="text-sm py-3 px-2 min-h-[44px] inline-flex items-center text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">
             Privacy
           </Link>
-          <Link href="/terms" className="text-xs py-2 px-1 text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">
+          <Link href="/terms" className="text-sm py-3 px-2 min-h-[44px] inline-flex items-center text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">
             Terms
           </Link>
         </nav>

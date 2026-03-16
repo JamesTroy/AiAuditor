@@ -22,7 +22,13 @@ export function GlobalJsonLd() {
         '@type': 'Organization',
         name: 'Claudit',
         url: BASE_URL,
-        logo: `${BASE_URL}/logo.svg`,
+        logo: {
+          '@type': 'ImageObject',
+          url: `${BASE_URL}/logo.svg`,
+          width: 512,
+          height: 512,
+        },
+        description: 'Automated code audit tool for security, performance, and accessibility.',
       },
       {
         '@type': 'WebSite',
@@ -30,7 +36,10 @@ export function GlobalJsonLd() {
         url: BASE_URL,
         potentialAction: {
           '@type': 'SearchAction',
-          target: `${BASE_URL}/#agents?q={search_term_string}`,
+          target: {
+            '@type': 'EntryPoint',
+            urlTemplate: `${BASE_URL}/#agents?q={search_term_string}`,
+          },
           'query-input': 'required name=search_term_string',
         },
       },
@@ -46,11 +55,16 @@ export function GlobalJsonLd() {
           '@type': 'Offer',
           price: 0,
           priceCurrency: 'USD',
+          availability: 'https://schema.org/InStock',
+          url: BASE_URL,
         },
+        featureList: 'Security audit, Code quality analysis, Performance profiling, Accessibility testing, SEO analysis',
       },
       {
         '@type': 'HowTo',
         name: 'How to run a code audit with Claudit',
+        totalTime: 'PT1M',
+        estimatedCost: { '@type': 'MonetaryAmount', currency: 'USD', value: '0' },
         step: [
           { '@type': 'HowToStep', position: 1, name: 'Enter a URL or paste code', text: 'Point us at any website, or paste files directly.' },
           { '@type': 'HowToStep', position: 2, name: 'Pick your audits', text: 'Choose from 50 specialized audits — or run them all.' },

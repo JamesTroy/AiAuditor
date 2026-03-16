@@ -43,9 +43,9 @@ export default function HomeSearch({ agents, featuredAgents = [] }: HomeSearchPr
   return (
     <>
       {/* Search */}
-      <div className="mb-8 max-w-lg mx-auto">
+      <div className="mb-8 max-w-lg mx-auto" role="search" aria-label="Search audit agents">
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500 text-sm">⌕</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500 text-sm" aria-hidden="true">⌕</span>
           <input
             ref={searchRef}
             type="search"
@@ -53,7 +53,7 @@ export default function HomeSearch({ agents, featuredAgents = [] }: HomeSearchPr
             onChange={(e) => { setSearch(e.target.value); if (e.target.value) setShowAll(false); }}
             placeholder="Search audits… (⌘K)"
             aria-label="Search audit agents"
-            className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)] transition-all"
+            className="w-full min-h-[44px] bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl pl-9 pr-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)] transition-all"
           />
         </div>
       </div>
@@ -61,7 +61,7 @@ export default function HomeSearch({ agents, featuredAgents = [] }: HomeSearchPr
       {hasSearch ? (
         /* Search results */
         filteredAgents.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
             {filteredAgents.map((agent, i) => (
               <AgentCard key={agent.id} agent={agent} index={i} />
             ))}
@@ -86,7 +86,7 @@ export default function HomeSearch({ agents, featuredAgents = [] }: HomeSearchPr
             return (
               <section key={cat} className="mb-10">
                 <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-4 border-l-2 border-violet-500/30 pl-3">{cat}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                   {group.map((agent, i) => (
                     <AgentCard key={agent.id} agent={agent} index={i} />
                   ))}
@@ -99,7 +99,7 @@ export default function HomeSearch({ agents, featuredAgents = [] }: HomeSearchPr
         /* Featured agents + browse all button */
         <>
           {featuredAgents.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
               {featuredAgents.map((agent, i) => (
                 <AgentCard key={agent.id} agent={agent} index={i} />
               ))}
