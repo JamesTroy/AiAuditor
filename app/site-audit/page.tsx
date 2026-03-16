@@ -563,55 +563,88 @@ export default function SiteAuditPage() {
           </div>
         )}
 
-        {/* Audit badges — progress while loading, scroll-to-section when done */}
+        {/* Audit progress tracker — live during loading, navigation when done */}
         {(loading || (!loading && result)) && (
-          <div className="flex flex-wrap gap-2 mb-6 sticky top-0 z-10 bg-gray-50/90 dark:bg-zinc-950/90 backdrop-blur-sm py-3 -mx-6 px-6">
-            {selectedAgents.map((agent, i) => {
-              const isActive = loading && runningIndices.has(i);
-              const isDone = completedIndices.has(i);
+          <div className="mb-6 sticky top-0 z-10 bg-gray-50/95 dark:bg-zinc-950/95 backdrop-blur-sm py-3 -mx-6 px-6">
+            {/* Progress summary bar */}
+            {loading && selectedAgents.length > 0 && (
+              <div className="mb-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-medium text-gray-600 dark:text-zinc-400">
+                    {completedIndices.size === selectedAgents.length
+                      ? 'All audits complete'
+                      : runningIndices.size > 0
+                        ? `Running ${runningIndices.size} of ${selectedAgents.length} audits…`
+                        : 'Preparing audits…'}
+                  </span>
+                  <span className="text-xs font-mono text-gray-500 dark:text-zinc-500">
+                    {completedIndices.size}/{selectedAgents.length} complete
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-violet-500 rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${(completedIndices.size / selectedAgents.length) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
 
-              // After audit completes, badges scroll to the corresponding section
-              if (!loading && result) {
-                const sectionId = `${agent.name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')}-audit`;
+            {/* Agent badges */}
+            <div className="flex flex-wrap gap-1.5">
+              {selectedAgents.map((agent, i) => {
+                const isActive = loading && runningIndices.has(i);
+                const isDone = completedIndices.has(i);
+                const isPending = loading && !isActive && !isDone;
+
+                // After audit completes, badges scroll to the corresponding section
+                if (!loading && result) {
+                  const sectionId = `${agent.name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')}-audit`;
+                  return (
+                    <button
+                      key={agent.id}
+                      onClick={() => {
+                        const el = document.getElementById(sectionId);
+                        el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:ring-1 hover:ring-violet-500/40 hover:text-violet-600 dark:hover:text-violet-300"
+                    >
+                      <svg className="w-3 h-3 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      {agent.name}
+                    </button>
+                  );
+                }
+
+                // While loading, show progress status per agent
                 return (
-                  <button
+                  <span
                     key={agent.id}
-                    onClick={() => {
-                      const el = document.getElementById(sectionId);
-                      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:ring-1 hover:ring-violet-500/40 hover:text-violet-600 dark:hover:text-violet-300`}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
+                      isActive
+                        ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 ring-1 ring-violet-500/30 shadow-sm'
+                        : isDone
+                          ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                          : 'bg-gray-100/50 dark:bg-zinc-900 text-gray-400 dark:text-zinc-600'
+                    }`}
                   >
-                    <span className={`w-2 h-2 rounded-full ${dotColor(agent.accentClass)}`} />
+                    {isActive && (
+                      <span className={`w-2 h-2 rounded-full ${dotColor(agent.accentClass)} animate-pulse flex-shrink-0`} />
+                    )}
+                    {isDone && (
+                      <svg className="w-3 h-3 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                    {isPending && (
+                      <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-zinc-700 flex-shrink-0" />
+                    )}
                     {agent.name}
-                  </button>
+                  </span>
                 );
-              }
-
-              // While loading, show progress status
-              return (
-                <span
-                  key={agent.id}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                    isActive
-                      ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 ring-1 ring-violet-500/30'
-                      : isDone
-                        ? 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-500'
-                        : 'bg-gray-50 dark:bg-zinc-900 text-gray-400 dark:text-zinc-500'
-                  }`}
-                >
-                  {isActive && (
-                    <span className={`w-2 h-2 rounded-full ${dotColor(agent.accentClass)} animate-pulse`} />
-                  )}
-                  {isDone && (
-                    <svg className="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                  {agent.name}
-                </span>
-              );
-            })}
+              })}
+            </div>
           </div>
         )}
 
@@ -640,11 +673,11 @@ export default function SiteAuditPage() {
                   <span className="flex items-center gap-1.5 text-violet-400">
                     <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
                     {runningIndices.size > 0
-                      ? `Running ${runningIndices.size} audit${runningIndices.size > 1 ? 's' : ''} (${completedIndices.size}/${selectedAgents.length} done)`
+                      ? `Auditing — ${completedIndices.size} of ${selectedAgents.length} complete`
                       : 'Fetching site…'}
                   </span>
                 ) : (
-                  'Site Audit Results'
+                  `Site Audit Results — ${selectedAgents.length} audits`
                 )}
               </span>
               {!loading && result && (
