@@ -4405,6 +4405,381 @@ Keep total under 30,000 characters.`,
 Keep total under 30,000 characters.`,
   },
 
+  // ─── SEO Specialist ───────────────────────────────────────────────
+  {
+    id: 'seo-local',
+    name: 'Local SEO',
+    description: 'Audits local search presence, Google Business Profile optimization, NAP consistency, and local ranking factors.',
+    category: 'SEO',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
+    placeholder: 'Paste your website HTML, local landing pages, or Google Business Profile details...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-local'],
+    prepPrompt: `I'm preparing my site for a **Local SEO** audit. Please help me collect the relevant content.
+
+## Project context (fill in)
+- Business type: [e.g. restaurant, dental office, law firm, plumber]
+- Service area: [city, region, or multi-location]
+- Google Business Profile: [link or current status]
+- Known concerns: [e.g. "inconsistent NAP", "no local landing pages", "few reviews"]
+
+## Content to gather
+- Local landing pages (full HTML or content)
+- Google Business Profile details (name, address, phone, categories, attributes)
+- NAP citations across directories (Yelp, Yellow Pages, industry-specific)
+- Local schema markup (LocalBusiness JSON-LD)
+- Review management setup and review counts
+- Location-specific content and geo-targeted pages
+
+## Don't forget
+- [ ] Include your exact business name, address, and phone as listed everywhere
+- [ ] Note any multi-location setup or service area details
+- [ ] Include screenshots or exports from Google Business Profile
+- [ ] Note your top local competitors
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-ecommerce',
+    name: 'E-commerce SEO',
+    description: 'Audits product page optimization, category architecture, faceted navigation, canonical strategy, and product schema.',
+    category: 'SEO',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
+    placeholder: 'Paste your product pages, category pages, faceted navigation HTML, and structured data...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-ecommerce'],
+    prepPrompt: `I'm preparing my store for an **E-commerce SEO** audit. Please help me collect the relevant content.
+
+## Project context (fill in)
+- Platform: [e.g. Shopify, WooCommerce, Magento, custom]
+- Product count: [e.g. 50, 500, 50,000 SKUs]
+- Category depth: [e.g. 2 levels, 5 levels]
+- Known concerns: [e.g. "faceted navigation bloat", "thin product descriptions", "no product schema"]
+
+## Content to gather
+- Product page HTML (2-3 representative pages)
+- Category page HTML with faceted navigation
+- Product schema / structured data (JSON-LD)
+- Canonical tag implementation across product variants
+- Internal linking between products and categories
+- URL structure for products, categories, and filters
+
+## Don't forget
+- [ ] Include pages for products with variants (size, color, etc.)
+- [ ] Show how filtered/sorted URLs are handled (canonicals, noindex, etc.)
+- [ ] Include breadcrumb implementation
+- [ ] Note any out-of-stock product handling strategy
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-content-audit',
+    name: 'Content SEO Audit',
+    description: 'Evaluates content quality, keyword cannibalization, thin content, topical authority, and content gap opportunities.',
+    category: 'SEO',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
+    placeholder: 'Paste your content pages, blog posts, content inventory, or sitemap...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-content-audit'],
+    prepPrompt: `I'm preparing my site for a **Content SEO Audit**. Please help me collect the relevant content.
+
+## Project context (fill in)
+- Content volume: [e.g. 20 blog posts, 200 pages]
+- Content types: [e.g. blog, guides, product pages, landing pages]
+- Publishing frequency: [e.g. weekly, monthly, sporadic]
+- Known concerns: [e.g. "declining traffic on old posts", "possible cannibalization", "thin pages"]
+
+## Content to gather
+- Full content of 5-10 representative pages (mix of high and low performers)
+- Complete list of all page titles and URLs
+- Any keyword mapping or target keyword assignments
+- Google Search Console data showing cannibalization (multiple pages ranking for same query)
+- Content that has declined in traffic or rankings
+
+## Don't forget
+- [ ] Include pages you suspect are cannibalizing each other
+- [ ] Note any content consolidation already done
+- [ ] Include your content taxonomy / category structure
+- [ ] Note which pages get the most and least traffic
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-link-building',
+    name: 'Link Profile Analysis',
+    description: 'Analyzes backlink quality, anchor text distribution, toxic links, internal linking, and link building opportunities.',
+    category: 'SEO',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
+    placeholder: 'Paste your backlink data, internal linking structure, anchor text reports, or link audit exports...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-link-building'],
+    prepPrompt: `I'm preparing my site for a **Link Profile Analysis**. Please help me collect the relevant data.
+
+## Project context (fill in)
+- Domain age: [e.g. 1 year, 5 years]
+- Domain authority/rating: [if known from Ahrefs, Moz, etc.]
+- Known concerns: [e.g. "spammy backlinks", "weak internal linking", "no link building strategy"]
+
+## Data to gather
+- Backlink report export (from Ahrefs, Semrush, Moz, or Google Search Console)
+- Anchor text distribution report
+- Internal linking structure (navigation, contextual links, footer links)
+- Top linked-to pages and orphan pages
+- Competitor backlink comparison (if available)
+- Any disavow file history
+
+## Don't forget
+- [ ] Include referring domains count and top referring domains
+- [ ] Note any manual penalty history or disavow submissions
+- [ ] Include your most important pages and their inbound link counts
+- [ ] Note any link building efforts already underway
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-mobile',
+    name: 'Mobile SEO',
+    description: 'Audits mobile-first indexing readiness, responsive design, mobile usability, page experience, and mobile search optimization.',
+    category: 'SEO',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
+    placeholder: 'Paste your responsive layout HTML, viewport configuration, mobile styles, and page experience data...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-mobile'],
+    prepPrompt: `I'm preparing my site for a **Mobile SEO** audit. Please help me collect the relevant content.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js, WordPress, custom]
+- Responsive approach: [e.g. responsive CSS, separate mobile site, AMP]
+- Mobile traffic share: [e.g. 60% mobile, 30% desktop]
+- Known concerns: [e.g. "mobile usability errors in GSC", "slow on mobile", "content hidden on mobile"]
+
+## Content to gather
+- Root layout with viewport meta tag and responsive configuration
+- CSS breakpoints and mobile-specific styles
+- Key page HTML as rendered on mobile (use mobile device emulation)
+- Touch target sizing and spacing implementation
+- Mobile navigation component
+- Any AMP pages or mobile-specific page versions
+
+## Don't forget
+- [ ] Include rendered HTML from both desktop and mobile for key pages
+- [ ] Note any content differences between mobile and desktop versions
+- [ ] Include mobile page speed data (Lighthouse or PageSpeed Insights)
+- [ ] Note any interstitials or popups shown on mobile
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-international',
+    name: 'International SEO',
+    description: 'Audits hreflang implementation, geo-targeting strategy, multilingual content, and cross-border SEO architecture.',
+    category: 'SEO',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
+    placeholder: 'Paste your hreflang tags, language routing config, localized pages, and geo-targeting setup...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-international'],
+    prepPrompt: `I'm preparing my site for an **International SEO** audit. Please help me collect the relevant content.
+
+## Project context (fill in)
+- Target countries/languages: [e.g. US English, UK English, French, German]
+- URL structure: [ccTLDs, subdomains, subdirectories, or query parameters]
+- CMS/Framework: [e.g. Next.js i18n, WordPress WPML, custom]
+- Known concerns: [e.g. "hreflang errors in GSC", "duplicate content across regions", "wrong country ranking"]
+
+## Content to gather
+- Hreflang tag implementation (HTML head, HTTP headers, or sitemap)
+- Language/region routing configuration
+- Localized page examples (same page in different languages)
+- Geo-targeting settings in Google Search Console
+- Sitemap structure for multi-language/region pages
+- Content localization quality samples
+
+## Don't forget
+- [ ] Include the same page URL in all available languages/regions
+- [ ] Note any x-default hreflang usage
+- [ ] Include any geo-redirect or IP-based redirect logic
+- [ ] Note which countries/languages drive the most traffic
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-site-architecture',
+    name: 'Site Architecture SEO',
+    description: 'Audits URL structure, content siloing, crawl depth, internal linking topology, and information architecture for SEO.',
+    category: 'SEO',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
+    placeholder: 'Paste your sitemap, URL structure, navigation components, and routing configuration...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-site-architecture'],
+    prepPrompt: `I'm preparing my site for a **Site Architecture SEO** audit. Please help me collect the relevant content.
+
+## Project context (fill in)
+- Site size: [e.g. 50 pages, 5,000 pages, 1M+ pages]
+- Site type: [e.g. e-commerce, SaaS, publisher, marketplace]
+- Framework: [e.g. Next.js, WordPress, custom]
+- Known concerns: [e.g. "deep pages not indexed", "crawl budget waste", "poor siloing"]
+
+## Content to gather
+- Complete sitemap.xml or URL list
+- URL structure patterns and routing configuration
+- Navigation components (header, footer, sidebar, breadcrumbs)
+- Internal linking patterns and contextual link implementation
+- Pagination implementation
+- Content taxonomy and category/tag structure
+
+## Don't forget
+- [ ] Include crawl depth data if available (how many clicks from homepage)
+- [ ] Note any orphan pages (pages with no internal links pointing to them)
+- [ ] Include redirect chains or redirect maps
+- [ ] Note planned site growth (new sections, content types)
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-core-web-vitals',
+    name: 'Core Web Vitals SEO',
+    description: 'Audits Core Web Vitals (LCP, CLS, INP) as ranking factors and page experience signals for search performance.',
+    category: 'SEO',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
+    placeholder: 'Paste your page HTML, performance data, Lighthouse reports, and layout/rendering code...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-core-web-vitals'],
+    prepPrompt: `I'm preparing my site for a **Core Web Vitals SEO** audit. Please help me collect the relevant content.
+
+## Project context (fill in)
+- Framework: [e.g. Next.js 15, WordPress, Shopify]
+- Current CWV status: [pass/fail in GSC, or specific LCP/CLS/INP values]
+- Hosting: [e.g. Vercel, AWS, shared hosting]
+- Known concerns: [e.g. "high LCP", "layout shift on load", "slow interactions"]
+
+## Content to gather
+- Lighthouse or PageSpeed Insights reports for key pages
+- LCP element and its rendering path (images, fonts, CSS)
+- Layout shift sources (dynamic content, ads, images without dimensions)
+- INP-heavy interactions (JavaScript event handlers, third-party scripts)
+- CrUX data from Google Search Console or PageSpeed Insights
+- HTTPS implementation and certificate details
+
+## Don't forget
+- [ ] Include both field data (CrUX) and lab data (Lighthouse) if available
+- [ ] Note which pages fail Core Web Vitals assessment in GSC
+- [ ] Include third-party scripts that may impact performance
+- [ ] Note any interstitials or intrusive popups
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-structured-data',
+    name: 'Structured Data SEO',
+    description: 'Audits Schema.org markup, JSON-LD implementation, rich result eligibility, and structured data opportunities.',
+    category: 'SEO',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
+    placeholder: 'Paste your JSON-LD markup, page HTML with structured data, or schema implementation code...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-structured-data'],
+    prepPrompt: `I'm preparing my site for a **Structured Data SEO** audit. Please help me collect the relevant content.
+
+## Project context (fill in)
+- Site type: [e.g. e-commerce, blog, local business, SaaS, recipe site]
+- Current structured data: [e.g. "basic Organization schema only", "product schema on all products", "none"]
+- Rich results status: [any rich results currently showing in Google?]
+- Known concerns: [e.g. "schema validation errors", "no rich results despite markup", "missing required properties"]
+
+## Content to gather
+- All JSON-LD or structured data blocks from key pages
+- Page HTML for 3-5 representative page types
+- Google Rich Results Test output (if available)
+- Schema markup generation code or CMS configuration
+- Knowledge Graph / Google Business Profile connection
+
+## Don't forget
+- [ ] Include structured data from EVERY page type (home, product, article, FAQ, etc.)
+- [ ] Note any rich results you want but are not getting
+- [ ] Include Google Search Console enhancement reports
+- [ ] Note any dynamically generated structured data
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-indexation',
+    name: 'Indexation & Crawl Management',
+    description: 'Audits indexation issues, canonical conflicts, crawl errors, orphan pages, index bloat, and crawl directives.',
+    category: 'SEO',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
+    placeholder: 'Paste your robots.txt, sitemap, canonical tags, meta robots directives, and Search Console data...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-indexation'],
+    prepPrompt: `I'm preparing my site for an **Indexation & Crawl Management** audit. Please help me collect the relevant content.
+
+## Project context (fill in)
+- Site size: [e.g. 100 pages, 10,000 pages, 1M+ URLs]
+- Indexed pages: [approximate count from Google Search Console or site: search]
+- Framework: [e.g. Next.js, WordPress, custom]
+- Known concerns: [e.g. "pages not indexed", "index bloat", "canonical conflicts", "crawl errors"]
+
+## Content to gather
+- robots.txt (full contents)
+- XML sitemap(s) or sitemap index
+- Canonical tag implementation across page types
+- Meta robots and X-Robots-Tag usage
+- Google Search Console Index Coverage report data
+- Crawl error logs or crawl stats from GSC
+- Noindex / nofollow usage patterns
+
+## Don't forget
+- [ ] Include pages that are submitted but not indexed
+- [ ] Note any recent site migrations or URL changes
+- [ ] Include redirect chains and redirect maps
+- [ ] Note any pages you want indexed but Google is ignoring
+
+Keep total under 30,000 characters.`,
+  },
+  {
+    id: 'seo-video',
+    name: 'Video SEO',
+    description: 'Audits video optimization for search — video schema, sitemaps, YouTube SEO, thumbnails, transcripts, and SERP features.',
+    category: 'SEO',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
+    placeholder: 'Paste your video embed code, video schema markup, YouTube metadata, or video sitemap...',
+    kind: 'builtin' as const,
+    systemPrompt: SYSTEM_PROMPTS['seo-video'],
+    prepPrompt: `I'm preparing my site for a **Video SEO** audit. Please help me collect the relevant content.
+
+## Project context (fill in)
+- Video hosting: [e.g. YouTube, Vimeo, self-hosted, Wistia]
+- Video count: [e.g. 10 videos, 100+ videos]
+- Video types: [e.g. tutorials, product demos, testimonials, vlogs]
+- Known concerns: [e.g. "videos not appearing in search", "no video schema", "poor YouTube rankings"]
+
+## Content to gather
+- Video embed code and player implementation
+- Video schema markup (VideoObject JSON-LD)
+- Video sitemap or video sitemap entries
+- YouTube channel and video metadata (titles, descriptions, tags)
+- Thumbnail implementation and quality
+- Transcript or caption availability
+- Pages containing video content (full HTML)
+
+## Don't forget
+- [ ] Include your video hosting strategy rationale
+- [ ] Note any videos that appear in Google Video results
+- [ ] Include YouTube analytics data if available
+- [ ] Note your thumbnail creation process and A/B testing
+
+Keep total under 30,000 characters.`,
+  },
+
   // ─── Bloat & Lean Code ──────────────────────────────────────────
   {
     id: 'code-bloat',
@@ -6242,38 +6617,6 @@ Keep total under 30,000 characters.`,
 
 Keep total under 30,000 characters.`,
   },
-
-  // ─── SEO: 11 New Agents ───────────────────────────────────────
-  { id: 'seo-local', name: 'Local SEO', description: 'Audits Google Business Profile, NAP consistency, local schema, citations, and review management.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your local landing pages, schema markup, GBP data, or citation list...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-local'], prepPrompt: `I'm preparing my site for a **Local SEO** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Business type: [e.g. restaurant, law firm, plumber, retail store]\n- Locations: [e.g. single location, 5 locations, service area business]\n- Current local SEO status: [e.g. "GBP claimed but not optimized", "no local schema"]\n\n## Content to gather\n- Google Business Profile information (name, address, phone, categories, description)\n- Local landing page HTML (especially schema markup in <head>)\n- NAP as it appears on your website footer/contact page\n- List of current citations/directory listings\n- Review data (count, average rating, recent reviews)\n- Any local schema markup (JSON-LD)\n\n## Don't forget\n- [ ] Include the exact NAP from your website, GBP, and 3-5 top citations\n- [ ] Include any LocalBusiness schema markup\n- [ ] Note your target service area or neighborhoods\n\nKeep total under 30,000 characters.` },
-  { id: 'seo-ecommerce', name: 'E-commerce SEO', description: 'Reviews product pages, faceted navigation, canonical strategy, product schema, and category architecture.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your product page HTML, category pages, faceted navigation config, or schema markup...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-ecommerce'], prepPrompt: `I'm preparing my store for an **E-commerce SEO** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Platform: [e.g. Shopify, WooCommerce, Next.js custom, Magento]\n- Product count: [e.g. 50 products, 10,000 SKUs]\n- Known concerns: [e.g. "faceted nav creating duplicate URLs", "no product schema"]\n\n## Content to gather\n- Product page HTML (including <head> with schema)\n- Category/collection page HTML\n- Faceted navigation/filter URL examples\n- Product schema markup (JSON-LD)\n- Canonical tag configuration\n- Pagination implementation\n- robots.txt and sitemap\n\n## Don't forget\n- [ ] Include examples of filtered/faceted URLs\n- [ ] Show how out-of-stock products are handled\n- [ ] Include product variant URLs (color, size)\n\nKeep total under 30,000 characters.` },
-  { id: 'seo-content-audit', name: 'Content SEO Audit', description: 'Identifies thin content, keyword cannibalization, topical authority gaps, and content consolidation opportunities.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your content inventory, page titles, URLs, and sample content...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-content-audit'], prepPrompt: `I'm preparing my site for a **Content SEO Audit**. Please help me collect the relevant content.\n\n## Project context (fill in)\n- Site type: [e.g. blog, SaaS, e-commerce, news]\n- Content volume: [e.g. 30 blog posts, 200 pages]\n- Known concerns: [e.g. "thin category pages", "multiple posts targeting same keyword"]\n\n## Content to gather\n- Complete list of all page URLs with titles and H1s\n- Full content of your top 10 pages by traffic\n- Content of pages you suspect have issues\n- Any keyword tracking data\n- Google Search Console performance data\n\n## Don't forget\n- [ ] Include ALL page titles — we need to find cannibalization\n- [ ] Note pages that target the same keyword\n- [ ] Include word counts if available\n\nKeep total under 30,000 characters.` },
-  { id: 'seo-link-building', name: 'Link Profile Audit', description: 'Analyzes backlink quality, anchor text health, toxic links, internal linking structure, and link building opportunities.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your backlink data, internal link structure, anchor text report, or navigation HTML...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-link-building'], prepPrompt: `I'm preparing my site for a **Link Profile Audit**. Please help me collect the relevant data.\n\n## Project context (fill in)\n- Domain age: [e.g. 2 years, 10 years]\n- Known concerns: [e.g. "spammy backlinks", "poor internal linking", "no link building done"]\n\n## Data to gather\n- Backlink report from Ahrefs/Moz/SEMrush (top referring domains)\n- Anchor text distribution report\n- Internal linking structure (navigation HTML, sidebar links)\n- List of pages with the most/fewest internal links\n- Any disavow file if one exists\n\n## Don't forget\n- [ ] Include anchor text distribution data\n- [ ] Note any known spammy backlinks\n- [ ] Include your site navigation HTML\n\nKeep total under 30,000 characters.` },
-  { id: 'seo-mobile', name: 'Mobile SEO', description: 'Reviews mobile-first indexing readiness, responsive design, mobile page speed, and mobile usability.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your mobile viewport config, responsive CSS, or mobile page HTML output...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-mobile'], prepPrompt: `I'm preparing my site for a **Mobile SEO** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Framework: [e.g. Next.js, responsive WordPress theme, separate mobile site]\n- Mobile traffic share: [e.g. "60% mobile", "unknown"]\n- Known concerns: [e.g. "content hidden on mobile", "slow on 3G", "tap targets too small"]\n\n## Files to gather\n- Viewport meta tag configuration\n- CSS media queries and breakpoints\n- Mobile-rendered HTML for key pages\n- Mobile PageSpeed Insights results\n- Any AMP configuration (if applicable)\n\n## Don't forget\n- [ ] Include the rendered HTML as seen on mobile (not just desktop)\n- [ ] Note any content that differs between mobile and desktop\n- [ ] Include mobile Core Web Vitals data if available\n\nKeep total under 30,000 characters.` },
-  { id: 'seo-international', name: 'International SEO', description: 'Audits hreflang implementation, geo-targeting, URL structure for locales, and content localization quality.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your hreflang tags, locale URL structure, language switcher, or localized page HTML...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-international'], prepPrompt: `I'm preparing my site for an **International SEO** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Target markets: [e.g. US, UK, Germany, Japan]\n- URL strategy: [e.g. /en/, en.example.com, example.de]\n- Translation method: [e.g. professional translation, auto-translated, native content]\n\n## Files to gather\n- Hreflang tags from <head> of key pages\n- URL structure examples for each locale\n- Language switcher implementation\n- Google Search Console international targeting settings\n- Sitemap(s) per language\n\n## Don't forget\n- [ ] Include hreflang tags from at least 3 different pages\n- [ ] Show the x-default hreflang if present\n- [ ] Note any auto-redirect based on IP or browser language\n\nKeep total under 30,000 characters.` },
-  { id: 'seo-site-architecture', name: 'Site Architecture', description: 'Evaluates crawl budget, URL structure, content siloing, internal link topology, and navigation hierarchy.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your sitemap, URL list, navigation HTML, routing config, or robots.txt...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-site-architecture'], prepPrompt: `I'm preparing my site for a **Site Architecture** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Total pages: [e.g. 50 pages, 5,000 pages, 1M+ pages]\n- Framework: [e.g. Next.js with file-based routing, WordPress, custom CMS]\n- Known concerns: [e.g. "orphan pages", "deep click depth", "crawl budget waste"]\n\n## Files to gather\n- Complete sitemap.xml (or sitemap index)\n- robots.txt\n- Navigation HTML (header, footer, sidebar)\n- URL routing configuration\n- Breadcrumb implementation\n- Internal search configuration\n\n## Don't forget\n- [ ] Include the full URL list or sitemap\n- [ ] Show the navigation hierarchy\n- [ ] Note any pages only accessible via search or deep links\n\nKeep total under 30,000 characters.` },
-  { id: 'seo-core-web-vitals', name: 'SEO & Core Web Vitals', description: 'Analyzes LCP, CLS, INP as ranking factors with page experience signals and CrUX data assessment.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your PageSpeed Insights results, CrUX data, layout components, or performance config...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-core-web-vitals'], prepPrompt: `I'm preparing my site for a **Core Web Vitals SEO** audit. Please help me collect the relevant data.\n\n## Project context (fill in)\n- Framework: [e.g. Next.js, WordPress, custom React]\n- Current CWV status: [e.g. "failing LCP", "good but want to improve", "unknown"]\n- Traffic: [e.g. "100K monthly visits", "small site"]\n\n## Data to gather\n- PageSpeed Insights results for top 5 pages\n- CrUX data from Google Search Console (if available)\n- Layout components (hero, header, images above fold)\n- Font loading configuration\n- Third-party script tags\n- Image optimization configuration\n\n## Don't forget\n- [ ] Include both mobile and desktop PageSpeed results\n- [ ] Note any third-party scripts (analytics, chat widgets, ads)\n- [ ] Include your image optimization strategy\n\nKeep total under 30,000 characters.` },
-  { id: 'seo-structured-data', name: 'Structured Data', description: 'Reviews Schema.org markup, JSON-LD implementation, rich result eligibility, and knowledge graph optimization.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your JSON-LD blocks, page HTML with schema, or structured data configuration...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-structured-data'], prepPrompt: `I'm preparing my site for a **Structured Data** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Site type: [e.g. blog, e-commerce, local business, SaaS]\n- Current schema: [e.g. "basic Organization only", "product schema on all items", "none"]\n- Known concerns: [e.g. "no rich results showing", "validation errors in GSC"]\n\n## Files to gather\n- All JSON-LD blocks from your key pages\n- Page HTML showing where schema is injected\n- Schema generation code (if dynamic)\n- Google Rich Results Test output for key pages\n- Google Search Console enhancement reports\n\n## Don't forget\n- [ ] Include schema from EVERY page type (home, blog, product, about, etc.)\n- [ ] Include the full JSON-LD, not just snippets\n- [ ] Note which pages show rich results in search\n\nKeep total under 30,000 characters.` },
-  { id: 'seo-indexation', name: 'Indexation Audit', description: 'Diagnoses crawl errors, canonical conflicts, noindex issues, orphan pages, and index bloat.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your robots.txt, sitemap, canonical tags, GSC coverage report, or page headers...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-indexation'], prepPrompt: `I'm preparing my site for an **Indexation Audit**. Please help me collect the relevant data.\n\n## Project context (fill in)\n- Total pages: [e.g. 100, 10,000, 1M+]\n- Known issues: [e.g. "pages not indexed", "duplicate content warnings", "crawl errors in GSC"]\n\n## Data to gather\n- robots.txt\n- XML sitemap(s)\n- Canonical tags from key page types\n- Google Search Console Index Coverage report data\n- Meta robots tags from key pages\n- HTTP response headers (X-Robots-Tag if used)\n- Any redirect configuration\n\n## Don't forget\n- [ ] Include GSC coverage report numbers (valid, excluded, error)\n- [ ] Note pages you expect to be indexed but aren't\n- [ ] Include any redirect rules or .htaccess\n\nKeep total under 30,000 characters.` },
-  { id: 'seo-video', name: 'Video SEO', description: 'Optimizes YouTube presence, video schema markup, video sitemaps, transcripts, and video SERP features.', category: 'SEO', accentClass: 'text-emerald-400 hover:bg-emerald-500/10', buttonClass: 'bg-emerald-800 hover:bg-emerald-700', placeholder: 'Paste your video page HTML, YouTube channel data, video schema, or video sitemap...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['seo-video'], prepPrompt: `I'm preparing my site for a **Video SEO** audit. Please help me collect the relevant data.\n\n## Project context (fill in)\n- Video hosting: [e.g. YouTube, Vimeo, self-hosted, Wistia]\n- Video count: [e.g. 10 videos, 500+ videos]\n- Known concerns: [e.g. "videos not showing in search", "no schema", "no transcripts"]\n\n## Data to gather\n- Video page HTML (showing embeds and schema)\n- Video schema markup (JSON-LD)\n- Video sitemap (if exists)\n- YouTube channel URL and key video URLs\n- Transcript/caption files\n\n## Don't forget\n- [ ] Include the VideoObject schema if present\n- [ ] Note which videos have captions/transcripts\n- [ ] Include YouTube titles, descriptions, and tags for key videos\n\nKeep total under 30,000 characters.` },
-
-  // ─── Infrastructure: 8 New Agents ─────────────────────────────
-  { id: 'kubernetes', name: 'Kubernetes', description: 'Audits K8s manifests, resource limits, RBAC, networking policies, health probes, and deployment strategy.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your Kubernetes manifests, Helm charts, or kubectl output...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['kubernetes'], prepPrompt: `I'm preparing my Kubernetes configuration for a **Kubernetes** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Cluster: [e.g. EKS, GKE, AKS, self-managed]\n- Workloads: [e.g. 5 deployments, 20 services]\n- Known concerns: [e.g. "no resource limits", "running as root", "no network policies"]\n\n## Files to gather\n- Deployment manifests (YAML)\n- Service and Ingress manifests\n- RBAC (Role, ClusterRole, RoleBinding) manifests\n- NetworkPolicy manifests\n- Helm values files\n- Namespace and ResourceQuota definitions\n\n## Don't forget\n- [ ] Include ALL deployment manifests, not just one example\n- [ ] Include any HPA/VPA configurations\n- [ ] Note which namespaces are in use\n\nKeep total under 30,000 characters.` },
-  { id: 'terraform', name: 'Terraform / IaC', description: 'Reviews state management, module design, security groups, drift detection, and provider configuration.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your Terraform files (.tf), module definitions, or tfplan output...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['terraform'], prepPrompt: `I'm preparing my infrastructure code for a **Terraform** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Cloud provider: [e.g. AWS, GCP, Azure, multi-cloud]\n- Terraform version: [e.g. 1.5, 1.7]\n- Known concerns: [e.g. "no state locking", "hardcoded values", "security groups too open"]\n\n## Files to gather\n- Main .tf files (main.tf, variables.tf, outputs.tf)\n- Module definitions\n- Backend configuration\n- Provider configuration\n- terraform.tfvars or .auto.tfvars (NO SECRETS)\n- Any .tfplan output\n\n## Don't forget\n- [ ] NEVER include actual secret values\n- [ ] Include the backend configuration for state\n- [ ] Show module structure and versioning\n\nKeep total under 30,000 characters.` },
-  { id: 'serverless', name: 'Serverless', description: 'Analyzes cold starts, timeout configuration, concurrency management, cost optimization, and event patterns.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your serverless.yml, SAM template, function code, or CloudFormation config...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['serverless'], prepPrompt: `I'm preparing my serverless architecture for a **Serverless** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Platform: [e.g. AWS Lambda, Azure Functions, Google Cloud Functions]\n- Framework: [e.g. Serverless Framework, SAM, CDK, raw CloudFormation]\n- Function count: [e.g. 5 functions, 50 functions]\n- Known concerns: [e.g. "cold starts", "high costs", "timeout issues"]\n\n## Files to gather\n- serverless.yml / template.yaml / CDK stack\n- Function handler code\n- IAM role/policy definitions\n- Event source configurations\n- Environment variable setup (NO SECRETS)\n\n## Don't forget\n- [ ] Include memory and timeout settings\n- [ ] Note any VPC configuration\n- [ ] Include provisioned concurrency settings if any\n\nKeep total under 30,000 characters.` },
-  { id: 'message-queues', name: 'Message Queues', description: 'Reviews dead letter queues, message ordering, idempotency patterns, backpressure, and error recovery.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your queue configuration, consumer/producer code, or messaging infrastructure...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['message-queues'], prepPrompt: `I'm preparing my messaging system for a **Message Queue** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Queue technology: [e.g. RabbitMQ, Kafka, SQS, Redis Streams]\n- Message volume: [e.g. 100/min, 10K/sec]\n- Known concerns: [e.g. "no DLQ", "duplicate processing", "message loss"]\n\n## Files to gather\n- Queue/topic configuration\n- Consumer code (message handlers)\n- Producer code (message publishers)\n- Dead letter queue configuration\n- Retry and error handling logic\n- Monitoring/alerting configuration\n\n## Don't forget\n- [ ] Include error handling in consumers\n- [ ] Show how idempotency is handled\n- [ ] Include DLQ configuration and reprocessing logic\n\nKeep total under 30,000 characters.` },
-  { id: 'cdn-config', name: 'CDN Configuration', description: 'Audits cache rules, purge strategy, edge functions, HTTP headers, and origin configuration.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your CDN configuration, cache rules, edge functions, or HTTP header config...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['cdn-config'], prepPrompt: `I'm preparing my CDN setup for a **CDN Configuration** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- CDN provider: [e.g. Cloudflare, CloudFront, Fastly, Vercel Edge]\n- Content types: [e.g. static site, dynamic app, mixed]\n- Known concerns: [e.g. "low cache hit ratio", "stale content issues", "no edge functions"]\n\n## Files to gather\n- CDN configuration (cache rules, page rules)\n- Cache-Control header configuration\n- Edge function/worker code\n- Origin configuration\n- Purge/invalidation setup\n- HTTP response headers for key routes\n\n## Don't forget\n- [ ] Include Cache-Control headers for different content types\n- [ ] Show any cache busting strategy\n- [ ] Include edge function code if applicable\n\nKeep total under 30,000 characters.` },
-  { id: 'load-balancing', name: 'Load Balancing', description: 'Reviews health checks, session affinity, failover strategy, auto-scaling policies, and traffic distribution.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your load balancer config, health checks, scaling policies, or target group setup...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['load-balancing'], prepPrompt: `I'm preparing my load balancing setup for an audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- LB type: [e.g. ALB, NLB, nginx, HAProxy, Cloud Load Balancer]\n- Architecture: [e.g. single region, multi-AZ, multi-region]\n- Known concerns: [e.g. "no health checks", "sticky sessions causing uneven load", "no auto-scaling"]\n\n## Files to gather\n- Load balancer configuration\n- Health check definitions\n- Target group/backend configuration\n- Auto-scaling policies\n- SSL/TLS configuration\n- DNS/failover configuration\n\n## Don't forget\n- [ ] Include health check endpoints and thresholds\n- [ ] Show auto-scaling policies and metrics\n- [ ] Note any session affinity requirements\n\nKeep total under 30,000 characters.` },
-  { id: 'backup-recovery', name: 'Backup & Recovery', description: 'Evaluates RPO/RTO coverage, backup verification, disaster recovery plans, and data replication strategy.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your backup configuration, DR plan, replication setup, or recovery procedures...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['backup-recovery'], prepPrompt: `I'm preparing my backup strategy for a **Backup & Recovery** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Data stores: [e.g. PostgreSQL, MongoDB, S3, Redis]\n- Business criticality: [e.g. "financial data, zero tolerance for loss", "content site, some loss OK"]\n- Known concerns: [e.g. "never tested restores", "no DR plan", "backups in same region"]\n\n## Data to gather\n- Backup configuration for each data store\n- Backup schedule and retention policies\n- DR plan documentation (if exists)\n- Replication configuration\n- Last restore test results\n- Monitoring/alerting for backup failures\n\n## Don't forget\n- [ ] List ALL data stores and whether each is backed up\n- [ ] Note the last time a restore was tested\n- [ ] Include RPO/RTO requirements if documented\n\nKeep total under 30,000 characters.` },
-  { id: 'monitoring-alerting', name: 'Monitoring & Alerting', description: 'Reviews SLI/SLO definitions, alert design, alert fatigue, dashboard quality, and runbook coverage.', category: 'Infrastructure', accentClass: 'text-cyan-400 hover:bg-cyan-500/10', buttonClass: 'bg-cyan-800 hover:bg-cyan-700', placeholder: 'Paste your alert rules, SLO definitions, dashboard configs, or monitoring setup...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['monitoring-alerting'], prepPrompt: `I'm preparing my monitoring setup for a **Monitoring & Alerting** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Monitoring stack: [e.g. Datadog, Prometheus/Grafana, CloudWatch, New Relic]\n- Services monitored: [e.g. 5 microservices, monolith + database]\n- Known concerns: [e.g. "too many alerts", "no SLOs defined", "missing runbooks"]\n\n## Files to gather\n- Alert rule definitions\n- SLI/SLO definitions (if they exist)\n- Dashboard configurations or screenshots\n- Runbooks for critical alerts\n- On-call rotation setup\n- Notification channel configuration\n\n## Don't forget\n- [ ] Include the number of alerts firing per day/week\n- [ ] Note any alerts that are frequently silenced\n- [ ] Include runbooks (or note their absence)\n\nKeep total under 30,000 characters.` },
-
-  // ─── Code Quality: 7 New Agents ───────────────────────────────
-  { id: 'naming-conventions', name: 'Naming Conventions', description: 'Audits variable, function, file, and type naming for clarity, consistency, and convention adherence.', category: 'Code Quality', accentClass: 'text-blue-400 hover:bg-blue-500/10', buttonClass: 'bg-blue-800 hover:bg-blue-700', placeholder: 'Paste your source code — the more files, the better we can assess naming consistency...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['naming-conventions'], prepPrompt: `I'm preparing code for a **Naming Conventions** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Language / framework: [e.g. TypeScript + React, Python + Django, Go]\n- Team conventions: [e.g. "we follow Airbnb style guide", "no formal conventions"]\n- Known concerns: [e.g. "inconsistent naming across files", "abbreviations everywhere"]\n\n## Files to gather\n- Core source files from the module being reviewed\n- Type definitions and interfaces\n- Utility/helper files\n- Test files (to check test naming)\n- Configuration files\n\n## Don't forget\n- [ ] Include files from multiple developers if possible\n- [ ] Include both old and new files to check consistency over time\n- [ ] Note any existing naming conventions documentation\n\nKeep total under 30,000 characters.` },
-  { id: 'code-comments', name: 'Code Comments Audit', description: 'Reviews JSDoc coverage, inline comment quality, TODO debt, and self-documenting code practices.', category: 'Code Quality', accentClass: 'text-blue-400 hover:bg-blue-500/10', buttonClass: 'bg-blue-800 hover:bg-blue-700', placeholder: 'Paste your source code with its existing comments, JSDoc, and TODOs...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['code-comments'], prepPrompt: `I'm preparing code for a **Code Comments** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Language / framework: [e.g. TypeScript, Python, Java]\n- Documentation policy: [e.g. "JSDoc required for public APIs", "no policy", "minimal comments"]\n- Known concerns: [e.g. "stale comments", "too many TODOs", "no JSDoc at all"]\n\n## Files to gather\n- Core source files with their existing comments\n- Public API files (most critical for documentation)\n- Files with complex business logic\n- Any files you know have TODO/FIXME markers\n\n## Don't forget\n- [ ] Include the comments as-is — don't clean them up first\n- [ ] Include files with complex regex or algorithms\n- [ ] Note any documentation generation tools in use\n\nKeep total under 30,000 characters.` },
-  { id: 'solid-principles', name: 'SOLID Principles', description: 'Identifies violations of SRP, OCP, LSP, ISP, and DIP with refactoring guidance for each principle.', category: 'Code Quality', accentClass: 'text-blue-400 hover:bg-blue-500/10', buttonClass: 'bg-blue-800 hover:bg-blue-700', placeholder: 'Paste your classes, modules, interfaces, and their dependencies...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['solid-principles'], prepPrompt: `I'm preparing code for a **SOLID Principles** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Language / paradigm: [e.g. TypeScript OOP, Java, Python with classes]\n- Architecture: [e.g. layered, hexagonal, MVC, no clear architecture]\n- Known concerns: [e.g. "god classes", "tight coupling", "hard to test"]\n\n## Files to gather\n- Core classes/modules and their dependencies\n- Interface/type definitions\n- Dependency injection setup (if any)\n- Service classes and their consumers\n- Any base classes or abstract classes\n\n## Don't forget\n- [ ] Include import statements — they show dependency direction\n- [ ] Include the classes that consume/use other classes\n- [ ] Note any classes that are frequently modified for different reasons\n\nKeep total under 30,000 characters.` },
-  { id: 'refactoring', name: 'Refactoring Opportunities', description: 'Finds code smells, duplication, complexity hotspots, and recommends safe refactoring techniques.', category: 'Code Quality', accentClass: 'text-blue-400 hover:bg-blue-500/10', buttonClass: 'bg-blue-800 hover:bg-blue-700', placeholder: 'Paste the code you suspect needs refactoring — include related files for context...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['refactoring'], prepPrompt: `I'm preparing code for a **Refactoring** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Language / framework: [e.g. TypeScript + React, Python + FastAPI]\n- Codebase age: [e.g. 6 months, 3 years]\n- Known concerns: [e.g. "functions too long", "copy-pasted code", "complex conditionals"]\n\n## Files to gather\n- Files you suspect have code smells\n- The largest files in the codebase\n- Files with the most git churn (\`git log --format=format: --name-only | sort | uniq -c | sort -rn | head -20\`)\n- Test files (to assess refactoring safety)\n\n## Don't forget\n- [ ] Include test files so we can assess refactoring safety\n- [ ] Include files that depend on the code being refactored\n- [ ] Note any files that developers avoid touching\n\nKeep total under 30,000 characters.` },
-  { id: 'api-contracts', name: 'API Contracts', description: 'Reviews type safety at API boundaries, versioning strategy, backwards compatibility, and schema validation.', category: 'Code Quality', accentClass: 'text-blue-400 hover:bg-blue-500/10', buttonClass: 'bg-blue-800 hover:bg-blue-700', placeholder: 'Paste your API route handlers, type definitions, validation schemas, and client code...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['api-contracts'], prepPrompt: `I'm preparing my API for an **API Contracts** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- API style: [e.g. REST, GraphQL, tRPC, gRPC]\n- Framework: [e.g. Next.js API routes, Express, FastAPI]\n- Consumers: [e.g. internal frontend, mobile app, third-party developers]\n- Known concerns: [e.g. "no versioning", "types don't match runtime", "breaking changes"]\n\n## Files to gather\n- API route handlers / controllers\n- Request/response type definitions\n- Validation schemas (Zod, Joi, JSON Schema)\n- OpenAPI spec (if exists)\n- Client-side API consumption code\n- Any API versioning configuration\n\n## Don't forget\n- [ ] Include BOTH the server types AND client types\n- [ ] Include validation schemas alongside TypeScript types\n- [ ] Note any recent API changes that broke consumers\n\nKeep total under 30,000 characters.` },
-  { id: 'async-patterns', name: 'Async Patterns', description: 'Identifies race conditions, unhandled rejections, missing cancellation, and async anti-patterns.', category: 'Code Quality', accentClass: 'text-blue-400 hover:bg-blue-500/10', buttonClass: 'bg-blue-800 hover:bg-blue-700', placeholder: 'Paste your async code — API calls, database queries, event handlers, concurrent operations...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['async-patterns'], prepPrompt: `I'm preparing code for an **Async Patterns** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Language / runtime: [e.g. TypeScript + Node.js, Python asyncio, Go goroutines]\n- Async patterns used: [e.g. "async/await", "Promises", "callbacks", "RxJS"]\n- Known concerns: [e.g. "race conditions", "unhandled rejections", "memory leaks from timers"]\n\n## Files to gather\n- API call/fetch logic\n- Database query code\n- Event handlers and listeners\n- Timer/interval code\n- Any concurrent operation management\n- React hooks with async operations\n\n## Don't forget\n- [ ] Include error handling around async operations\n- [ ] Include cleanup/teardown code (useEffect returns, finally blocks)\n- [ ] Note any known race conditions or timing issues\n\nKeep total under 30,000 characters.` },
-  { id: 'testing-strategy', name: 'Testing Strategy', description: 'Evaluates test pyramid balance, coverage gaps, mocking strategy, test quality, and E2E coverage.', category: 'Code Quality', accentClass: 'text-blue-400 hover:bg-blue-500/10', buttonClass: 'bg-blue-800 hover:bg-blue-700', placeholder: 'Paste your test files alongside the source code they test...', kind: 'builtin' as const, systemPrompt: SYSTEM_PROMPTS['testing-strategy'], prepPrompt: `I'm preparing code for a **Testing Strategy** audit. Please help me collect the relevant files.\n\n## Project context (fill in)\n- Test framework: [e.g. Jest, Vitest, pytest, Go testing]\n- Current coverage: [e.g. "70% unit", "no E2E", "unknown"]\n- Known concerns: [e.g. "flaky tests", "too many mocks", "no integration tests"]\n\n## Files to gather\n- Test files (*.test.ts, *.spec.ts, *_test.go, etc.)\n- The source files those tests cover\n- Test utilities, factories, fixtures\n- Test configuration (jest.config, vitest.config)\n- CI test commands from package.json or CI config\n- Coverage report output (if available)\n\n## Don't forget\n- [ ] Include BOTH test files AND the source code they test\n- [ ] Include any shared test utilities or mock factories\n- [ ] Note any tests that are skipped or frequently fail\n\nKeep total under 30,000 characters.` },
 ];
 
 export function getAgent(id: string): AgentConfig | undefined {
