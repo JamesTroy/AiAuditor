@@ -11,15 +11,15 @@
  * 5. Free-text "Overall Score: N" or "Overall: N/10"
  */
 export function extractScore(text: string): number | null {
-  // 1. Table row: | **Overall** | 72 | or | **Composite** | 8.5 |
-  // Also handles: | Overall Score | 72/100 |
+  // 1. Table row: | **Overall** | 72 | or | **Composite** | 8.5/10 |
+  // Also handles: | Overall Score | 72/100 |, | Net Risk Posture | 7 |
   const tableOverall = text.match(
-    /\|\s*\*{0,2}(?:Overall|Composite|Total|Final)(?:\s+Score)?\*{0,2}\s*\|\s*(\d{1,3}(?:\.\d+)?)\s*(?:\/\s*100)?\s*\|/i,
+    /\|\s*\*{0,2}(?:Overall|Composite|Total|Final|Net Risk Posture)(?:\s+Score)?\*{0,2}\s*\|\s*(\d{1,3}(?:\.\d+)?)\s*(?:\/\s*(\d+))?\s*\|/i,
   );
   if (tableOverall) {
-    const val = parseFloat(tableOverall[1]);
-    if (val <= 10) return Math.round(val * 10);
-    if (val >= 0 && val <= 100) return Math.round(val);
+    // Most agents use 1-10 scale in tables; if no denominator and value ≤ 10,
+    // assume it's on a 1-10 scale and multiply by 10.
+    return normalizeScore(tableOverall[1], tableOverall[2] ?? (parseFloat(tableOverall[1]) <= 10 ? '10' : undefined));
   }
 
   // 2. Heading-style: "## Overall Score: 72/100" or "### Final Score: 85"
@@ -44,6 +44,14 @@ export function extractScore(text: string): number | null {
     const last = allSlash100[allSlash100.length - 1];
     const val = parseInt(last[1], 10);
     if (val >= 0 && val <= 100) return val;
+  }
+
+  // 4b. Explicit "N/10" — use LAST match (composite score at end of table)
+  const allSlash10 = [...text.matchAll(/(\d{1,2}(?:\.\d+)?)\s*\/\s*10(?!\d)/g)];
+  if (allSlash10.length > 0) {
+    const last = allSlash10[allSlash10.length - 1];
+    const val = parseFloat(last[1]);
+    if (val >= 0 && val <= 10) return Math.round(val * 10);
   }
 
   // 5. "Overall Score: N" or "Overall: N/10" or "Score: N"
