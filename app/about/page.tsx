@@ -25,7 +25,7 @@ export default function AboutPage() {
           <section>
             <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100 mb-3">What we do</h2>
             <p>
-              Claudit runs your code through 50+ specialized audits — checking for injection flaws,
+              Claudit runs your code through specialized audits — checking for injection flaws,
               auth bugs, accessibility violations, slow queries, compliance gaps, and hundreds of other
               patterns that manual code review often misses. Each audit produces a structured report with
               severity ratings, exact file/line references, and copy-paste fixes.
@@ -63,7 +63,7 @@ export default function AboutPage() {
           <section>
             <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100 mb-3">Security &amp; trust</h2>
             <ul className="space-y-2">
-              <li><strong className="text-gray-900 dark:text-zinc-100">Your code stays private.</strong> Code is sent directly for analysis and is not stored beyond the audit session.</li>
+              <li><strong className="text-gray-900 dark:text-zinc-100">Your code stays private.</strong> Code is analyzed and discarded — it is not stored on our servers beyond the truncated snippet saved with your audit record.</li>
               <li><strong className="text-gray-900 dark:text-zinc-100">Encrypted in transit.</strong> All data over HTTPS with TLS 1.3. Per-request CSP nonces prevent XSS.</li>
               <li><strong className="text-gray-900 dark:text-zinc-100">Two-factor authentication.</strong> TOTP-based 2FA via any authenticator app, with backup codes.</li>
               <li><strong className="text-gray-900 dark:text-zinc-100">Rate limited.</strong> All endpoints are rate-limited per IP and per user to prevent abuse.</li>

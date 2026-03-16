@@ -3,17 +3,17 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'How It Works',
-  description: 'How Claudit works — 60+ specialized code audits with real-time streaming results and severity-rated findings.',
+  description: 'How Claudit works — specialized code audits with real-time streaming results and severity-rated findings.',
   alternates: { canonical: '/how-it-works' },
   openGraph: {
     title: 'How It Works — Claudit',
-    description: 'Paste code or enter a URL, choose from 60+ audits, and get severity-rated findings in seconds.',
+    description: 'Paste code or enter a URL, choose your audits, and get severity-rated findings in real time.',
     url: '/how-it-works',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'How It Works — Claudit',
-    description: 'Paste code or enter a URL, choose from 60+ audits, and get severity-rated findings in seconds.',
+    description: 'Paste code or enter a URL, choose your audits, and get severity-rated findings in real time.',
   },
 };
 
@@ -44,7 +44,7 @@ export default function HowItWorksPage() {
             <StepCard
               step={2}
               title="Pick your audits"
-              description="Choose from 60+ specialized audits — each focused on a specific domain like security, accessibility, or performance. Results stream back in real-time."
+              description="Choose from specialized audits — each focused on a specific domain like security, accessibility, or performance. Results stream back in real time."
             />
             <StepCard
               step={3}

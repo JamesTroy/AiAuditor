@@ -115,7 +115,7 @@ export default async function AgentOGImage({
         >
           <span style={{ fontWeight: 700, color: '#a1a1aa' }}>Claudit</span>
           <span>·</span>
-          <span>AI-Powered Code Audit</span>
+          <span>Automated Code Audit</span>
         </div>
       </div>
     ),

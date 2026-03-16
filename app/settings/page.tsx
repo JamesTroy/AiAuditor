@@ -231,7 +231,7 @@ export default function SettingsPage() {
 
         {/* Danger zone — CRED-002: Requires password re-entry */}
         <section className="bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900/50 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">Danger zone</h2>
+          <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">Delete account</h2>
           <p className="text-sm text-gray-500 dark:text-zinc-500 mb-4">
             Permanently delete your account and all associated data. This action cannot be undone.
           </p>

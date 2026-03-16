@@ -71,7 +71,7 @@ export default function PrivacyPage() {
                 <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
                   <tr>
                     <td className="px-4 py-2">Anthropic</td>
-                    <td className="px-4 py-2">AI code analysis</td>
+                    <td className="px-4 py-2">Code analysis</td>
                     <td className="px-4 py-2">Submitted code/URLs</td>
                     <td className="px-4 py-2">United States</td>
                   </tr>

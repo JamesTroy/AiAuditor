@@ -58,7 +58,7 @@ export default async function AgentPage({ params }: Props) {
     <div id="main-content" tabIndex={-1} className="text-gray-900 dark:text-zinc-100 px-6 py-12">
       <BreadcrumbJsonLd
         items={[
-          { name: 'Audit Studio', url: BASE_URL },
+          { name: 'Home', url: BASE_URL },
           { name: agent.category, url: `${BASE_URL}/#${agent.category.toLowerCase().replace(/\s+/g, '-')}` },
           { name: agent.name },
         ]}
@@ -66,7 +66,7 @@ export default async function AgentPage({ params }: Props) {
       <div className="max-w-4xl mx-auto">
         {/* Breadcrumb */}
         <nav className="text-xs text-gray-400 dark:text-zinc-500 mb-6 flex items-center gap-1.5">
-          <Link href="/" className="hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">Audit Studio</Link>
+          <Link href="/" className="hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">Home</Link>
           <span>/</span>
           <span className={agent.accentClass.split(' ').find((c) => c.startsWith('text-')) ?? ''}>{agent.category}</span>
           <span>/</span>
@@ -75,14 +75,17 @@ export default async function AgentPage({ params }: Props) {
 
         <div className="mb-8">
           <div className={`text-xs font-mono uppercase tracking-widest mb-3 ${agent.accentClass.split(' ').find((c) => c.startsWith('text-')) ?? ''}`}>
-            Audit · {agent.category}
+            {agent.category}
           </div>
           <h1 className="text-3xl font-bold mb-2">{agent.name}</h1>
           <p className="text-gray-600 dark:text-zinc-400">{agent.description}</p>
 
           <h2 className="text-lg font-semibold mt-6 mb-2">How to use this audit</h2>
           <p className="text-gray-500 dark:text-zinc-500 text-sm">
-            This audit uses a specialized system prompt to analyze your code via the Anthropic API. Paste your code below, and results will stream in real-time. You can export the report as Markdown or JSON.
+            Paste your code below and results will stream in real time. Each finding includes severity ratings, line references, and fix suggestions. You can export the report as Markdown or JSON.
+          </p>
+          <p className="text-gray-400 dark:text-zinc-600 text-xs mt-2">
+            Your code is analyzed and discarded — it is not stored on our servers.
           </p>
           {agent.prepPrompt && <PrepPromptBox prompt={agent.prepPrompt} />}
           <SystemPromptViewer prompt={agent.systemPrompt} />

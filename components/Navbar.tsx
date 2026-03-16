@@ -9,7 +9,7 @@ import UserNav from '@/components/UserNav';
 import { useSession } from '@/lib/auth-client';
 
 const PUBLIC_LINKS = [
-  { href: '/', label: 'Audit Studio' },
+  { href: '/', label: 'All Audits' },
   { href: '/site-audit', label: 'Site Audit' },
 ] as const;
 
@@ -201,7 +201,7 @@ export default function Navbar() {
 
             {/* Drawer footer */}
             <div className="border-t border-gray-200 dark:border-zinc-800 px-6 py-4 text-xs text-gray-400 dark:text-zinc-500">
-              60+ audits · Security · Performance · Compliance
+              Security · Performance · Accessibility · Compliance
             </div>
           </div>
         </div>

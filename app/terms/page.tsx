@@ -3,11 +3,11 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
-  description: 'Terms and conditions for using the Claudit AI code auditing platform.',
+  description: 'Terms and conditions for using the Claudit code auditing platform.',
   alternates: { canonical: '/terms' },
   openGraph: {
     title: 'Terms of Service — Claudit',
-    description: 'Terms and conditions for using the Claudit AI code auditing platform.',
+    description: 'Terms and conditions for using the Claudit code auditing platform.',
     url: '/terms',
   },
 };
@@ -58,7 +58,7 @@ export default function TermsPage() {
           <Section title="5. Intellectual property">
             <p>
               You retain ownership of all code and content you submit. Claudit does not claim any
-              intellectual property rights over your submissions. AI-generated audit reports are provided
+              intellectual property rights over your submissions. Audit reports are provided
               for your use and may be shared, exported, or archived as you see fit.
             </p>
           </Section>
@@ -68,7 +68,7 @@ export default function TermsPage() {
               Your data is handled in accordance with our{' '}
               <Link href="/privacy" className="text-violet-600 dark:text-violet-400 underline">
                 Privacy Policy
-              </Link>. Submitted code is sent to our AI provider for analysis and is not retained beyond the
+              </Link>. Submitted code is analyzed and discarded — it is not retained beyond the
               audit session. Audit results are stored in your account until you delete them.
             </p>
           </Section>

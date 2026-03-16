@@ -23,12 +23,20 @@ export default function GlobalError({
           {error.digest && (
             <p className="text-gray-400 dark:text-zinc-500 text-xs mb-4 font-mono">Error ID: {error.digest}</p>
           )}
-          <button
-            onClick={reset}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors focus-ring"
-          >
-            Try again
-          </button>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={reset}
+              className="px-5 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors focus-ring"
+            >
+              Try again
+            </button>
+            <a
+              href="/"
+              className="px-5 py-2.5 rounded-lg border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 text-sm font-medium hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+            >
+              Go home
+            </a>
+          </div>
         </div>
       </body>
     </html>

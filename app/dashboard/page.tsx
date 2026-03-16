@@ -127,7 +127,7 @@ export default async function DashboardPage({
                   {avgScore ?? '—'}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-zinc-500 mt-1">
-                  Avg score
+                  Average score
                   {trendScores.length >= 2 && (() => {
                     const delta = trendScores[trendScores.length - 1] - trendScores[0];
                     if (delta === 0) return null;

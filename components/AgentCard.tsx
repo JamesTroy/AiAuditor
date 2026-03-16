@@ -130,7 +130,7 @@ export default memo(function AgentCard({ agent, href, index = 0, onEdit, onDelet
         </h3>
         <p className="text-gray-600 dark:text-zinc-400 text-sm sm:text-base leading-relaxed">{agent.description}</p>
         <div className={`mt-4 text-xs font-medium uppercase tracking-widest ${accentTextClass} flex items-center gap-1`}>
-          Start audit <span className="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
+          Run this audit <span className="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
         </div>
       </div>
 

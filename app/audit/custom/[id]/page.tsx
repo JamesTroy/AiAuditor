@@ -48,7 +48,7 @@ export default function CustomAgentPage() {
       <div className="max-w-4xl mx-auto">
         {/* Breadcrumb */}
         <nav className="text-xs text-gray-400 dark:text-zinc-500 mb-6 flex items-center gap-1.5">
-          <Link href="/" className="hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">Audit Studio</Link>
+          <Link href="/" className="hover:text-gray-600 dark:hover:text-zinc-400 transition-colors">Home</Link>
           <span>/</span>
           <span className="text-purple-400">Custom</span>
           <span>/</span>
@@ -61,7 +61,7 @@ export default function CustomAgentPage() {
           <h1 className="text-3xl font-bold mb-2">{agent.name}</h1>
           {agent.description && <p className="text-gray-600 dark:text-zinc-400">{agent.description}</p>}
           <p className="text-gray-500 dark:text-zinc-500 text-xs mt-2">
-            Custom audits use your own system prompt sent to the Anthropic API. Results stream in real-time and are stored in your browser.
+            Custom audits use your own prompt to analyze code. Results stream in real time and are stored in your browser.
           </p>
           <SystemPromptViewer prompt={agent.systemPrompt} />
         </div>
