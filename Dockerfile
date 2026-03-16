@@ -45,4 +45,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "echo '[DEBUG] Env vars present at runtime:' && env | grep -E '^(BETTER_AUTH|DATABASE_URL|ANTHROPIC|HEALTH|RESEND|REVALIDATION|API_ACCESS|TOTP|NEXT_PUBLIC|EMAIL_FROM)' | sed 's/=.*/=***/' && node server.js"]
