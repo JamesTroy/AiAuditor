@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { db } from '@/lib/db';
 import { audit } from '@/lib/auth-schema';
 import { eq, desc, lt, count, and, isNotNull } from 'drizzle-orm';
+import { unstable_cache } from 'next/cache';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -40,16 +41,29 @@ export default async function DashboardPage({
     ? and(eq(audit.userId, session.user.id), lt(audit.createdAt, cursorDate))
     : eq(audit.userId, session.user.id);
 
-  const [totalResult, allScoredAudits, rawAudits] = await Promise.all([
-    db.select({ value: count() })
-      .from(audit)
-      .where(eq(audit.userId, session.user.id)),
-    // PERF-030: Only fetch score + createdAt, not the full result column.
-    db.select({ score: audit.score, createdAt: audit.createdAt })
-      .from(audit)
-      .where(and(eq(audit.userId, session.user.id), eq(audit.status, 'completed'), isNotNull(audit.score)))
-      .orderBy(desc(audit.createdAt))
-      .limit(200),
+  // PERF-031: Cache aggregate stats (count + scores) with 60s TTL.
+  // Paginated list is NOT cached since it depends on cursor.
+  const getCachedStats = unstable_cache(
+    async (userId: string) => {
+      const [totalResult, allScoredAudits] = await Promise.all([
+        db.select({ value: count() })
+          .from(audit)
+          .where(eq(audit.userId, userId)),
+        db.select({ score: audit.score, createdAt: audit.createdAt })
+          .from(audit)
+          .where(and(eq(audit.userId, userId), eq(audit.status, 'completed'), isNotNull(audit.score)))
+          .orderBy(desc(audit.createdAt))
+          .limit(200),
+      ]);
+      return { totalResult, allScoredAudits };
+    },
+    ['dashboard-stats'],
+    { revalidate: 60, tags: [`dashboard-${session.user.id}`] },
+  );
+
+  const [{ totalResult, allScoredAudits }, rawAudits] = await Promise.all([
+    getCachedStats(session.user.id),
+    // PERF-030: Paginated list runs fresh (cursor-dependent).
     db.select()
       .from(audit)
       .where(paginationWhere)

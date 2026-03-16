@@ -7,9 +7,14 @@
 //   Blocks javascript: and data: URIs that could be injected via LLM output.
 // - Images: disabled entirely — audit results don't need images, and this
 //   eliminates the model-output image-src exfiltration vector.
-import React from 'react';
-import ReactMarkdown from 'react-markdown';
+'use client';
+
+import React, { lazy, Suspense } from 'react';
 import type { Components } from 'react-markdown';
+
+// PERF-022: Lazy-load react-markdown (~45KB gzipped). During streaming the UI
+// uses a <pre> tag, so this module is only needed after audit completion.
+const ReactMarkdown = lazy(() => import('react-markdown'));
 
 const DISALLOWED_ELEMENTS = ['script', 'iframe', 'object', 'embed', 'form'];
 
@@ -78,14 +83,16 @@ interface Props {
 /** Drop-in replacement for ReactMarkdown with all security settings applied. */
 export default function SafeMarkdown({ children, className }: Props) {
   return (
-    <ReactMarkdown
-      disallowedElements={DISALLOWED_ELEMENTS}
-      unwrapDisallowed
-      components={components}
-      className={className}
-    >
-      {children}
-    </ReactMarkdown>
+    <Suspense fallback={<pre className="whitespace-pre-wrap font-mono text-sm">{children}</pre>}>
+      <ReactMarkdown
+        disallowedElements={DISALLOWED_ELEMENTS}
+        unwrapDisallowed
+        components={components}
+        className={className}
+      >
+        {children}
+      </ReactMarkdown>
+    </Suspense>
   );
 }
 

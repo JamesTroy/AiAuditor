@@ -170,10 +170,13 @@ export function detectAgents(input: string): Detection {
     }
   }
 
-  // Check patterns
-  for (const rule of PATTERN_RULES) {
-    if (rule.pattern.test(sample)) {
-      for (const tag of rule.tags) detectedTags.add(tag);
+  // PERF-NEW-01: Skip expensive pattern rules if we already have a confident
+  // detection from language + framework rules (≥4 tags means strong signal).
+  if (detectedTags.size < 4) {
+    for (const rule of PATTERN_RULES) {
+      if (rule.pattern.test(sample)) {
+        for (const tag of rule.tags) detectedTags.add(tag);
+      }
     }
   }
 

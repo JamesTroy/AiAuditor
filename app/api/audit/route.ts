@@ -10,6 +10,7 @@ import { extractScore } from '@/lib/extractScore';
 import { db } from '@/lib/db';
 import { audit as auditTable } from '@/lib/auth-schema';
 import { eq, and, lt } from 'drizzle-orm';
+import { revalidateTag } from 'next/cache';
 
 // STALE-001: Mark 'running' audits older than 30 min as 'failed'.
 // Streams that crash or server restarts leave records stuck in 'running' forever.
@@ -102,11 +103,17 @@ function makeStream(
   systemPrompt: string,
   safeInput: string,
   logMeta: Record<string, unknown>,
-  auditRecord?: { id: string; startedAt: number },
+  auditRecord?: { id: string; startedAt: number; userId?: string },
+  requestSignal?: AbortSignal,
 ): ReadableStream {
+  // PERF-NEW-07: Combine client disconnect signal with hard timeout so that
+  // abandoned audits stop consuming Anthropic API tokens immediately.
   const timeoutSignal = AbortSignal.timeout(STREAM_TIMEOUT_MS);
+  const combinedSignal = requestSignal
+    ? AbortSignal.any([timeoutSignal, requestSignal])
+    : timeoutSignal;
   const upstream = anthropicProvider.streamAudit(systemPrompt, safeInput, {
-    signal: timeoutSignal,
+    signal: combinedSignal,
   });
   // PERF-NEW-03: Per-chunk read timeout prevents stalled streams from holding
   // serverless functions open indefinitely if the upstream connection hangs.
@@ -144,6 +151,10 @@ function makeStream(
               })
               .where(eq(auditTable.id, auditRecord.id));
             log('info', 'audit_saved', { requestId: logMeta.requestId, auditId: auditRecord.id });
+            // PERF-031: Invalidate dashboard cache so user sees fresh stats.
+            if (auditRecord.userId) {
+              try { revalidateTag(`dashboard-${auditRecord.userId}`); } catch { /* best-effort */ }
+            }
           } catch (err) {
             log('error', 'audit_save_failed', { requestId: logMeta.requestId, auditId: auditRecord.id, error: String(err) });
           }
@@ -323,7 +334,7 @@ export async function POST(req: NextRequest) {
         input: data.input.slice(0, 10_000), // store first 10K chars of input
         status: 'running',
       });
-      return { id, startedAt: now };
+      return { id, startedAt: now, userId: userId ?? undefined };
     } catch (err) {
       log('error', 'audit_record_create_failed', { requestId, error: String(err) });
       return undefined;
@@ -342,7 +353,7 @@ export async function POST(req: NextRequest) {
       remaining: rl.remaining,
     });
     return new Response(
-      makeStream(guardedPrompt, safeInput, { requestId, ip: anonIp, agentType: 'custom' }, auditRecord),
+      makeStream(guardedPrompt, safeInput, { requestId, ip: anonIp, agentType: 'custom' }, auditRecord, req.signal),
       { headers: { ...STREAM_HEADERS, ...rl.headers, 'X-Request-Id': requestId } },
     );
   }
@@ -365,7 +376,7 @@ export async function POST(req: NextRequest) {
     remaining: rl.remaining,
   });
   return new Response(
-    makeStream(agent.systemPrompt, safeInput, { requestId, ip: anonIp, agentType: data.agentType }, auditRecord),
+    makeStream(agent.systemPrompt, safeInput, { requestId, ip: anonIp, agentType: data.agentType }, auditRecord, req.signal),
     { headers: { ...STREAM_HEADERS, ...rl.headers, 'X-Request-Id': requestId } },
   );
 }
