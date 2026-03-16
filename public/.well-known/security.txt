@@ -1,0 +1,7 @@
+# Security policy for claudit.consulting
+# https://securitytxt.org/ — RFC 9116
+
+Contact: mailto:security@claudit.consulting
+Preferred-Languages: en
+Canonical: https://claudit.consulting/.well-known/security.txt
+Expires: 2027-03-16T00:00:00.000Z

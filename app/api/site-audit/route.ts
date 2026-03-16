@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { fetchUrlLimiter } from '@/lib/rateLimit';
 import { API_RESPONSE_HEADERS, ALLOWED_ORIGINS } from '@/lib/config/apiHeaders';
 import { cachedFetch } from '@/lib/cache';
+import { validateUrlForSSRF } from '@/lib/ssrf';
 
 export const runtime = 'nodejs';
 
@@ -65,29 +66,97 @@ async function fetchLiveHeaders(
   return { headers, nonces, html: text };
 }
 
-/** Build a context block summarizing server-side security posture. */
+// ── SPA / Architecture Detection ──────────────────────────────────────────
+// Detects client-side SPA frameworks from HTML markers so audit agents can
+// calibrate their findings for the actual architecture instead of penalizing
+// an HTML shell for missing SSR features.
+
+interface ArchitectureInfo {
+  isSPA: boolean;
+  framework: string | null;
+  signals: string[];
+}
+
+function detectArchitecture(html: string): ArchitectureInfo {
+  const signals: string[] = [];
+  let framework: string | null = null;
+
+  // React / Next.js
+  if (html.includes('__next') || html.includes('_next/static')) {
+    framework = 'Next.js';
+    signals.push('Next.js build artifacts detected (_next/static)');
+  } else if (html.includes('data-reactroot') || html.includes('__NEXT_DATA__') || html.includes('react-root')) {
+    framework = 'React';
+    signals.push('React root element detected');
+  }
+
+  // Vue / Nuxt
+  if (html.includes('__nuxt') || html.includes('_nuxt/')) {
+    framework = 'Nuxt';
+    signals.push('Nuxt build artifacts detected');
+  } else if (html.includes('data-v-') || html.includes('id="app"') && html.includes('vue')) {
+    framework = framework ?? 'Vue';
+    signals.push('Vue markers detected');
+  }
+
+  // Angular
+  if (html.includes('ng-version') || html.includes('ng-app') || html.includes('angular')) {
+    framework = framework ?? 'Angular';
+    signals.push('Angular markers detected');
+  }
+
+  // Svelte / SvelteKit
+  if (html.includes('__sveltekit') || html.includes('svelte')) {
+    framework = framework ?? 'SvelteKit';
+    signals.push('SvelteKit markers detected');
+  }
+
+  // Generic SPA shell detection: mostly empty <body> with large JS bundles
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  const bodyContent = bodyMatch?.[1] ?? '';
+  const textContent = bodyContent.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const scriptCount = (html.match(/<script[\s>]/g) ?? []).length;
+
+  if (textContent.length < 200 && scriptCount > 3) {
+    signals.push(`Thin HTML shell (${textContent.length} chars of text content, ${scriptCount} script tags) — likely client-rendered SPA`);
+  }
+
+  // Root mount points
+  if (/<div\s+id=["'](root|app|__next)["'][^>]*>\s*<\/div>/i.test(html)) {
+    signals.push('Empty root mount point detected (client-side hydration target)');
+  }
+
+  const isSPA = signals.length > 0 && (textContent.length < 500 || framework !== null);
+
+  return { isSPA, framework, signals };
+}
+
+/** Build a context block summarizing server-side security posture and architecture. */
 function buildServerContext(
   url: string,
   headers: Record<string, string>,
   nonceRotates: boolean | null,
   nonce1: string[],
   nonce2: string[],
+  html: string,
 ): string {
+  const arch = detectArchitecture(html);
+
   const lines: string[] = [
-    '<!-- SERVER CONTEXT (collected by Claudit crawler — NOT visible in static HTML) -->',
-    '<!--',
-    `  URL: ${url}`,
-    '  The following HTTP response headers were observed on a live request:',
+    '--- SITE AUDIT CONTEXT (collected by Claudit crawler) ---',
+    '',
+    `URL: ${url}`,
+    '',
+    '=== HTTP Response Headers ===',
     '',
   ];
 
   if (Object.keys(headers).length === 0) {
-    lines.push('  (No security-relevant headers detected)');
+    lines.push('(No security-relevant headers detected)');
   } else {
     for (const [name, value] of Object.entries(headers)) {
-      // Truncate very long CSP headers to avoid bloating the context
       const display = value.length > 500 ? value.slice(0, 500) + '…' : value;
-      lines.push(`  ${name}: ${display}`);
+      lines.push(`${name}: ${display}`);
     }
   }
 
@@ -95,29 +164,87 @@ function buildServerContext(
 
   // CSP nonce rotation verification
   if (nonceRotates === true) {
-    lines.push('  CSP Nonce Verification: PASS — nonces rotate between requests.');
-    lines.push(`    Request 1 nonces: ${nonce1.join(', ') || '(none found)'}`);
-    lines.push(`    Request 2 nonces: ${nonce2.join(', ') || '(none found)'}`);
-    lines.push('    The nonce values differ, confirming per-request generation.');
-    lines.push('    DO NOT flag the nonce as static/reused — it is correctly implemented.');
+    lines.push('CSP Nonce Verification: PASS — nonces rotate between requests.');
+    lines.push(`  Request 1 nonces: ${nonce1.join(', ') || '(none found)'}`);
+    lines.push(`  Request 2 nonces: ${nonce2.join(', ') || '(none found)'}`);
   } else if (nonceRotates === false) {
-    lines.push('  CSP Nonce Verification: FAIL — same nonce appeared in both requests.');
-    lines.push(`    Nonce value(s): ${nonce1.join(', ')}`);
-    lines.push('    This suggests the nonce is static or the page is cached with a fixed nonce.');
+    lines.push('CSP Nonce Verification: FAIL — same nonce appeared in both requests.');
+    lines.push(`  Nonce value(s): ${nonce1.join(', ')}`);
   } else if (nonce1.length === 0) {
-    lines.push('  CSP Nonce Verification: N/A — no nonce attributes found in HTML.');
+    lines.push('CSP Nonce Verification: N/A — no nonce attributes found in HTML.');
   }
 
+  // ── Architecture detection ──────────────────────────────────────
   lines.push('');
-  lines.push('  IMPORTANT FOR AUDITORS:');
-  lines.push('  - Use the HTTP headers above to assess security posture. Do NOT flag');
-  lines.push('    missing headers based on HTML alone — check the headers above first.');
-  lines.push('  - If CSP nonce rotation is PASS, do NOT flag nonces as static/leaked.');
-  lines.push('  - SRI (integrity attributes) on script tags may be partially applied by');
-  lines.push('    the framework — check if SRI is configured server-side before flagging.');
-  lines.push('  - The HTML below is a single response snapshot. Server-side behavior');
-  lines.push('    (middleware, dynamic rendering) cannot be fully assessed from HTML alone.');
-  lines.push('-->');
+  lines.push('=== Architecture Detection ===');
+  lines.push('');
+  if (arch.isSPA) {
+    lines.push(`Architecture: Single-Page Application (SPA)${arch.framework ? ` — ${arch.framework}` : ''}`);
+    lines.push('Signals:');
+    for (const sig of arch.signals) {
+      lines.push(`  - ${sig}`);
+    }
+    lines.push('');
+    lines.push('SPA AUDIT GUIDANCE:');
+    lines.push('This page is a client-rendered SPA. The HTML you see is a thin shell —');
+    lines.push('most content, routing, and interactivity are rendered client-side by JavaScript.');
+    lines.push('Adjust your analysis accordingly:');
+    lines.push('  - Do NOT penalize for missing server-rendered content, inline critical CSS,');
+    lines.push('    <noscript> tags, or server-side meta tags — these are expected in SPAs.');
+    lines.push('  - Do NOT flag empty <body> or missing text content as an issue.');
+    lines.push('  - PWA manifest, service worker, and offline support are optional features,');
+    lines.push('    not requirements — score them as suggestions, not deficiencies.');
+    lines.push('  - SEO: note that SPAs rely on client-side rendering or pre-rendering;');
+    lines.push('    missing meta tags in the HTML shell may be injected by the JS framework.');
+    lines.push('  - Mobile: if the SPA has explicit mobile gating (e.g., a component that');
+    lines.push('    blocks mobile access), mobile UX findings are architecturally mitigated.');
+    lines.push('  - Focus your analysis on what IS present: JS bundles, security headers,');
+    lines.push('    authentication patterns, API endpoints, and client-side security.');
+  } else {
+    lines.push('Architecture: Server-rendered / traditional (SSR or static HTML)');
+    if (arch.framework) {
+      lines.push(`Framework detected: ${arch.framework}`);
+    }
+    if (arch.signals.length > 0) {
+      lines.push('Signals:');
+      for (const sig of arch.signals) {
+        lines.push(`  - ${sig}`);
+      }
+    }
+  }
+
+  // ── Finding classification guidance ──────────────────────────────
+  lines.push('');
+  lines.push('=== Finding Classification ===');
+  lines.push('');
+  lines.push('Classify every finding into exactly one of these categories:');
+  lines.push('  [VULNERABILITY] — Exploitable security issue with a real attack vector');
+  lines.push('  [DEFICIENCY]    — Measurable gap from best practice that has real impact');
+  lines.push('  [SUGGESTION]    — Improvement opportunity; nice-to-have, not a deficiency');
+  lines.push('  [NOT APPLICABLE] — Finding does not apply to this architecture (e.g.,');
+  lines.push('                     missing SSR content on an SPA, missing PWA manifest');
+  lines.push('                     on a developer tool)');
+  lines.push('');
+  lines.push('Prefix each finding title with its classification tag, e.g.:');
+  lines.push('  - **[VULNERABILITY] [CRITICAL]** Missing CSRF protection on login form');
+  lines.push('  - **[SUGGESTION] [LOW]** Add preconnect hints for third-party origins');
+  lines.push('  - **[NOT APPLICABLE]** No critical CSS inlined (SPA — content is JS-rendered)');
+
+  // ── Scoring guidance ──────────────────────────────────────────
+  lines.push('');
+  lines.push('=== Scoring Calibration ===');
+  lines.push('');
+  lines.push('When computing the Overall Score:');
+  lines.push('  - Only [VULNERABILITY] and [DEFICIENCY] findings should lower the score.');
+  lines.push('  - [SUGGESTION] findings should NOT reduce the score — they are opportunities.');
+  lines.push('  - [NOT APPLICABLE] findings MUST NOT affect the score in any way.');
+  lines.push('  - A site with no vulnerabilities and only suggestions should score 7+/10.');
+  lines.push('  - A site with strong security headers, proper auth, and good practices');
+  lines.push('    should not score below 5/10 because of missing optional features.');
+  lines.push('  - Score what IS there, not what COULD be there.');
+
+  lines.push('');
+  lines.push('--- END SITE AUDIT CONTEXT ---');
   lines.push('');
 
   return lines.join('\n');
@@ -170,6 +297,12 @@ export async function POST(req: NextRequest) {
     return new Response('Only HTTP/HTTPS URLs are supported', { status: 400 });
   }
 
+  // SSRF-001: Validate URL against private/internal IP ranges before fetching.
+  const ssrfError = await validateUrlForSSRF(url);
+  if (ssrfError) {
+    return new Response(ssrfError, { status: 400 });
+  }
+
   try {
     const signal = AbortSignal.timeout(15_000);
 
@@ -210,10 +343,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Prepend server context so audit agents can see HTTP headers + nonce status.
-    const context = buildServerContext(url, req1.headers, nonceRotates, req1.nonces, nonce2);
+    // PROMPT-INJ-001: Strip HTML comments from fetched content before LLM ingestion.
+    // Attackers embed adversarial instructions in HTML comments to manipulate audit output.
+    const sanitizedData = data.replace(/<!--[\s\S]*?-->/g, '');
 
-    return new Response(context + data, {
+    // Prepend server context so audit agents can see HTTP headers, nonce status,
+    // architecture detection, finding classification rules, and scoring guidance.
+    const context = buildServerContext(url, req1.headers, nonceRotates, req1.nonces, nonce2, data);
+
+    return new Response(context + sanitizedData, {
       headers: {
         ...API_RESPONSE_HEADERS,
         'Content-Type': 'text/plain; charset=utf-8',

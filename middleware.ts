@@ -1,21 +1,13 @@
-// VULN-007: Nonce-based Content Security Policy.
+// Nonce-based Content Security Policy + security headers.
 //
-// A static CSP in next.config.ts must use 'unsafe-inline' because Next.js
-// injects inline hydration scripts at runtime that cannot be hashed ahead of
-// time. A per-request nonce solves this: each response carries a unique nonce
-// that is stamped on those inline scripts by the Next.js runtime (via the
-// x-nonce request header convention), removing the need for 'unsafe-inline'
-// in script-src for modern browsers.
+// Per-request nonce removes the need for 'unsafe-inline' in both script-src
+// and style-src. The nonce is forwarded to the Next.js runtime via x-nonce
+// header so it stamps inline hydration scripts and styles automatically.
 //
 // Policy notes:
-// - 'strict-dynamic': modern browsers propagate nonce trust to dynamically
-//   loaded scripts, enabling Next.js chunk loading without an explicit hash.
-// - 'unsafe-inline': kept as a fallback for browsers that don't support nonces
-//   (they ignore 'strict-dynamic'; modern browsers ignore 'unsafe-inline' when
-//   a nonce or 'strict-dynamic' is present, so there is no net regression).
+// - 'strict-dynamic': propagates nonce trust to dynamically loaded scripts.
 // - 'unsafe-eval': required only in dev for webpack eval-source-maps.
-// - style-src still requires 'unsafe-inline' (Tailwind + Next.js inline styles;
-//   removing it would require a separate style nonce — out of scope here).
+// - style-src uses nonce instead of 'unsafe-inline' (VULN-003).
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getSessionCookie } from 'better-auth/cookies';
@@ -26,16 +18,22 @@ const PROTECTED_PREFIXES = ['/dashboard', '/settings', '/admin'];
 // Routes that authenticated users should be redirected away from
 const AUTH_ROUTES = ['/login', '/signup', '/forgot-password'];
 
-// PERF-013: Pre-compute static CSP parts at module scope (runs once at cold start).
 const isDev = process.env.NODE_ENV === 'development';
 const hasPlausible = !!process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
 
-const CSP_BEFORE_NONCE = "default-src 'self'; script-src 'nonce-";
-const CSP_AFTER_NONCE = [
-  "' 'strict-dynamic' 'unsafe-inline'",
+// PERF-013 / CRYPTO-002 / VULN-003: Pre-compute static CSP fragments.
+// The nonce is inserted at two points: script-src and style-src.
+// 'unsafe-inline' removed from both — nonce-aware browsers use nonces,
+// and legacy browsers that don't understand nonces get a stricter policy.
+const CSP_SCRIPT_PRE = "default-src 'self'; script-src 'nonce-";
+const CSP_SCRIPT_POST = [
+  "' 'strict-dynamic'",
   isDev ? " 'unsafe-eval'" : '',
   hasPlausible ? ' https://plausible.io' : '',
-  "; style-src 'self' 'unsafe-inline'",
+].join('');
+const CSP_STYLE_PRE = "; style-src 'self' 'nonce-";
+const CSP_TAIL = [
+  "'",
   "; font-src 'self'",
   "; img-src 'self' data: blob: https://avatars.githubusercontent.com https://lh3.googleusercontent.com",
   `; connect-src 'self'${hasPlausible ? ' https://plausible.io' : ''}`,
@@ -77,11 +75,15 @@ export function middleware(request: NextRequest) {
   // Let the login page handle already-authenticated users client-side instead.
 
   // ── CSP nonce ──────────────────────────────────────────────────
-  // PERF-020: Use UUID directly as nonce — 122 bits of entropy is sufficient.
-  const nonce = crypto.randomUUID();
+  // CRYPTO-003: Use crypto.getRandomValues for 128-bit nonce in base64url format
+  // (more compact and slightly stronger than UUID v4's 122 bits).
+  const nonceBytes = new Uint8Array(16);
+  crypto.getRandomValues(nonceBytes);
+  const nonce = btoa(String.fromCharCode(...nonceBytes))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-  // PERF-013: Per-request cost is one string concatenation instead of array allocation + 12 joins.
-  const csp = CSP_BEFORE_NONCE + nonce + CSP_AFTER_NONCE;
+  // PERF-013: Build CSP with nonce in both script-src and style-src.
+  const csp = CSP_SCRIPT_PRE + nonce + CSP_SCRIPT_POST + CSP_STYLE_PRE + nonce + CSP_TAIL;
 
   // Forward nonce to the Next.js runtime — it stamps this value onto the
   // inline hydration scripts it generates, making them pass the nonce check.
@@ -92,13 +94,29 @@ export function middleware(request: NextRequest) {
     request: { headers: requestHeaders },
   });
 
+  // ── Security headers ────────────────────────────────────────
   response.headers.set('Content-Security-Policy', csp);
   response.headers.set('Report-To', REPORT_TO_HEADER);
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  // VULN-002: Expanded Permissions-Policy — deny all device APIs not used by the app.
+  response.headers.set(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), magnetometer=(), gyroscope=(), accelerometer=(), autoplay=(), encrypted-media=(), picture-in-picture=()',
+  );
   response.headers.set('X-Content-Type-Options', 'nosniff');
   // SESS-004: Defense-in-depth for legacy browsers that don't support frame-ancestors.
   response.headers.set('X-Frame-Options', 'DENY');
+  // VULN-002: Suppress infrastructure disclosure (Railway sets `Server: railway-edge`).
+  response.headers.set('Server', '');
+  // VULN-008: Explicitly disable XSS auditor — it causes more issues than it prevents
+  // in modern browsers and can be exploited for information leakage.
+  response.headers.set('X-XSS-Protection', '0');
+  // COOP/CORP: Cross-origin isolation headers for defense-in-depth.
+  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+  response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
+  // Request correlation ID for tracing and debugging.
+  const requestId = crypto.randomUUID();
+  response.headers.set('X-Request-Id', requestId);
   // SESS-005: HSTS — prevent SSL stripping attacks.
   if (!isDev) {
     response.headers.set(
