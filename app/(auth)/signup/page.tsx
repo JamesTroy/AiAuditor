@@ -33,14 +33,14 @@ export default function SignupPage() {
         name,
         email,
         password,
-        callbackURL: '/',
+        callbackURL: '/dashboard',
       });
 
       if (authError) {
         setError(authError.message ?? 'Something went wrong');
         setLoading(false);
       } else {
-        router.push('/');
+        router.push('/dashboard');
         router.refresh();
       }
     } catch (err) {
