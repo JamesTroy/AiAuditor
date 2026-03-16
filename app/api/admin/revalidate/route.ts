@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { agents } from '@/lib/agents';
+import { agents } from '@/lib/agents/registry';
 import { API_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
 
 // CACHE-011/021: Admin endpoint for on-demand cache invalidation.

@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { getAgent, agents } from '@/lib/agents';
+import { getAgent, agents } from '@/lib/agents/registry';
 
 export const alt = 'Claudit Audit';
 export const size = { width: 1200, height: 630 };

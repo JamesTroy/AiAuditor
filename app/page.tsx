@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { agents } from '@/lib/agents';
+import { agents } from '@/lib/agents/registry';
 import Logo from '@/components/Logo';
 import HomeSearch from '@/components/HomeSearch';
 

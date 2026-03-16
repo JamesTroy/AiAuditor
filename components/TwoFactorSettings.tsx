@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
+import dynamic from 'next/dynamic';
 import { authClient } from '@/lib/auth-client';
+
+const QRCodeSVG = dynamic(() => import('qrcode.react').then((m) => m.QRCodeSVG), { ssr: false });
 
 type Step = 'idle' | 'loading' | 'setup' | 'verify' | 'enabled' | 'error';
 

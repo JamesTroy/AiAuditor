@@ -102,6 +102,10 @@ export const audit = pgTable('audit', {
 }, (t) => [
   index('idx_audit_userId_createdAt').on(t.userId, t.createdAt),
   index('idx_audit_status').on(t.status),
+  // PERF-018: Composite index covering the 3 dashboard queries (userId + status + createdAt).
+  index('idx_audit_user_status_created').on(t.userId, t.status, t.createdAt),
+  // PERF-018: Index for stale audit cleanup query.
+  index('idx_audit_status_updated').on(t.status, t.updatedAt),
   check('audit_status_check', sql`${t.status} IN ('pending', 'running', 'completed', 'failed')`),
   check('audit_score_check', sql`${t.score} IS NULL OR (${t.score} >= 0 AND ${t.score} <= 100)`),
   check('audit_durationMs_check', sql`${t.durationMs} IS NULL OR ${t.durationMs} >= 0`),

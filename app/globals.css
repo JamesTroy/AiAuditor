@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+html { scroll-behavior: smooth; }
+
 /* ─── Keyframes ──────────────────────────────────────────────── */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(8px); }
@@ -73,6 +75,12 @@ html {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ─── PERF-026: Defer rendering of off-screen agent cards ──── */
+.agent-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 200px;
 }
 
 /* ─── Print ──────────────────────────────────────────────────── */

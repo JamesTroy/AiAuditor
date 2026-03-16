@@ -134,14 +134,29 @@ const TAG_TO_AGENTS: Record<string, string[]> = {
 // Always-relevant agents added when any code is detected
 const UNIVERSAL_AGENTS = ['security', 'code-quality'];
 
+// PERF-003: Truncate input before regex battery — most language signals appear
+// in imports/headers (first 1KB) or file-type markers (last 500B).
+const SAMPLE_HEAD = 1_000;
+const SAMPLE_TAIL = 500;
+
+function sampleInput(input: string): string {
+  if (input.length <= SAMPLE_HEAD + SAMPLE_TAIL) return input;
+  return input.slice(0, SAMPLE_HEAD) + input.slice(-SAMPLE_TAIL);
+}
+
 export function detectAgents(input: string): Detection {
+  if (input.length < 10) {
+    return { language: null, framework: null, patterns: [], recommendedAgents: [] };
+  }
+
+  const sample = sampleInput(input);
   const detectedTags = new Set<string>();
   let language: string | null = null;
   let framework: string | null = null;
 
   // Check language
   for (const rule of LANGUAGE_RULES) {
-    if (rule.pattern.test(input)) {
+    if (rule.pattern.test(sample)) {
       for (const tag of rule.tags) detectedTags.add(tag);
       if (!language) language = rule.tags[0];
     }
@@ -149,7 +164,7 @@ export function detectAgents(input: string): Detection {
 
   // Check frameworks
   for (const rule of FRAMEWORK_RULES) {
-    if (rule.pattern.test(input)) {
+    if (rule.pattern.test(sample)) {
       for (const tag of rule.tags) detectedTags.add(tag);
       if (!framework) framework = rule.tags[0];
     }
@@ -157,7 +172,7 @@ export function detectAgents(input: string): Detection {
 
   // Check patterns
   for (const rule of PATTERN_RULES) {
-    if (rule.pattern.test(input)) {
+    if (rule.pattern.test(sample)) {
       for (const tag of rule.tags) detectedTags.add(tag);
     }
   }

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { AgentConfig } from '@/lib/types';
 import SafeMarkdown from '@/components/markdownComponents';
-import { agents } from '@/lib/agents';
+import { agents } from '@/lib/agents/registry';
 import { setChainInput, consumeChainInput } from '@/lib/session';
 import { ALLOWED_URL_DESCRIPTION } from '@/lib/config/urlAllowlist';
 import { useAuditSession } from '@/lib/hooks/useAuditSession';
@@ -57,6 +57,9 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
   const chatAbortRef = useRef<AbortController | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // PERF-023: Debounce input for detectAgents to avoid 55 regex tests on every keystroke.
+  const [debouncedInput, setDebouncedInput] = useState('');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chainRef = useRef<HTMLDivElement>(null);
   const resultEndRef = useRef<HTMLDivElement>(null);
@@ -92,6 +95,12 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
     const chained = consumeChainInput();
     if (chained) setInput(chained);
   }, []);
+
+  // PERF-023: Debounce input for detectAgents (150ms).
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedInput(input), 150);
+    return () => clearTimeout(id);
+  }, [input]);
 
   // Close chain dropdown on outside click
   useEffect(() => {
@@ -372,10 +381,11 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
   }, [chatMessages]);
 
   // Auto-detect language/framework and recommend other agents
+  // PERF-023: Use debounced input to avoid running 55 regex tests on every keystroke.
   const detection = useMemo(() => {
-    if (input.length < 50) return null;
-    return detectAgents(input);
-  }, [input]);
+    if (debouncedInput.length < 50) return null;
+    return detectAgents(debouncedInput);
+  }, [debouncedInput]);
 
   const suggestedAgents = useMemo(() => {
     if (!detection || detection.recommendedAgents.length === 0) return [];

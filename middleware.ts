@@ -26,6 +26,35 @@ const PROTECTED_PREFIXES = ['/dashboard', '/settings', '/admin'];
 // Routes that authenticated users should be redirected away from
 const AUTH_ROUTES = ['/login', '/signup', '/forgot-password'];
 
+// PERF-013: Pre-compute static CSP parts at module scope (runs once at cold start).
+const isDev = process.env.NODE_ENV === 'development';
+const hasPlausible = !!process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
+
+const CSP_BEFORE_NONCE = "default-src 'self'; script-src 'nonce-";
+const CSP_AFTER_NONCE = [
+  "' 'strict-dynamic' 'unsafe-inline'",
+  isDev ? " 'unsafe-eval'" : '',
+  hasPlausible ? ' https://plausible.io' : '',
+  "; style-src 'self' 'unsafe-inline'",
+  "; font-src 'self'",
+  "; img-src 'self' data: blob: https://avatars.githubusercontent.com https://lh3.googleusercontent.com",
+  `; connect-src 'self'${hasPlausible ? ' https://plausible.io' : ''}`,
+  "; frame-ancestors 'none'",
+  "; object-src 'none'",
+  "; base-uri 'self'",
+  "; form-action 'self'",
+  '; upgrade-insecure-requests',
+  '; report-uri /api/csp-report',
+  '; report-to csp-endpoint',
+].join('');
+
+// PERF-021: Pre-serialize Report-To header at module scope.
+const REPORT_TO_HEADER = JSON.stringify({
+  group: 'csp-endpoint',
+  max_age: 86400,
+  endpoints: [{ url: '/api/csp-report' }],
+});
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -47,34 +76,11 @@ export function middleware(request: NextRequest) {
   }
 
   // ── CSP nonce ──────────────────────────────────────────────────
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
-  const isDev = process.env.NODE_ENV === 'development';
+  // PERF-020: Use UUID directly as nonce — 122 bits of entropy is sufficient.
+  const nonce = crypto.randomUUID();
 
-  // Allow Plausible analytics if configured (privacy-friendly, no cookies).
-  const hasPlausible = !!process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
-
-  const csp = [
-    "default-src 'self'",
-    [
-      'script-src',
-      `'nonce-${nonce}'`,
-      "'strict-dynamic'",
-      "'unsafe-inline'", // ignored by nonce-aware browsers; fallback for legacy
-      ...(isDev ? ["'unsafe-eval'"] : []),
-      ...(hasPlausible ? ['https://plausible.io'] : []),
-    ].join(' '),
-    "style-src 'self' 'unsafe-inline'",
-    "font-src 'self'",
-    "img-src 'self' data: blob: https://avatars.githubusercontent.com https://lh3.googleusercontent.com",
-    `connect-src 'self'${hasPlausible ? ' https://plausible.io' : ''}`,
-    "frame-ancestors 'none'",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-    'upgrade-insecure-requests',
-    "report-uri /api/csp-report",
-    "report-to csp-endpoint",
-  ].join('; ');
+  // PERF-013: Per-request cost is one string concatenation instead of array allocation + 12 joins.
+  const csp = CSP_BEFORE_NONCE + nonce + CSP_AFTER_NONCE;
 
   // Forward nonce to the Next.js runtime — it stamps this value onto the
   // inline hydration scripts it generates, making them pass the nonce check.
@@ -86,11 +92,7 @@ export function middleware(request: NextRequest) {
   });
 
   response.headers.set('Content-Security-Policy', csp);
-  response.headers.set('Report-To', JSON.stringify({
-    group: 'csp-endpoint',
-    max_age: 86400,
-    endpoints: [{ url: '/api/csp-report' }],
-  }));
+  response.headers.set('Report-To', REPORT_TO_HEADER);
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   response.headers.set('X-Content-Type-Options', 'nosniff');

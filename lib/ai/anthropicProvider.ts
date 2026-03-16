@@ -24,6 +24,20 @@ async function sleep(ms: number) {
   return new Promise<void>((r) => setTimeout(r, ms));
 }
 
+// PERF-036: Sleep with periodic heartbeat to keep the downstream connection alive
+// during retry backoff. Sends SSE-compatible comments that clients will ignore.
+async function sleepWithHeartbeat(ms: number, controller: ReadableStreamDefaultController<Uint8Array>) {
+  const HEARTBEAT_INTERVAL = 1_000;
+  const heartbeat = encoder.encode(': retry-heartbeat\n');
+  let elapsed = 0;
+  while (elapsed < ms) {
+    const wait = Math.min(HEARTBEAT_INTERVAL, ms - elapsed);
+    await sleep(wait);
+    elapsed += wait;
+    try { controller.enqueue(heartbeat); } catch { break; }
+  }
+}
+
 export class AnthropicProvider implements AIProvider {
   private client: Anthropic;
 
@@ -85,7 +99,7 @@ export class AnthropicProvider implements AIProvider {
 
             if (attempt < MAX_RETRIES && isRetryable(err)) {
               const delay = RETRY_BASE_MS * 2 ** (attempt - 1);
-              await sleep(delay);
+              await sleepWithHeartbeat(delay, controller);
               continue;
             }
 
@@ -150,7 +164,7 @@ export class AnthropicProvider implements AIProvider {
 
             if (attempt < MAX_RETRIES && isRetryable(err)) {
               const delay = RETRY_BASE_MS * 2 ** (attempt - 1);
-              await sleep(delay);
+              await sleepWithHeartbeat(delay, controller);
               continue;
             }
 

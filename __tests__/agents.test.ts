@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { agents, getAgent } from '@/lib/agents';
+import { agents, getAgent } from '@/lib/agents/registry';
 import { VALID_AGENT_TYPES } from '@/lib/schemas/auditRequest';
 
 describe('Agent registry', () => {

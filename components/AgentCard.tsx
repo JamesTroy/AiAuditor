@@ -2,7 +2,6 @@
 
 import { memo } from 'react';
 import Link from 'next/link';
-import * as m from 'motion/react-m';
 import { AgentConfig } from '@/lib/types';
 import {
   Hexagon, Lock, TrendingUp, Accessibility, Database, Plug, Container,
@@ -104,16 +103,8 @@ export default memo(function AgentCard({ agent, href, index = 0, onEdit, onDelet
   const cardHref = href ?? `/audit/${agent.id}`;
 
   return (
-    <m.div
-      className={`group relative overflow-hidden border border-gray-200 dark:border-zinc-800 rounded-xl p-6 bg-white/95 dark:bg-zinc-900/80 ${agent.accentClass}`}
-      initial={false}
-      whileHover={{
-        scale: 1.03,
-        borderColor: 'rgba(139, 92, 246, 0.3)',
-        boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.4)',
-        transition: { duration: 0.2, ease: 'easeOut' },
-      }}
-      whileTap={{ scale: 0.98 }}
+    <div
+      className={`agent-card group relative overflow-hidden border border-gray-200 dark:border-zinc-800 rounded-xl p-6 bg-white/95 dark:bg-zinc-900/80 transition-all duration-200 ease-out hover:scale-[1.03] hover:border-violet-500/30 hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.4)] active:scale-[0.98] ${agent.accentClass}`}
     >
       {/* Full-coverage link — sits behind content but covers the entire card */}
       <Link
@@ -174,6 +165,6 @@ export default memo(function AgentCard({ agent, href, index = 0, onEdit, onDelet
           </button>
         )}
       </div>
-    </m.div>
+    </div>
   );
 });

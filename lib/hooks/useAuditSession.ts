@@ -33,6 +33,8 @@ export function useAuditSession(
   const abortRef = useRef<AbortController | null>(null);
   const chunksRef = useRef<string[]>([]);
   const rafRef = useRef<number | null>(null);
+  // PERF-035: Track how many chunks have been rendered to avoid O(total) join per frame.
+  const renderedCountRef = useRef(0);
   // SM-012: Ref-based guard prevents stale closure over status in runAudit.
   const isRunningRef = useRef(false);
   // SM-014: Guard checked inside RAF callback to prevent post-stop writes.
@@ -54,6 +56,7 @@ export function useAuditSession(
     abortRef.current?.abort();
     abortRef.current = new AbortController();
     chunksRef.current = [];
+    renderedCountRef.current = 0;
     isRunningRef.current = true;
     isStoppedRef.current = false;
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
@@ -101,7 +104,13 @@ export function useAuditSession(
           rafRef.current = requestAnimationFrame(() => {
             // SM-014: Skip write if stopped between schedule and execution.
             if (!isStoppedRef.current) {
-              setResult(chunksRef.current.join(''));
+              // PERF-035: Incremental join — only join new chunks, not the full array.
+              const totalChunks = chunksRef.current.length;
+              if (totalChunks > renderedCountRef.current) {
+                const newContent = chunksRef.current.slice(renderedCountRef.current).join('');
+                renderedCountRef.current = totalChunks;
+                setResult(prev => prev + newContent);
+              }
             }
             rafRef.current = null;
           });
@@ -116,6 +125,7 @@ export function useAuditSession(
 
       if (isStoppedRef.current) return;
 
+      // PERF-010: Single join for final result (avoids duplicate O(n) join).
       const fullResult = chunksRef.current.join('');
       setResult(fullResult);
       setStatus('complete');

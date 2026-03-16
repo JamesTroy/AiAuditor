@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { agents, getAgent } from '@/lib/agents';
+import { agents, getAgent } from '@/lib/agents/registry';
 import AuditPageClient from '@/components/AuditPageClient';
 import SystemPromptViewer from '@/components/SystemPromptViewer';
 import PrepPromptBox from '@/components/PrepPromptBox';

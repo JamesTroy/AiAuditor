@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { agents as allAgents } from '@/lib/agents';
+import { agents as allAgents } from '@/lib/agents/registry';
 import SafeMarkdown from '@/components/markdownComponents';
 import { saveAudit } from '@/lib/history';
 import { friendlyError } from '@/lib/friendlyError';
@@ -49,11 +49,9 @@ const DOT_COLORS: Record<string, string> = {
   'text-sky-400': 'bg-sky-500',
 };
 
+// PERF-014: Direct key lookup instead of O(18) iteration with .includes().
 function dotColor(accentClass: string): string {
-  for (const [key, val] of Object.entries(DOT_COLORS)) {
-    if (accentClass.includes(key)) return val;
-  }
-  return 'bg-zinc-500';
+  return DOT_COLORS[accentClass.split(' ').find(cls => cls in DOT_COLORS) ?? ''] ?? 'bg-zinc-500';
 }
 
 export default function SiteAuditPage() {
@@ -65,9 +63,11 @@ export default function SiteAuditPage() {
   const [copied, setCopied] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set(DEFAULT_IDS));
   const [pickerOpen, setPickerOpen] = useState(false);
-  // Explicit index tracking for sequential per-audit calls
-  const [currentAgentIndex, setCurrentAgentIndex] = useState(-1);
+  // PERF-002: Track running/completed per-agent for concurrent execution.
+  const [runningIndices, setRunningIndices] = useState<Set<number>>(new Set());
   const [completedIndices, setCompletedIndices] = useState<Set<number>>(new Set());
+  // For backwards-compat with progress display, derive currentAgentIndex from running set.
+  const currentAgentIndex = runningIndices.size > 0 ? Math.min(...runningIndices) : -1;
   // SM-005: Discriminated union for synthesis state.
   type SynthStatus = 'idle' | 'loading' | 'done' | 'error';
   const [synthesis, setSynthesis] = useState('');
@@ -217,7 +217,7 @@ export default function SiteAuditPage() {
     setLoading(true);
     setResult('');
     setError('');
-    setCurrentAgentIndex(-1);
+    setRunningIndices(new Set());
     setCompletedIndices(new Set());
     // SM-013: Clear synthesis errors from previous run.
     setSynthError('');
@@ -252,32 +252,45 @@ export default function SiteAuditPage() {
 
       const siteContent = await fetchRes.text();
 
-      // Step 2: Run each audit sequentially
-      let accumulated = '';
+      // PERF-002: Run audits concurrently with a concurrency cap.
+      // Each agent writes to its own slot; results are combined in order for display.
+      const CONCURRENCY = 3;
+      const agentResults: string[] = new Array(agentsToRun.length).fill('');
 
-      for (let i = 0; i < agentsToRun.length; i++) {
-        if (abortRef.current.signal.aborted) break;
+      // Simple concurrency limiter (avoids adding p-limit dependency).
+      let activeCount = 0;
+      let nextIndex = 0;
+      const queue: Array<() => void> = [];
 
+      function rebuildResult() {
+        const parts: string[] = [];
+        for (let i = 0; i < agentsToRun.length; i++) {
+          if (agentResults[i]) {
+            const header = `\n\n${'='.repeat(60)}\n## ${agentsToRun[i].name} Audit\n${'='.repeat(60)}\n\n`;
+            parts.push(header + agentResults[i]);
+          }
+        }
+        setResult(parts.join(''));
+      }
+
+      async function runAgent(i: number) {
         const agent = agentsToRun[i];
-        setCurrentAgentIndex(i);
-
-        // Add section header
-        const header = `\n\n${'='.repeat(60)}\n## ${agent.name} Audit\n${'='.repeat(60)}\n\n`;
-        accumulated += header;
-        setResult(accumulated);
+        setRunningIndices((prev) => new Set(prev).add(i));
 
         try {
           const agentResult = await streamSingleAudit(
             agent.id,
             siteContent,
-            abortRef.current.signal,
+            abortRef.current!.signal,
             (chunk) => {
-              accumulated += chunk;
-              setResult(accumulated);
+              agentResults[i] += chunk;
+              rebuildResult();
             },
           );
 
-          // Save to localStorage immediately
+          agentResults[i] = agentResult;
+          rebuildResult();
+
           saveAudit({
             agentId: agent.id,
             agentName: agent.name,
@@ -285,32 +298,49 @@ export default function SiteAuditPage() {
             result: agentResult,
             timestamp: Date.now(),
           });
-
-          setCompletedIndices((prev) => new Set(prev).add(i));
         } catch (err: unknown) {
-          if (err instanceof Error && err.name === 'AbortError') break;
-          // Log error in result and continue to next audit
+          if (err instanceof Error && err.name === 'AbortError') return;
           const errMsg = err instanceof Error ? err.message : String(err);
-          accumulated += `\n\n[Error: ${errMsg}]\n`;
-          setResult(accumulated);
+          agentResults[i] += `\n\n[Error: ${errMsg}]\n`;
+          rebuildResult();
+        } finally {
+          setRunningIndices((prev) => { const next = new Set(prev); next.delete(i); return next; });
           setCompletedIndices((prev) => new Set(prev).add(i));
+          activeCount--;
+          if (queue.length > 0) queue.shift()!();
         }
       }
+
+      await new Promise<void>((resolveAll) => {
+        function tryNext() {
+          while (activeCount < CONCURRENCY && nextIndex < agentsToRun.length) {
+            if (abortRef.current?.signal.aborted) break;
+            const i = nextIndex++;
+            activeCount++;
+            runAgent(i).then(tryNext);
+          }
+          // All done when no more active and no more queued.
+          if (activeCount === 0 && nextIndex >= agentsToRun.length) {
+            resolveAll();
+          }
+        }
+        tryNext();
+      });
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== 'AbortError') {
         setError(err.message);
       }
     } finally {
       setLoading(false);
-      setCurrentAgentIndex(-1);
+      setRunningIndices(new Set());
     }
   }, [url, loading, selected]);
 
   function handleStop() {
     abortRef.current?.abort();
-    setResult((prev) => prev ? prev + '\n\n---\n*Audit stopped by user.*' : prev);
+    setResult((prev) => prev ? `${prev}\n\n---\n*Audit stopped by user.*` : prev);
     setLoading(false);
-    setCurrentAgentIndex(-1);
+    setRunningIndices(new Set());
   }
 
   async function handleCopy() {
@@ -537,7 +567,7 @@ export default function SiteAuditPage() {
         {(loading || (!loading && result)) && (
           <div className="flex flex-wrap gap-2 mb-6 sticky top-0 z-10 bg-gray-50/90 dark:bg-zinc-950/90 backdrop-blur-sm py-3 -mx-6 px-6">
             {selectedAgents.map((agent, i) => {
-              const isActive = loading && i === currentAgentIndex;
+              const isActive = loading && runningIndices.has(i);
               const isDone = completedIndices.has(i);
 
               // After audit completes, badges scroll to the corresponding section
@@ -609,8 +639,8 @@ export default function SiteAuditPage() {
                 {loading ? (
                   <span className="flex items-center gap-1.5 text-violet-400">
                     <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
-                    {currentAgentIndex >= 0
-                      ? `Running: ${selectedAgents[currentAgentIndex]?.name} (${currentAgentIndex + 1} of ${selectedAgents.length})`
+                    {runningIndices.size > 0
+                      ? `Running ${runningIndices.size} audit${runningIndices.size > 1 ? 's' : ''} (${completedIndices.size}/${selectedAgents.length} done)`
                       : 'Fetching site…'}
                   </span>
                 ) : (

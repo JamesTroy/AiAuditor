@@ -5,8 +5,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { audit } from '@/lib/auth-schema';
-import { eq, desc, lt, count, and } from 'drizzle-orm';
-import { extractScore } from '@/lib/extractScore';
+import { eq, desc, lt, count, and, isNotNull } from 'drizzle-orm';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -34,76 +33,47 @@ export default async function DashboardPage({
   const params = await searchParams;
   const cursor = params.cursor;
 
-  // Get total count for stats (not paginated)
-  const [totalResult] = await db
-    .select({ value: count() })
-    .from(audit)
-    .where(eq(audit.userId, session.user.id));
-  const totalCount = totalResult?.value ?? 0;
+  // PERF-016: Run all dashboard queries in parallel instead of sequentially.
+  // Merges score stats + trend into one query to reduce from 4 → 3 queries.
+  const cursorDate = cursor ? new Date(cursor) : null;
+  const paginationWhere = cursorDate
+    ? and(eq(audit.userId, session.user.id), lt(audit.createdAt, cursorDate))
+    : eq(audit.userId, session.user.id);
 
-  // Get all scores for avg calculation. Include result text so we can
-  // extract scores from audits that completed before score-saving was added.
-  const scoredAudits = await db
-    .select({ score: audit.score, result: audit.result })
-    .from(audit)
-    .where(and(eq(audit.userId, session.user.id), eq(audit.status, 'completed')));
+  const [totalResult, allScoredAudits, rawAudits] = await Promise.all([
+    db.select({ value: count() })
+      .from(audit)
+      .where(eq(audit.userId, session.user.id)),
+    // PERF-030: Only fetch score + createdAt, not the full result column.
+    db.select({ score: audit.score, createdAt: audit.createdAt })
+      .from(audit)
+      .where(and(eq(audit.userId, session.user.id), eq(audit.status, 'completed'), isNotNull(audit.score)))
+      .orderBy(desc(audit.createdAt))
+      .limit(200),
+    db.select()
+      .from(audit)
+      .where(paginationWhere)
+      .orderBy(desc(audit.createdAt))
+      .limit(PAGE_SIZE + 1),
+  ]);
 
-  const allScores = scoredAudits
-    .map((a) => {
-      if (a.score != null) return a.score;
-      if (a.result) return extractScore(a.result);
-      return null;
-    })
-    .filter((s): s is number => s !== null);
+  const totalCount = totalResult[0]?.value ?? 0;
 
+  const allScores = allScoredAudits.map((a) => a.score!);
   const avgScore = allScores.length > 0
     ? Math.round(allScores.reduce((sum, s) => sum + s, 0) / allScores.length)
     : null;
 
-  // TREND-001: Get last 10 scored audits (chronological) for sparkline.
-  const recentScored = await db
-    .select({ score: audit.score, result: audit.result, createdAt: audit.createdAt })
-    .from(audit)
-    .where(and(eq(audit.userId, session.user.id), eq(audit.status, 'completed')))
-    .orderBy(desc(audit.createdAt))
-    .limit(10);
-  const trendScores = recentScored
-    .map((a) => a.score ?? (a.result ? extractScore(a.result) : null))
-    .filter((s): s is number => s !== null)
+  // TREND-001: Last 10 scored audits for sparkline (already ordered by createdAt DESC).
+  const trendScores = allScoredAudits
+    .slice(0, 10)
+    .map((a) => a.score!)
     .reverse(); // oldest first for left-to-right chart
-
-  // Fetch paginated audits
-  const cursorDate = cursor ? new Date(cursor) : null;
-  const whereClause = cursorDate
-    ? and(eq(audit.userId, session.user.id), lt(audit.createdAt, cursorDate))
-    : eq(audit.userId, session.user.id);
-
-  const rawAudits = await db
-    .select()
-    .from(audit)
-    .where(whereClause)
-    .orderBy(desc(audit.createdAt))
-    .limit(PAGE_SIZE + 1); // fetch one extra to detect if there are more
 
   const hasMore = rawAudits.length > PAGE_SIZE;
   const pageAudits = hasMore ? rawAudits.slice(0, PAGE_SIZE) : rawAudits;
 
-  // Re-extract scores from stored results for records that have null scores
-  const audits = pageAudits.map((a) => {
-    if (a.score != null || !a.result) return a;
-    const extracted = extractScore(a.result);
-    return extracted !== null ? { ...a, score: extracted } : a;
-  });
-
-  // Backfill: update DB records that now have extracted scores (fire-and-forget)
-  const toBackfill = audits.filter((a, i) => a.score !== pageAudits[i].score && a.score != null);
-  if (toBackfill.length > 0) {
-    Promise.all(
-      toBackfill.map((a) =>
-        db.update(audit).set({ score: a.score }).where(eq(audit.id, a.id))
-      ),
-    ).catch((err) => { console.warn('[dashboard] score backfill failed:', err); });
-  }
+  const audits = pageAudits;
 
   const nextCursor = hasMore
     ? pageAudits[pageAudits.length - 1].createdAt.toISOString()

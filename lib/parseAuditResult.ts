@@ -24,8 +24,8 @@ export interface AuditMetrics {
   totalFindings: number;
 }
 
-const SEVERITY_PATTERN = /\*?\*?\[?(CRITICAL|HIGH|MEDIUM|LOW|INFORMATIONAL)\]?\*?\*?\s*[-—]\s*(.+)/gi;
-const FINDING_ID_PATTERN = /\b([A-Z]+-\d+)\b/;
+const SEVERITY_RE = /\*?\*?\[?(CRITICAL|HIGH|MEDIUM|LOW|INFORMATIONAL)\]?\*?\*?\s*[-—]\s*(.+)/i;
+const FINDING_ID_RE = /\b([A-Z]+-\d+)\b/;
 
 export function parseAuditResult(markdown: string): AuditMetrics {
   const severityCounts = {
@@ -43,32 +43,23 @@ export function parseAuditResult(markdown: string): AuditMetrics {
   // Extract findings by severity
   const lines = markdown.split('\n');
   for (const line of lines) {
-    const match = line.match(SEVERITY_PATTERN);
-    if (!match) {
-      // Try individual line match
-      const severityMatch = line.match(/\*?\*?\[?(CRITICAL|HIGH|MEDIUM|LOW|INFORMATIONAL)\]?\*?\*?\s*[-—]\s*(.+)/i);
-      if (severityMatch) {
-        const severity = severityMatch[1].toLowerCase() as Finding['severity'];
-        const title = severityMatch[2].replace(/\*\*/g, '').trim();
-        const idMatch = title.match(FINDING_ID_PATTERN);
+    const severityMatch = line.match(SEVERITY_RE);
+    if (severityMatch) {
+      const severity = severityMatch[1].toLowerCase() as Finding['severity'];
+      const title = severityMatch[2].replace(/\*\*/g, '').trim();
+      const idMatch = title.match(FINDING_ID_RE);
 
-        severityCounts[severity]++;
-        findings.push({
-          id: idMatch ? idMatch[1] : `${severity.toUpperCase()}-${severityCounts[severity]}`,
-          severity,
-          title: title.replace(FINDING_ID_PATTERN, '').replace(/^\s*[-—]\s*/, '').trim(),
-        });
-      }
+      severityCounts[severity]++;
+      findings.push({
+        id: idMatch ? idMatch[1] : `${severity.toUpperCase()}-${severityCounts[severity]}`,
+        severity,
+        title: title.replace(FINDING_ID_RE, '').replace(/^\s*[-—]\s*/, '').trim(),
+      });
     }
   }
 
   // Fallback: count severity keywords in headers/bold text if no structured findings found
   if (findings.length === 0) {
-    const criticalMatches = markdown.match(/\bcritical\b/gi);
-    const highMatches = markdown.match(/\bhigh\b/gi);
-    const mediumMatches = markdown.match(/\bmedium\b/gi);
-    const lowMatches = markdown.match(/\blow\b/gi);
-
     // Only count if they appear in a finding-like context (near severity/vuln/finding)
     const findingContext = /(?:severity|finding|issue|vulnerability|risk)\s*[:]\s*(?:critical|high|medium|low)/gi;
     const contextMatches = [...markdown.matchAll(findingContext)];

@@ -59,7 +59,7 @@ export class RateLimiter {
   private readonly windowMs: number;
   private readonly maxRequests: number;
   private readonly maxEntries: number;
-  private readonly store = new Map<string, number[]>();
+  private readonly store = new Map<string, { timestamps: number[]; head: number }>();
   private readonly timer: ReturnType<typeof setInterval>;
 
   constructor(config: RateLimiterConfig) {
@@ -77,15 +77,16 @@ export class RateLimiter {
    * Record a request for `key` and return the rate-limit decision.
    * Always records the request first; the caller must honour `allowed`.
    */
+  // PERF-008: Pointer-based eviction instead of .filter() or .shift() per call.
+  // Timestamps are chronologically ordered — advance a head pointer past expired entries.
   check(key: string): RateLimitResult {
     const now = Date.now();
     const windowStart = now - this.windowMs;
 
-    // Evict timestamps outside the window.
-    const timestamps = (this.store.get(key) ?? []).filter((t) => t > windowStart);
+    let entry = this.store.get(key);
 
     // Enforce the entry cap for new keys.
-    if (!this.store.has(key) && this.store.size >= this.maxEntries) {
+    if (!entry && this.store.size >= this.maxEntries) {
       const resetAt = now + this.windowMs;
       return {
         allowed: false,
@@ -95,15 +96,29 @@ export class RateLimiter {
       };
     }
 
-    timestamps.push(now);
-    this.store.set(key, timestamps);
+    if (!entry) {
+      entry = { timestamps: [], head: 0 };
+      this.store.set(key, entry);
+    }
 
-    const count = timestamps.length;
+    // Advance head past expired entries — O(expired) amortized across all calls.
+    while (entry.head < entry.timestamps.length && entry.timestamps[entry.head] <= windowStart) {
+      entry.head++;
+    }
+
+    // Periodically compact to avoid unbounded array growth.
+    if (entry.head > 1000) {
+      entry.timestamps = entry.timestamps.slice(entry.head);
+      entry.head = 0;
+    }
+
+    entry.timestamps.push(now);
+    const count = entry.timestamps.length - entry.head;
     const allowed = count <= this.maxRequests;
     const remaining = Math.max(0, this.maxRequests - count);
 
-    // Reset time: when the oldest request in the window will expire.
-    const oldestInWindow = timestamps[0] ?? now;
+    // Reset time: when the oldest active request will expire.
+    const oldestInWindow = entry.timestamps[entry.head] ?? now;
     const resetAt = oldestInWindow + this.windowMs;
 
     return { allowed, remaining, resetAt, headers: this.buildHeaders(allowed, remaining, resetAt) };
@@ -116,12 +131,16 @@ export class RateLimiter {
 
   private cleanup(): void {
     const windowStart = Date.now() - this.windowMs;
-    for (const [key, timestamps] of this.store) {
-      const active = timestamps.filter((t) => t > windowStart);
-      if (active.length === 0) {
+    for (const [key, entry] of this.store) {
+      // Advance head past expired entries.
+      while (entry.head < entry.timestamps.length && entry.timestamps[entry.head] <= windowStart) {
+        entry.head++;
+      }
+      if (entry.head >= entry.timestamps.length) {
         this.store.delete(key);
-      } else {
-        this.store.set(key, active);
+      } else if (entry.head > 0) {
+        entry.timestamps = entry.timestamps.slice(entry.head);
+        entry.head = 0;
       }
     }
   }

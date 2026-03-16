@@ -13,14 +13,25 @@ import type { Components } from 'react-markdown';
 
 const DISALLOWED_ELEMENTS = ['script', 'iframe', 'object', 'embed', 'form'];
 
+// PERF-005: Cache slugified headings to avoid redundant regex work on re-renders.
+const MAX_SLUG_CACHE = 500;
+const slugCache = new Map<string, string>();
+
 /** Convert heading text to a URL-friendly slug. */
 function slugify(text: string): string {
-  return text
+  const cached = slugCache.get(text);
+  if (cached) return cached;
+  const slug = text
     .toLowerCase()
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .trim();
+  if (slugCache.size >= MAX_SLUG_CACHE) {
+    slugCache.delete(slugCache.keys().next().value!);
+  }
+  slugCache.set(text, slug);
+  return slug;
 }
 
 /** Extract plain text from react-markdown children. */

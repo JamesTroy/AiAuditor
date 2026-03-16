@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { agents } from '@/lib/agents';
+import { agents } from '@/lib/agents/registry';
 
 // CACHE-005: Sitemap content is derived from a static agents array and only
 // changes on deploy. force-static avoids regenerating it per request.
