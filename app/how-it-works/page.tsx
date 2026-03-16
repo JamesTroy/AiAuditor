@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-export const dynamic = 'force-static';
-
 export const metadata: Metadata = {
   title: 'How It Works',
   description: 'How Claudit works — 60+ specialized code audits with real-time streaming results and severity-rated findings.',

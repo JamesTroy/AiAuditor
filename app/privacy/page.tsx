@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-export const dynamic = 'force-static';
-
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description: 'How Claudit collects, uses, and protects your data. GDPR-compliant, no tracking, EU-hosted.',
