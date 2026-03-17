@@ -5,3 +5,6 @@ node_modules
 tsconfig.tsbuildinfo
 next-env.d.ts
 audits/
+
+# Audit input working documents
+*-audit-input.md
