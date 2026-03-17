@@ -9,7 +9,7 @@ export const ANTHROPIC_RETRY_BASE_MS = 1_000;
 
 // ── Site audit limits ──────────────────────────────────────────
 /** How many audit agents stream concurrently during a site audit. Higher = faster but uses more API quota. */
-export const SITE_AUDIT_CONCURRENCY = 50;
+export const SITE_AUDIT_CONCURRENCY = 20;
 /** Maximum number of agents a user can select per site audit run. 0 = unlimited. */
 export const MAX_AGENTS_PER_RUN = 0;
 
@@ -25,9 +25,11 @@ export const CONCURRENCY_RECOVERY_MS = 15_000;
 /** Delay (ms) between launching each agent to avoid API burst. */
 export const LAUNCH_STAGGER_MS = 100;
 /** Initial concurrency before ramping up to SITE_AUDIT_CONCURRENCY. */
-export const INITIAL_CONCURRENCY = 10;
-/** How many successful completions before ramping concurrency up. */
+export const INITIAL_CONCURRENCY = 5;
+/** How many successful completions before ramping concurrency up by one step. */
 export const RAMP_UP_AFTER = 5;
+/** Concurrency ramp steps — gradual increase avoids API burst. */
+export const RAMP_STEPS = [5, 10, 15, 20] as const;
 
 // ── Per-run token budget (safeguard #2) ────────────────────────
 /** Max estimated output tokens per site audit run. 125 agents × 16K = ~2M; cap at 1.5M. */

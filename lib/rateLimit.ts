@@ -218,10 +218,10 @@ export const auditLimiter = new RateLimiter({
   prefix: 'audit',
 });
 
-/** Site audit batch: 150 requests per minute per IP (supports 125 agents at concurrency 50). */
+/** Site audit batch: 200 requests per 2 minutes per IP (supports 132 agents + retries). */
 export const siteAuditLimiter = new RateLimiter({
-  windowMs: 60_000,
-  maxRequests: 150,
+  windowMs: 120_000,
+  maxRequests: 200,
   prefix: 'site-audit',
 });
 
@@ -286,11 +286,11 @@ export const userDailyAuditLimiter = new RateLimiter({
   prefix: 'user-daily',
 });
 
-// SAFE-006: Per-IP concurrent audit fairness — max 50 concurrent (sliding 30s window).
-// Prevents a single user from monopolizing the global API quota.
+// SAFE-006: Per-IP concurrent audit fairness — max 150 audits per 2 min window.
+// Prevents a single user from monopolizing the global API quota while allowing full 132-agent runs.
 export const perIpConcurrencyLimiter = new RateLimiter({
-  windowMs: 30_000,
-  maxRequests: 50,
+  windowMs: 120_000,
+  maxRequests: 150,
   prefix: 'ip-concurrent',
 });
 

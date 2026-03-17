@@ -20,6 +20,7 @@ import {
   LAUNCH_STAGGER_MS,
   INITIAL_CONCURRENCY,
   RAMP_UP_AFTER,
+  RAMP_STEPS,
 } from '@/lib/config/constants';
 
 const DEFAULT_IDS = new Set([
@@ -363,9 +364,9 @@ export default function SiteAuditPage() {
       const agentResults: string[] = new Array(agentsToRun.length).fill('');
       let activeCount = 0;
       let nextIndex = 0;
-      // Start at lower concurrency and ramp up after initial agents succeed.
+      // Start at lower concurrency and ramp up gradually after agents succeed.
+      let rampStep = 0;
       let concurrency = agentsToRun.length > INITIAL_CONCURRENCY ? INITIAL_CONCURRENCY : SITE_AUDIT_CONCURRENCY;
-      let hasRampedUp = agentsToRun.length <= INITIAL_CONCURRENCY;
       let totalErrors = 0;
       let totalCompleted = 0;
       let tokensUsed = 0;
@@ -424,10 +425,10 @@ export default function SiteAuditPage() {
           rebuildResult();
           totalCompleted++;
 
-          // Ramp up concurrency after initial agents succeed without errors.
-          if (!hasRampedUp && totalCompleted >= RAMP_UP_AFTER && totalErrors === 0) {
-            hasRampedUp = true;
-            concurrency = SITE_AUDIT_CONCURRENCY;
+          // Gradually ramp up concurrency through steps after agents succeed without errors.
+          if (rampStep < RAMP_STEPS.length - 1 && totalCompleted >= RAMP_UP_AFTER * (rampStep + 1) && totalErrors === 0) {
+            rampStep++;
+            concurrency = RAMP_STEPS[rampStep];
             setCurrentConcurrency(concurrency);
           }
 
@@ -477,6 +478,8 @@ export default function SiteAuditPage() {
       let resolveAll: () => void;
       const allDone = new Promise<void>((r) => { resolveAll = r; });
 
+      let lastLaunchTime = 0;
+
       function tryNext() {
         // SAFE-001: Respect backoff pause.
         if (backoffUntil > Date.now()) {
@@ -489,20 +492,23 @@ export default function SiteAuditPage() {
           if (activeCount === 0) resolveAll!();
           return;
         }
-        let launched = 0;
-        while (activeCount < concurrency && nextIndex < agentsToRun.length) {
-          if (abortRef.current?.signal.aborted) break;
-          if (budgetHit) break;
+        // Stagger: ensure minimum gap between launches to avoid API burst.
+        const elapsed = Date.now() - lastLaunchTime;
+        if (elapsed < LAUNCH_STAGGER_MS && activeCount > 0) {
+          setTimeout(tryNext, LAUNCH_STAGGER_MS - elapsed);
+          return;
+        }
+        if (activeCount < concurrency && nextIndex < agentsToRun.length) {
+          if (abortRef.current?.signal.aborted) return;
+          if (budgetHit) return;
           const i = nextIndex++;
           activeCount++;
-          // Stagger launches to avoid API burst
-          if (launched > 0) {
-            const delay = launched * LAUNCH_STAGGER_MS;
-            setTimeout(() => runAgent(i), delay);
-          } else {
-            runAgent(i);
+          lastLaunchTime = Date.now();
+          runAgent(i);
+          // Schedule next launch with stagger delay
+          if (activeCount < concurrency && nextIndex < agentsToRun.length) {
+            setTimeout(tryNext, LAUNCH_STAGGER_MS);
           }
-          launched++;
         }
         if (activeCount === 0 && (nextIndex >= agentsToRun.length || budgetHit)) {
           resolveAll!();
