@@ -20,10 +20,10 @@ export default function Footer() {
 
   const linkClass = (href: string) => {
     const isActive = pathname === href;
-    return `text-sm py-1 transition-colors ${
+    return `text-sm py-3 min-h-[44px] inline-flex items-center transition-colors focus-ring rounded ${
       isActive
         ? 'text-gray-900 dark:text-zinc-100 font-medium'
-        : 'text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300'
+        : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300'
     }`;
   };
 
@@ -33,7 +33,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-8 sm:gap-6">
           {/* Brand column */}
           <div className="sm:col-span-2 space-y-3">
-            <Link href="/" className="inline-flex items-center gap-2 text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">
+            <Link href="/" className="inline-flex items-center gap-2 p-2 -m-2 min-h-[44px] min-w-[44px] text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors focus-ring rounded-lg">
               <Logo size={20} />
               <span className="text-sm font-semibold">Claudit</span>
             </Link>
@@ -50,7 +50,7 @@ export default function Footer() {
 
           {/* Product column */}
           <nav className="flex flex-col gap-2" aria-label="Product">
-            <span className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-600 mb-1">Product</span>
+            <span className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-500 mb-1">Product</span>
             {PRODUCT_LINKS.map(({ href, label }) => (
               <Link key={href} href={href} className={linkClass(href)}>{label}</Link>
             ))}
@@ -58,7 +58,7 @@ export default function Footer() {
 
           {/* Legal column */}
           <nav className="flex flex-col gap-2" aria-label="Legal">
-            <span className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-600 mb-1">Legal</span>
+            <span className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-500 mb-1">Legal</span>
             {LEGAL_LINKS.map(({ href, label }) => (
               <Link key={href} href={href} className={linkClass(href)}>{label}</Link>
             ))}
@@ -68,7 +68,7 @@ export default function Footer() {
 
       {/* Copyright */}
       <div className="border-t border-gray-200/50 dark:border-zinc-800/50 py-4">
-        <p className="text-center text-xs text-gray-400 dark:text-zinc-600">
+        <p className="text-center text-xs text-gray-500 dark:text-zinc-500">
           &copy; {new Date().getFullYear()} Claudit. All rights reserved.
         </p>
       </div>

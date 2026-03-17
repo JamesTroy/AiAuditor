@@ -84,9 +84,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <ActivationBanner />
-            <main id="main-content" role="main" tabIndex={-1} className="flex-1">{children}</main>
+            <main id="main-content" tabIndex={-1} className="flex-1">{children}</main>
             <noscript>
-              <div className="fixed inset-0 z-[200] bg-white dark:bg-zinc-950 flex items-center justify-center p-8">
+              <div role="alertdialog" aria-label="JavaScript required" className="fixed inset-0 z-[200] bg-white dark:bg-zinc-950 flex items-center justify-center p-8">
                 <div className="text-center max-w-md">
                   <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-zinc-100">Enable JavaScript to run audits</h1>
                   <p className="text-gray-600 dark:text-zinc-400 mb-6">Claudit streams audit results in real time, which requires JavaScript. Enable it in your browser settings to get started — your code is never stored or shared.</p>

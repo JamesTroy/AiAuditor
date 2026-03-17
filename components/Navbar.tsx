@@ -10,6 +10,7 @@ import { useSession } from '@/lib/auth-client';
 
 const PUBLIC_LINKS = [
   { href: '/', label: 'Explore Audits', title: 'Browse all available audit types' },
+  { href: '/code-audit', label: 'Code Audit', title: 'Run a full multi-agent code audit' },
   { href: '/site-audit', label: 'Site Audit', title: 'Run a comprehensive site audit' },
   { href: '/pricing', label: 'Pricing', title: 'View pricing and plans' },
 ] as const;
@@ -106,6 +107,7 @@ export default function Navbar() {
                   key={item.href}
                   href={item.href}
                   title={'title' in item ? item.title : ''}
+                  aria-current={isActive ? 'page' : undefined}
                   className={`relative text-sm px-3 py-1.5 rounded-lg transition-colors ${
                     isActive
                       ? 'text-gray-900 dark:text-zinc-100'
@@ -123,10 +125,10 @@ export default function Navbar() {
 
           {/* Right: CTA + separator + Theme + User */}
           <div className="flex items-center gap-2">
-            {pathname !== '/code-audit' && (
+            {pathname !== '/code-audit' && pathname !== '/site-audit' && (
               <Link
                 href="/code-audit"
-                className="hidden sm:inline-flex px-4 py-1.5 rounded-full text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring whitespace-nowrap shadow-sm shadow-violet-600/20"
+                className="hidden sm:inline-flex px-4 py-1.5 rounded-full text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 active:scale-[0.98] active:bg-violet-700 transition-colors focus-ring whitespace-nowrap shadow-sm shadow-violet-600/20"
               >
                 {session ? 'New Audit' : 'Get Started Free'}
               </Link>
@@ -205,19 +207,6 @@ export default function Navbar() {
             {/* Drawer nav links */}
             <nav className="flex-1 overflow-y-auto px-4 py-4" aria-label="Mobile navigation">
               <ul className="flex flex-col gap-1">
-                <li>
-                  <Link
-                    href="/code-audit"
-                    onClick={closeDrawer}
-                    className={`flex items-center min-h-[48px] px-4 rounded-lg text-sm font-medium transition-colors ${
-                      pathname.startsWith('/code-audit')
-                        ? 'text-gray-900 dark:text-zinc-100 bg-gray-100 dark:bg-zinc-800'
-                        : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100/50 dark:hover:bg-zinc-800/50'
-                    }`}
-                  >
-                    Code Audit
-                  </Link>
-                </li>
                 {NAV_LINKS.map((item) => {
                   const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
                   return (
@@ -225,6 +214,7 @@ export default function Navbar() {
                       <Link
                         href={item.href}
                         title={'title' in item ? item.title : ''}
+                        aria-current={isActive ? 'page' : undefined}
                         onClick={closeDrawer}
                         className={`flex items-center min-h-[48px] px-4 rounded-lg text-sm font-medium transition-colors ${
                           isActive

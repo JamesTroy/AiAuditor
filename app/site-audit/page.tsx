@@ -17,6 +17,9 @@ import {
   EST_TOKENS_PER_AGENT,
   FULL_RUN_COOLDOWN_SECS,
   FULL_RUN_AGENT_THRESHOLD,
+  LAUNCH_STAGGER_MS,
+  INITIAL_CONCURRENCY,
+  RAMP_UP_AFTER,
 } from '@/lib/config/constants';
 
 const DEFAULT_IDS = new Set([
@@ -360,7 +363,9 @@ export default function SiteAuditPage() {
       const agentResults: string[] = new Array(agentsToRun.length).fill('');
       let activeCount = 0;
       let nextIndex = 0;
-      let concurrency = SITE_AUDIT_CONCURRENCY;
+      // Start at lower concurrency and ramp up after initial agents succeed.
+      let concurrency = agentsToRun.length > INITIAL_CONCURRENCY ? INITIAL_CONCURRENCY : SITE_AUDIT_CONCURRENCY;
+      let hasRampedUp = agentsToRun.length <= INITIAL_CONCURRENCY;
       let totalErrors = 0;
       let totalCompleted = 0;
       let tokensUsed = 0;
@@ -418,6 +423,13 @@ export default function SiteAuditPage() {
           agentResults[i] = agentResult;
           rebuildResult();
           totalCompleted++;
+
+          // Ramp up concurrency after initial agents succeed without errors.
+          if (!hasRampedUp && totalCompleted >= RAMP_UP_AFTER && totalErrors === 0) {
+            hasRampedUp = true;
+            concurrency = SITE_AUDIT_CONCURRENCY;
+            setCurrentConcurrency(concurrency);
+          }
 
           // SAFE-002: Track estimated token usage.
           const estimatedTokens = Math.ceil(agentResult.length / 4); // rough char→token
@@ -477,12 +489,20 @@ export default function SiteAuditPage() {
           if (activeCount === 0) resolveAll!();
           return;
         }
+        let launched = 0;
         while (activeCount < concurrency && nextIndex < agentsToRun.length) {
           if (abortRef.current?.signal.aborted) break;
           if (budgetHit) break;
           const i = nextIndex++;
           activeCount++;
-          runAgent(i);
+          // Stagger launches to avoid API burst
+          if (launched > 0) {
+            const delay = launched * LAUNCH_STAGGER_MS;
+            setTimeout(() => runAgent(i), delay);
+          } else {
+            runAgent(i);
+          }
+          launched++;
         }
         if (activeCount === 0 && (nextIndex >= agentsToRun.length || budgetHit)) {
           resolveAll!();

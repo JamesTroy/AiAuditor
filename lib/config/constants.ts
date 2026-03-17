@@ -22,6 +22,12 @@ export const ERROR_RATE_THRESHOLD = 0.2;
 export const CONCURRENCY_BACKOFF_FACTOR = 0.5;
 /** How long (ms) to wait before attempting to ramp concurrency back up. */
 export const CONCURRENCY_RECOVERY_MS = 15_000;
+/** Delay (ms) between launching each agent to avoid API burst. */
+export const LAUNCH_STAGGER_MS = 100;
+/** Initial concurrency before ramping up to SITE_AUDIT_CONCURRENCY. */
+export const INITIAL_CONCURRENCY = 10;
+/** How many successful completions before ramping concurrency up. */
+export const RAMP_UP_AFTER = 5;
 
 // ── Per-run token budget (safeguard #2) ────────────────────────
 /** Max estimated output tokens per site audit run. 125 agents × 16K = ~2M; cap at 1.5M. */

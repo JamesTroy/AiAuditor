@@ -105,13 +105,13 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <Link
                 href="/code-audit"
-                className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring whitespace-nowrap shadow-lg shadow-violet-600/20"
+                className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 active:scale-[0.98] active:bg-violet-700 transition-colors focus-ring whitespace-nowrap shadow-lg shadow-violet-600/20"
               >
                 Audit Your Code Free
               </Link>
               <Link
                 href="/site-audit"
-                className="px-8 py-3.5 rounded-xl font-semibold text-base text-gray-700 dark:text-zinc-200 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus-ring whitespace-nowrap"
+                className="px-8 py-3.5 rounded-xl font-semibold text-base text-gray-700 dark:text-zinc-200 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 active:scale-[0.98] transition-colors focus-ring whitespace-nowrap"
               >
                 Audit a Live Site
               </Link>
@@ -123,7 +123,7 @@ export default function Home() {
 
           {/* Privacy guarantee */}
           <p className="text-xs text-gray-500 dark:text-zinc-400 mb-10 flex items-center justify-center gap-1.5">
-            <svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+            <svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
             Your code is never stored, never used for training, and never shared with third parties.
           </p>
 
@@ -163,7 +163,7 @@ export default function Home() {
               {
                 step: '2',
                 title: `${agents.length} auditors run in parallel`,
-                desc: 'Each agent specializes in one domain — security, performance, accessibility, SEO, infrastructure, and compliance — finishing in under 60 seconds.',
+                desc: 'Each auditor specializes in one domain — security, performance, accessibility, SEO, infrastructure, and compliance — finishing in under 60 seconds.',
               },
               {
                 step: '3',
@@ -259,7 +259,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/code-audit"
-              className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring shadow-lg shadow-violet-600/20"
+              className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 active:scale-[0.98] active:bg-violet-700 transition-colors focus-ring shadow-lg shadow-violet-600/20"
             >
               Try It on Your Code
             </Link>
@@ -345,13 +345,13 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/code-audit"
-              className="inline-block px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring shadow-lg shadow-violet-600/20"
+              className="inline-block px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 active:scale-[0.98] active:bg-violet-700 transition-colors focus-ring shadow-lg shadow-violet-600/20"
             >
               Audit Your Code
             </Link>
             <Link
               href="/site-audit"
-              className="inline-block px-8 py-3.5 rounded-xl font-semibold text-base text-gray-700 dark:text-zinc-200 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus-ring"
+              className="inline-block px-8 py-3.5 rounded-xl font-semibold text-base text-gray-700 dark:text-zinc-200 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 active:scale-[0.98] transition-colors focus-ring"
             >
               Audit a Live Site
             </Link>
