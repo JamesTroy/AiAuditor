@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { auditLimiter } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { STREAM_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
+import { escapeXml } from '@/lib/escapeXml';
 
 export const runtime = 'nodejs';
 
@@ -12,6 +13,12 @@ You have access to the original code that was audited and the audit results. Ans
 - Provide code examples for fixes when asked
 - Explain the reasoning behind severity ratings
 - Suggest concrete next steps
+
+Understanding the audit's finding tags:
+- [CERTAIN] = definitively confirmed issue. [LIKELY] = strong evidence but depends on runtime context. [POSSIBLE] = speculative, may be a false positive.
+- [VULNERABILITY] = exploitable issue. [DEFICIENCY] = best-practice gap with real impact. [SUGGESTION] = nice-to-have improvement, not a defect.
+- If a user asks whether a finding is real, consider its confidence tag. [POSSIBLE] findings are worth investigating but may not apply.
+- If a user says a finding is wrong, acknowledge it — false positives can occur, especially for [LIKELY] and [POSSIBLE] findings.
 
 Keep answers focused and under 400 words unless the user asks for detailed code.`;
 
@@ -65,7 +72,7 @@ export async function POST(req: NextRequest) {
   // Build system prompt with audit context
   const contextTruncated = context.slice(0, MAX_INPUT_CHARS);
   const systemPrompt = contextTruncated
-    ? `${CHAT_SYSTEM_PROMPT}\n\n<audit_context>\n${contextTruncated}\n</audit_context>`
+    ? `${CHAT_SYSTEM_PROMPT}\n\n<audit_context>\n${escapeXml(contextTruncated)}\n</audit_context>`
     : CHAT_SYSTEM_PROMPT;
 
   const chatMessages: ChatMessage[] = messages.map((m: { role: string; content: string }) => ({

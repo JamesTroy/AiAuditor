@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { auditLimiter } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { STREAM_RESPONSE_HEADERS, ALLOWED_ORIGINS } from '@/lib/config/apiHeaders';
+import { escapeXml } from '@/lib/escapeXml';
 
 export const runtime = 'nodejs';
 
@@ -9,17 +10,28 @@ const SYNTHESIS_PROMPT = `You are a senior engineering lead reviewing multiple a
 
 Your job is to produce a concise, actionable **Remediation Roadmap** by:
 
-1. **Deduplicating** — Many audits flag the same underlying issue. Group related findings.
-2. **Prioritizing** — Order by impact: security vulnerabilities first, then correctness bugs, then performance, then best-practice improvements.
-3. **Correlating** — Identify root causes that span multiple audit categories (e.g., a missing input validation that shows up in both Security and Forms audits).
-4. **Summarizing** — For each grouped issue, give: severity, affected areas, and a one-line remediation action.
+1. **Filtering** — Ignore findings tagged [POSSIBLE] (low confidence) and [SUGGESTION] (not defects). Focus only on [CERTAIN] and [LIKELY] findings classified as [VULNERABILITY] or [DEFICIENCY].
+2. **Deduplicating** — Many audits flag the same underlying issue. Group related findings. If two agents flag the same root cause, count it once.
+3. **Prioritizing** — Order by impact: security vulnerabilities first, then correctness bugs, then performance, then best-practice improvements. Within each level, rank [CERTAIN] findings above [LIKELY].
+4. **Correlating** — Identify root causes that span multiple audit categories (e.g., a missing input validation that shows up in both Security and Forms audits).
+5. **Summarizing** — For each grouped issue, give: severity, confidence, affected areas, and a one-line remediation action.
+
+Understanding confidence tags in the input:
+- [CERTAIN] = definitively causes an issue (include in roadmap)
+- [LIKELY] = strong evidence but depends on runtime context (include in roadmap)
+- [POSSIBLE] = speculative (exclude from roadmap)
+
+Understanding classification tags in the input:
+- [VULNERABILITY] = exploitable issue (always include)
+- [DEFICIENCY] = measurable gap from best practice (always include)
+- [SUGGESTION] = nice-to-have improvement (exclude from roadmap, mention only in summary)
 
 Output format:
 
 ## Remediation Roadmap
 
 ### Critical Priority
-- [Finding group name]: [one-line description]. Affects: [agents that flagged it]. Fix: [action].
+- [Finding group name]: [one-line description]. Confidence: [Certain/Likely]. Affects: [agents that flagged it]. Fix: [action].
 
 ### High Priority
 ...
@@ -29,6 +41,9 @@ Output format:
 
 ### Low Priority
 ...
+
+## Suggestions (not scored)
+[Brief list of improvement suggestions that don't indicate defects, if any were found across audits]
 
 ## Cross-Cutting Patterns
 [2-3 sentences identifying systemic patterns across the audits]
@@ -75,7 +90,7 @@ export async function POST(req: NextRequest) {
   try {
     const stream = anthropicProvider.streamAudit(
       SYNTHESIS_PROMPT,
-      `<audit_results>\n${truncated}\n</audit_results>`,
+      `<audit_results>\n${escapeXml(truncated)}\n</audit_results>`,
       { signal: AbortSignal.timeout(STREAM_TIMEOUT_MS) },
     );
 

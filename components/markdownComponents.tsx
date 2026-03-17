@@ -80,8 +80,19 @@ interface Props {
   className?: string;
 }
 
+// FP-003: Strip confidence/classification tags from markdown display.
+// The triage panel (AuditResultView) already shows these as styled badges.
+// In the full report, they'd clutter the prose, so we remove them cleanly.
+const AUDIT_TAG_RE = /\[(?:CERTAIN|LIKELY|POSSIBLE)\]\s*/gi;
+const CLASSIFICATION_TAG_RE = /\[(?:VULNERABILITY|DEFICIENCY|SUGGESTION|NOT APPLICABLE)\]\s*/gi;
+
+function stripAuditTags(markdown: string): string {
+  return markdown.replace(AUDIT_TAG_RE, '').replace(CLASSIFICATION_TAG_RE, '');
+}
+
 /** Drop-in replacement for ReactMarkdown with all security settings applied. */
 export default function SafeMarkdown({ children, className }: Props) {
+  const cleaned = stripAuditTags(children);
   return (
     <Suspense fallback={<pre className="whitespace-pre-wrap font-mono text-sm">{children}</pre>}>
       <ReactMarkdown
@@ -90,7 +101,7 @@ export default function SafeMarkdown({ children, className }: Props) {
         components={components}
         className={className}
       >
-        {children}
+        {cleaned}
       </ReactMarkdown>
     </Suspense>
   );

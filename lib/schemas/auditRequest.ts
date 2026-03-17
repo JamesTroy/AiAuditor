@@ -134,21 +134,6 @@ export const VALID_AGENT_TYPES = [
   'seo-structured-data',
   'seo-indexation',
   'seo-video',
-  'kubernetes',
-  'terraform',
-  'serverless',
-  'message-queues',
-  'cdn-config',
-  'load-balancing',
-  'backup-recovery',
-  'monitoring-alerting',
-  'naming-conventions',
-  'code-comments',
-  'solid-principles',
-  'refactoring',
-  'api-contracts',
-  'async-patterns',
-  'testing-strategy',
 ] as const;
 
 export type AgentTypeValue = (typeof VALID_AGENT_TYPES)[number];

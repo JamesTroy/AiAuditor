@@ -40,7 +40,7 @@ export default function PrivacyPage() {
             <p>We collect the following categories of personal data:</p>
             <ul className="list-disc pl-5 space-y-1.5 mt-2">
               <li><strong>Account data</strong> &mdash; name, email address, and hashed password when you create an account. If you sign in with GitHub or Google, we receive your name, email, and profile picture from the provider.</li>
-              <li><strong>Audit data</strong> &mdash; code snippets or website URLs you submit for analysis, and the AI-generated audit reports. Audit results are stored in your account history.</li>
+              <li><strong>Audit data</strong> &mdash; code snippets or website URLs you submit for analysis, and the resulting audit reports. Audit results are stored in your account history.</li>
               <li><strong>Usage data</strong> &mdash; pages visited, audit counts, and scores displayed on your dashboard. We do not use third-party analytics trackers.</li>
               <li><strong>Technical data</strong> &mdash; IP address (anonymized in logs), browser type, and device information transmitted automatically with every HTTP request.</li>
             </ul>
@@ -49,7 +49,7 @@ export default function PrivacyPage() {
           {/* 3. How we use your data */}
           <Section title="3. How we use your data">
             <ul className="list-disc pl-5 space-y-1.5">
-              <li><strong>Provide the service</strong> &mdash; your submitted code or URL is sent to Anthropic&apos;s Claude API for AI analysis. Results are streamed back to you and stored in your account. <em>Lawful basis: performance of a contract (GDPR Art. 6(1)(b)).</em></li>
+              <li><strong>Provide the service</strong> &mdash; your submitted code or URL is sent to Anthropic&apos;s Claude API for analysis. Results are streamed back to you and stored in your account. <em>Lawful basis: performance of a contract (GDPR Art. 6(1)(b)).</em></li>
               <li><strong>Account management</strong> &mdash; authentication, password resets, and email verification. <em>Lawful basis: performance of a contract.</em></li>
               <li><strong>Security</strong> &mdash; rate limiting, abuse prevention, and CSP violation monitoring. <em>Lawful basis: legitimate interests (GDPR Art. 6(1)(f)).</em></li>
             </ul>

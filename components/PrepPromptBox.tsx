@@ -23,7 +23,7 @@ export default function PrepPromptBox({ prompt }: Props) {
             Workspace Prep Prompt
           </p>
           <p className="text-xs text-blue-600 dark:text-blue-400">
-            Paste this into Claude, ChatGPT, Cursor, or your preferred AI tool. It will structure your code into the ideal format for this audit — then paste the result here.
+            Paste this into your preferred code assistant (Claude, Cursor, etc.). It will structure your code into the ideal format for this audit — then paste the result here.
           </p>
         </div>
         <button

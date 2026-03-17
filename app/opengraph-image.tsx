@@ -84,7 +84,7 @@ export default function OGImage() {
             maxWidth: 700,
           }}
         >
-          Severity-rated security, performance, and accessibility reports in 60 seconds.
+          Severity-rated security, performance, and accessibility reports — streaming in real time.
         </div>
 
         {/* Stats */}
@@ -97,7 +97,7 @@ export default function OGImage() {
             fontSize: 20,
           }}
         >
-          <span>50 Audits</span>
+          <span>125+ Audits</span>
           <span>·</span>
           <span>OWASP · GDPR · SOC 2</span>
           <span>·</span>

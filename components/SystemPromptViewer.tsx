@@ -19,11 +19,11 @@ export default function SystemPromptViewer({ prompt }: Props) {
     <details className="mt-4 group">
       <summary className="cursor-pointer text-xs text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors list-none flex items-center gap-1 select-none">
         <span className="transition-transform duration-200 group-open:rotate-90">▶</span>
-        View system prompt
+        View audit instructions
       </summary>
       <div className="mt-3 border border-gray-200 dark:border-zinc-800 rounded-lg overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800">
-          <span className="text-xs text-gray-400 dark:text-zinc-500 font-mono uppercase tracking-widest">System Prompt</span>
+          <span className="text-xs text-gray-400 dark:text-zinc-500 font-mono uppercase tracking-widest">Audit Instructions</span>
           <button
             onClick={handleCopy}
             className="text-xs text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"

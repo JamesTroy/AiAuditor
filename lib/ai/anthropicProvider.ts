@@ -56,7 +56,10 @@ export class AnthropicProvider implements AIProvider {
     return new ReadableStream<Uint8Array>({
       async start(controller) {
         // CLOUD-030: Check circuit breaker before making API call.
+        // FP-008: Enqueue a visible error before erroring the stream so
+        // clients see an explanation instead of a silent stream end.
         if (!anthropicCircuitBreaker.allowRequest()) {
+          controller.enqueue(encoder.encode('\n\n[Service temporarily unavailable. Please try again in a few minutes.]'));
           controller.error(new Error('Circuit breaker open: Anthropic API unavailable. Try again later.'));
           return;
         }
@@ -86,6 +89,7 @@ export class AnthropicProvider implements AIProvider {
               options?.signal ? { signal: options.signal } : undefined,
             );
 
+            let stopReason: string | null = null;
             for await (const chunk of stream) {
               if (
                 chunk.type === 'content_block_delta' &&
@@ -93,6 +97,22 @@ export class AnthropicProvider implements AIProvider {
               ) {
                 controller.enqueue(encoder.encode(chunk.delta.text));
               }
+              // FP-009: Track stop_reason to detect max_tokens truncation.
+              if (chunk.type === 'message_delta' && 'delta' in chunk) {
+                const delta = chunk.delta as { stop_reason?: string };
+                if (delta.stop_reason) stopReason = delta.stop_reason;
+              }
+            }
+
+            // FP-009: Warn user if output was truncated due to max_tokens.
+            // Truncated audits may be missing the overall score section and
+            // later findings, which leads to incomplete/misleading results.
+            if (stopReason === 'max_tokens') {
+              controller.enqueue(encoder.encode(
+                '\n\n---\n\n> **Note:** This report was truncated because it exceeded the maximum output length. ' +
+                'Some findings or the overall score section may be missing. Consider running a more targeted audit ' +
+                'on specific sections of your code for complete results.',
+              ));
             }
 
             // Stream completed successfully.
@@ -134,7 +154,10 @@ export class AnthropicProvider implements AIProvider {
     return new ReadableStream<Uint8Array>({
       async start(controller) {
         // CLOUD-030: Check circuit breaker before making API call.
+        // FP-008: Enqueue a visible error before erroring the stream so
+        // clients see an explanation instead of a silent stream end.
         if (!anthropicCircuitBreaker.allowRequest()) {
+          controller.enqueue(encoder.encode('\n\n[Service temporarily unavailable. Please try again in a few minutes.]'));
           controller.error(new Error('Circuit breaker open: Anthropic API unavailable. Try again later.'));
           return;
         }

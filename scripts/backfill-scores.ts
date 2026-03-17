@@ -63,6 +63,20 @@ function extractScore(text: string): number | null {
   return null;
 }
 
+/** Cross-validate score against severity distribution (mirrors lib/extractScore.ts). */
+function sanityCheckScore(score: number | null, markdown: string): number | null {
+  if (score === null) return null;
+  const severities = [...markdown.matchAll(/\*\*\[(CRITICAL|HIGH|MEDIUM|LOW|INFORMATIONAL)\]\*\*/gi)]
+    .map((m) => m[1].toUpperCase());
+  const criticals = severities.filter((s) => s === 'CRITICAL').length;
+  const highs = severities.filter((s) => s === 'HIGH').length;
+  if (criticals >= 3 && score > 60) return 60;
+  if (criticals >= 1 && highs >= 3 && score > 70) return 70;
+  const hasMajor = criticals > 0 || highs > 0 || severities.some((s) => s === 'MEDIUM');
+  if (!hasMajor && severities.length > 0 && score < 60) return 60;
+  return score;
+}
+
 async function main() {
   const url = process.env.DATABASE_URL;
   if (!url) {
@@ -84,7 +98,8 @@ async function main() {
   let skipped = 0;
 
   for (const row of rows) {
-    const score = extractScore(row.result ?? '');
+    const rawScore = extractScore(row.result ?? '');
+    const score = sanityCheckScore(rawScore, row.result ?? '');
     if (score !== null) {
       await db.update(audit)
         .set({ score, updatedAt: new Date() })

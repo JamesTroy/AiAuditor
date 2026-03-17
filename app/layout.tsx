@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: '%s | Claudit',
   },
   description:
-    'Paste code or enter a URL — get a severity-rated security, performance, and accessibility report in 60 seconds. 50 audits covering OWASP, GDPR, SOC 2, and more.',
+    'Paste code or enter a URL — get a severity-rated security, performance, and accessibility report with results streaming in real time. Audits covering OWASP, GDPR, SOC 2, and more.',
   manifest: '/site.webmanifest',
   alternates: {
     canonical: '/',
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     siteName: 'Claudit',
     title: 'Find What Your Code Review Missed — Claudit',
     description:
-      'Paste code or enter a URL — get a severity-rated security, performance, and accessibility report in 60 seconds. 50 audits covering OWASP, GDPR, SOC 2, and more.',
+      'Paste code or enter a URL — get a severity-rated security, performance, and accessibility report with results streaming in real time. Audits covering OWASP, GDPR, SOC 2, and more.',
     url: BASE_URL,
     images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Claudit — automated code auditing' }],
   },
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Find What Your Code Review Missed — Claudit',
     description:
-      'Paste code or enter a URL — get a severity-rated security, performance, and accessibility report in 60 seconds. 50 audits covering OWASP, GDPR, SOC 2, and more.',
+      'Paste code or enter a URL — get a severity-rated security, performance, and accessibility report with results streaming in real time. Audits covering OWASP, GDPR, SOC 2, and more.',
     images: ['/opengraph-image'],
   },
   robots: {

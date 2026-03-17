@@ -3,6 +3,7 @@ import { fetchUrlLimiter } from '@/lib/rateLimit';
 import { API_RESPONSE_HEADERS, ALLOWED_ORIGINS } from '@/lib/config/apiHeaders';
 import { cachedFetch } from '@/lib/cache';
 import { validateUrlForSSRF } from '@/lib/ssrf';
+import { escapeXml } from '@/lib/escapeXml';
 
 export const runtime = 'nodejs';
 
@@ -145,7 +146,7 @@ function buildServerContext(
   const lines: string[] = [
     '--- SITE AUDIT CONTEXT (collected by Claudit crawler) ---',
     '',
-    `URL: ${url}`,
+    `URL: ${escapeXml(url)}`,
     '',
     '=== HTTP Response Headers ===',
     '',
@@ -156,7 +157,7 @@ function buildServerContext(
   } else {
     for (const [name, value] of Object.entries(headers)) {
       const display = value.length > 500 ? value.slice(0, 500) + '…' : value;
-      lines.push(`${name}: ${display}`);
+      lines.push(`${escapeXml(name)}: ${escapeXml(display)}`);
     }
   }
 
@@ -165,11 +166,11 @@ function buildServerContext(
   // CSP nonce rotation verification
   if (nonceRotates === true) {
     lines.push('CSP Nonce Verification: PASS — nonces rotate between requests.');
-    lines.push(`  Request 1 nonces: ${nonce1.join(', ') || '(none found)'}`);
-    lines.push(`  Request 2 nonces: ${nonce2.join(', ') || '(none found)'}`);
+    lines.push(`  Request 1 nonces: ${nonce1.map(n => escapeXml(n)).join(', ') || '(none found)'}`);
+    lines.push(`  Request 2 nonces: ${nonce2.map(n => escapeXml(n)).join(', ') || '(none found)'}`);
   } else if (nonceRotates === false) {
     lines.push('CSP Nonce Verification: FAIL — same nonce appeared in both requests.');
-    lines.push(`  Nonce value(s): ${nonce1.join(', ')}`);
+    lines.push(`  Nonce value(s): ${nonce1.map(n => escapeXml(n)).join(', ')}`);
   } else if (nonce1.length === 0) {
     lines.push('CSP Nonce Verification: N/A — no nonce attributes found in HTML.');
   }
@@ -179,10 +180,10 @@ function buildServerContext(
   lines.push('=== Architecture Detection ===');
   lines.push('');
   if (arch.isSPA) {
-    lines.push(`Architecture: Single-Page Application (SPA)${arch.framework ? ` — ${arch.framework}` : ''}`);
+    lines.push(`Architecture: Single-Page Application (SPA)${arch.framework ? ` — ${escapeXml(arch.framework)}` : ''}`);
     lines.push('Signals:');
     for (const sig of arch.signals) {
-      lines.push(`  - ${sig}`);
+      lines.push(`  - ${escapeXml(sig)}`);
     }
     lines.push('');
     lines.push('SPA AUDIT GUIDANCE:');
@@ -203,12 +204,12 @@ function buildServerContext(
   } else {
     lines.push('Architecture: Server-rendered / traditional (SSR or static HTML)');
     if (arch.framework) {
-      lines.push(`Framework detected: ${arch.framework}`);
+      lines.push(`Framework detected: ${escapeXml(arch.framework)}`);
     }
     if (arch.signals.length > 0) {
       lines.push('Signals:');
       for (const sig of arch.signals) {
-        lines.push(`  - ${sig}`);
+        lines.push(`  - ${escapeXml(sig)}`);
       }
     }
   }
@@ -347,11 +348,18 @@ export async function POST(req: NextRequest) {
     // Attackers embed adversarial instructions in HTML comments to manipulate audit output.
     const sanitizedData = data.replace(/<!--[\s\S]*?-->/g, '');
 
+    // FP-004: Warn agents when HTML was truncated so they don't flag
+    // "missing" elements that exist beyond the truncation boundary.
+    const MAX_BYTES = 30_000;
+    const truncationWarning = data.length >= MAX_BYTES
+      ? `\n=== TRUNCATION WARNING ===\nThis HTML was truncated to ~${MAX_BYTES} bytes. Elements beyond this boundary are NOT visible to you. Do NOT flag missing elements, scripts, or meta tags unless you can confirm they are absent from the visible portion. If unsure, classify the finding as [POSSIBLE] rather than [CERTAIN].\n=== END WARNING ===\n\n`
+      : '';
+
     // Prepend server context so audit agents can see HTTP headers, nonce status,
     // architecture detection, finding classification rules, and scoring guidance.
     const context = buildServerContext(url, req1.headers, nonceRotates, req1.nonces, nonce2, data);
 
-    return new Response(context + sanitizedData, {
+    return new Response(truncationWarning + context + sanitizedData, {
       headers: {
         ...API_RESPONSE_HEADERS,
         'Content-Type': 'text/plain; charset=utf-8',

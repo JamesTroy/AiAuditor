@@ -683,7 +683,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
                       Try with… ▾
                     </button>
                     {chainOpen && (
-                      <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-lg z-10 overflow-hidden">
+                      <div className="absolute right-0 top-full mt-1 w-56 max-w-[calc(100vw-2rem)] bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-lg z-10 overflow-hidden">
                         {CATEGORIES.map((cat) => {
                           const group = otherAgents.filter((a) => a.category === cat);
                           if (group.length === 0) return null;
@@ -745,8 +745,15 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
                 </span>
               )}
               <span className="text-gray-400 dark:text-zinc-500 ml-auto">
-                {metrics.totalFindings} finding{metrics.totalFindings !== 1 ? 's' : ''}
+                {metrics.filteredTotal < metrics.totalFindings
+                  ? `${metrics.filteredTotal} actionable / ${metrics.totalFindings} total`
+                  : `${metrics.totalFindings} finding${metrics.totalFindings !== 1 ? 's' : ''}`}
               </span>
+              {metrics.suggestionCount > 0 && (
+                <span className="text-gray-400 dark:text-zinc-500" title="Suggestions are improvement opportunities that don't indicate defects">
+                  · {metrics.suggestionCount} suggestion{metrics.suggestionCount !== 1 ? 's' : ''}
+                </span>
+              )}
             </div>
           )}
 

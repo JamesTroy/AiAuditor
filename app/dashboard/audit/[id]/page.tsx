@@ -109,6 +109,7 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
           agentName={auditRecord.agentName}
           agentId={auditRecord.agentId}
           input={auditRecord.input}
+          auditId={auditRecord.id}
           status={auditRecord.status}
           createdDate={createdDate}
         />

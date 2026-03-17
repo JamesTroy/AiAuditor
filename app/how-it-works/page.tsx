@@ -29,7 +29,7 @@ export default function HowItWorksPage() {
             How It Works
           </h1>
           <p className="text-lg text-gray-600 dark:text-zinc-400 max-w-2xl">
-            Actionable, severity-rated findings in seconds — not hours.
+            Actionable, severity-rated findings — streaming in real time.
           </p>
         </div>
 

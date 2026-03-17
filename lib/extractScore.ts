@@ -74,3 +74,32 @@ function normalizeScore(numStr: string, denomStr?: string): number | null {
   if (!denom && num >= 0 && num <= 100) return Math.round(num);
   return null;
 }
+
+// FP-005: Sanity-check score against severity counts from the same report.
+// If the score seems inconsistent with finding severity distribution, clamp
+// it to a reasonable range. This catches agents that accidentally scored
+// [SUGGESTION] findings as defects.
+export function sanityCheckScore(score: number | null, markdown: string): number | null {
+  if (score === null) return null;
+
+  const severityRe = /\*?\*?\[?(CRITICAL|HIGH|MEDIUM|LOW|INFORMATIONAL)\]?\*?\*?\s*[-—]/gi;
+  const severities: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = severityRe.exec(markdown)) !== null) {
+    severities.push(match[1].toUpperCase());
+  }
+
+  const criticals = severities.filter((s) => s === 'CRITICAL').length;
+  const highs = severities.filter((s) => s === 'HIGH').length;
+
+  // If many critical/high findings but score is suspiciously high, cap it
+  if (criticals >= 3 && score > 60) return Math.min(score, 60);
+  if (criticals >= 1 && highs >= 3 && score > 70) return Math.min(score, 70);
+
+  // If only suggestions/informational and score is suspiciously low, floor it
+  const onlySuggestions = severities.length > 0 &&
+    severities.every((s) => s === 'INFORMATIONAL' || s === 'LOW');
+  if (onlySuggestions && score < 60) return Math.max(score, 60);
+
+  return score;
+}

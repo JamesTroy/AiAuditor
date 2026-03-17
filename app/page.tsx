@@ -199,7 +199,7 @@ export default function Home() {
             Ready to find what you&apos;re missing?
           </h2>
           <p className="text-gray-500 dark:text-zinc-400 text-sm sm:text-base mb-6">
-            Run your first audit in under a minute. No credit card required.
+            Paste code, pick your audits, and get results streaming in real time. No credit card required.
           </p>
           <Link
             href="/site-audit"
