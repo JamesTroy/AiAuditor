@@ -1,9 +1,17 @@
-// ARCH-005: Registry metadata only — system prompts live in ./prompts.ts.
+// Registry metadata and startup validation.
+// System prompts live in ./prompts.ts — separated to keep this file navigable
+// and allow prompt edits without touching agent metadata.
 import { AgentConfig } from '../types';
 import { SYSTEM_PROMPTS } from './prompts';
+import { VALID_AGENT_TYPES } from '@/lib/schemas/auditRequest';
+
+type BuiltinAgentInput = Omit<AgentConfig, 'kind'>;
+function builtin(config: BuiltinAgentInput): AgentConfig {
+  return { ...config, kind: 'builtin' };
+}
 
 export const agents: AgentConfig[] = [
-  {
+  builtin({
     id: 'code-quality',
     name: 'Code Quality',
     description: 'Detects bugs, anti-patterns, and style issues across any language.',
@@ -11,7 +19,6 @@ export const agents: AgentConfig[] = [
     accentClass: 'text-blue-400 hover:bg-blue-500/10',
     buttonClass: 'bg-blue-700 hover:bg-blue-600',
     placeholder: 'Paste your code here...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['code-quality'],
     prepPrompt: `I'm preparing code for a **Code Quality** audit. Please help me collect and format the relevant files from my project.
 
@@ -56,8 +63,8 @@ Separate files with a blank line.
 - [ ] Note any files you omitted and why
 
 If the total exceeds 30,000 characters, prioritise the files most central to the feature being reviewed, include the first 100 lines of long files, and note which were truncated or omitted.`,
-  },
-  {
+  }),
+  builtin({
     id: 'security',
     name: 'Security',
     description: 'Identifies vulnerabilities, attack surfaces, and insecure patterns.',
@@ -65,7 +72,6 @@ If the total exceeds 30,000 characters, prioritise the files most central to the
     accentClass: 'text-red-400 hover:bg-red-500/10',
     buttonClass: 'bg-red-700 hover:bg-red-600',
     placeholder: 'Paste your code or describe your system architecture...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['security'],
     prepPrompt: `I'm preparing code for a **Security** audit. Please help me collect and format the relevant files.
 
@@ -121,8 +127,8 @@ Format each file:
 - [ ] Note which endpoints are public vs. authenticated vs. admin-only
 
 Keep total under 30,000 characters. Omit purely presentational or styling files.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-performance',
     name: 'SEO / Performance',
     description: 'Analyzes HTML and page structure for search rankings and load speed.',
@@ -130,7 +136,6 @@ Keep total under 30,000 characters. Omit purely presentational or styling files.
     accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
     buttonClass: 'bg-yellow-800 hover:bg-yellow-700',
     placeholder: 'Paste your page HTML or describe your page structure and content...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-performance'],
     prepPrompt: `I'm preparing a page for an **SEO & Performance** audit. Please help me collect the relevant content.
 
@@ -198,8 +203,8 @@ Format each section clearly labelled:
 - [ ] Mention the page's primary CTA and conversion goal
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'accessibility',
     name: 'Accessibility',
     description: 'Checks HTML against WCAG 2.2 AA criteria and ARIA best practices.',
@@ -207,7 +212,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-green-400 hover:bg-green-500/10',
     buttonClass: 'bg-green-800 hover:bg-green-700',
     placeholder: 'Paste your HTML here...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['accessibility'],
     prepPrompt: `I'm preparing a UI component or page for an **Accessibility (WCAG 2.2 AA)** audit. Please help me collect the relevant markup and behaviour.
 
@@ -279,8 +283,8 @@ Format each section:
 - [ ] Check that disabled elements are truly non-interactive (not just visually greyed out)
 
 Keep total under 30,000 characters. Note the component name and its purpose at the top.`,
-  },
-  {
+  }),
+  builtin({
     id: 'sql',
     name: 'SQL Auditor',
     description: 'Finds injection risks, N+1 queries, missing indexes, and transaction issues.',
@@ -288,7 +292,6 @@ Keep total under 30,000 characters. Note the component name and its purpose at t
     accentClass: 'text-orange-400 hover:bg-orange-500/10',
     buttonClass: 'bg-orange-800 hover:bg-orange-700',
     placeholder: 'Paste your SQL queries, schema, or ORM code here...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['sql'],
     prepPrompt: `I'm preparing database code for a **SQL** audit. Please help me collect the relevant files, queries, and schema.
 
@@ -356,8 +359,8 @@ Format each file or section:
 - [ ] If using an ORM, include both the ORM code AND the generated SQL if you can capture it
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'api-design',
     name: 'API Design',
     description: 'Reviews REST and GraphQL APIs for conventions, versioning, and error contracts.',
@@ -365,7 +368,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
     buttonClass: 'bg-cyan-800 hover:bg-cyan-700',
     placeholder: 'Paste your API routes, OpenAPI spec, or GraphQL schema here...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['api-design'],
     prepPrompt: `I'm preparing an API for a **Design Review**. Please help me collect the relevant files and documentation.
 
@@ -432,8 +434,8 @@ Format each file:
 - [ ] Include rate limit values per endpoint if they differ
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'devops',
     name: 'Docker / DevOps',
     description: 'Audits Dockerfiles, CI/CD pipelines, and infrastructure config for security and efficiency.',
@@ -441,7 +443,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-slate-300 hover:bg-slate-500/10',
     buttonClass: 'bg-slate-700 hover:bg-slate-600',
     placeholder: 'Paste your Dockerfile, docker-compose.yml, CI config (.github/workflows, .gitlab-ci.yml), or IaC here...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['devops'],
     prepPrompt: `I'm preparing infrastructure and deployment config for a **Docker / DevOps** audit. Please help me collect the relevant files.
 
@@ -514,8 +515,8 @@ Format each file:
 - [ ] Mention average CI build time if known
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'performance',
     name: 'Performance Profiler',
     description: 'Identifies algorithmic complexity, memory leaks, and render performance bottlenecks.',
@@ -523,7 +524,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-amber-400 hover:bg-amber-500/10',
     buttonClass: 'bg-amber-800 hover:bg-amber-700',
     placeholder: 'Paste your code — frontend, backend, or algorithm...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['performance'],
     prepPrompt: `I'm preparing code for a **Performance Profiler** audit. Please help me collect the relevant files and context.
 
@@ -590,8 +590,8 @@ Format each file:
 - [ ] Mention any existing caching, debouncing, or throttling already in place
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'privacy',
     name: 'Privacy / GDPR',
     description: 'Checks code and data flows for PII exposure, consent gaps, and GDPR/CCPA compliance.',
@@ -599,7 +599,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-700 hover:bg-pink-600',
     placeholder: 'Paste your code, data models, API routes, or privacy policy for analysis...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['privacy'],
     prepPrompt: `I'm preparing code for a **Privacy & GDPR/CCPA** audit. Please help me collect the relevant files and data flow documentation.
 
@@ -681,8 +680,8 @@ Format each file:
 - [ ] Include any data retention schedules or automated cleanup jobs
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'test-quality',
     name: 'Test Quality',
     description: 'Reviews test suites for coverage gaps, flaky patterns, and assertion quality.',
@@ -690,7 +689,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-teal-400 hover:bg-teal-500/10',
     buttonClass: 'bg-teal-800 hover:bg-teal-700',
     placeholder: 'Paste your test files, test suite, or both test and implementation code...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['test-quality'],
     prepPrompt: `I'm preparing code for a **Test Quality** audit. Please help me collect both the test files and the implementation they cover.
 
@@ -751,8 +749,8 @@ Format each file with clear labels:
 - [ ] Mention any known flaky tests and their symptoms
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'architecture',
     name: 'Architecture Review',
     description: 'Evaluates system design for coupling, cohesion, dependency direction, and scalability.',
@@ -760,7 +758,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-indigo-400 hover:bg-indigo-500/10',
     buttonClass: 'bg-indigo-700 hover:bg-indigo-600',
     placeholder: 'Paste your system description, architecture diagram description, module structure, or key source files...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['architecture'],
     prepPrompt: `I'm preparing a system for an **Architecture Review**. Please help me collect a representative snapshot of the codebase structure.
 
@@ -844,8 +841,8 @@ Format:
 - [ ] Note planned architectural changes or migrations in progress
 
 Keep total under 30,000 characters. Prefer BREADTH (many files, first 30 lines each) over depth (fewer files, complete contents).`,
-  },
-  {
+  }),
+  builtin({
     id: 'documentation',
     name: 'Documentation Quality',
     description: 'Audits inline comments, JSDoc/TSDoc, README completeness, and API reference quality.',
@@ -853,7 +850,6 @@ Keep total under 30,000 characters. Prefer BREADTH (many files, first 30 lines e
     accentClass: 'text-purple-400 hover:bg-purple-500/10',
     buttonClass: 'bg-purple-700 hover:bg-purple-600',
     placeholder: 'Paste your source files, README, JSDoc comments, or API reference...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['documentation'],
     prepPrompt: `I'm preparing code and documentation for a **Documentation Quality** audit. Please help me collect the relevant files.
 
@@ -925,8 +921,8 @@ Format each file:
 - [ ] Include error messages shown to users — these are documentation too
 
 Keep total under 30,000 characters. Prioritise public API surfaces and onboarding-critical files.`,
-  },
-  {
+  }),
+  builtin({
     id: 'dependency-security',
     name: 'Dependency Security',
     description: 'Scans for CVEs, outdated packages, license risks, and supply-chain vulnerabilities.',
@@ -934,7 +930,6 @@ Keep total under 30,000 characters. Prioritise public API surfaces and onboardin
     accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
     buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
     placeholder: 'Paste your package.json, package-lock.json, requirements.txt, go.mod, or similar...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['dependency-security'],
     prepPrompt: `I'm preparing dependency files for a **Dependency & Supply Chain Security** audit. Please help me collect the relevant manifests and configuration.
 
@@ -1018,8 +1013,8 @@ Format each file:
 - [ ] Do NOT include node_modules/ or the full dependency tree dump
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'auth-review',
     name: 'Auth & Session Review',
     description: 'Deep-dives on authentication flows, JWT/session handling, OAuth, and credential security.',
@@ -1027,7 +1022,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-violet-400 hover:bg-violet-500/10',
     buttonClass: 'bg-violet-700 hover:bg-violet-600',
     placeholder: 'Paste your authentication code, JWT logic, session handling, or OAuth implementation...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['auth-review'],
     prepPrompt: `I'm preparing authentication code for an **Auth & Session Security** audit. Please help me collect the relevant files.
 
@@ -1111,8 +1105,8 @@ Format each file:
 - [ ] Note which endpoints are exempt from auth and why
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'frontend-performance',
     name: 'Frontend Performance',
     description: 'Analyzes bundle size, Core Web Vitals risk, rendering bottlenecks, and resource loading.',
@@ -1120,7 +1114,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-lime-400 hover:bg-lime-500/10',
     buttonClass: 'bg-lime-800 hover:bg-lime-700',
     placeholder: 'Paste your component code, build config, HTML, or Lighthouse report...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['frontend-performance'],
     prepPrompt: `I'm preparing frontend code for a **Frontend Performance** audit. Please help me collect the relevant files and measurements.
 
@@ -1200,8 +1193,8 @@ Format each file:
 - [ ] Mention the target device: mobile 3G, desktop broadband, or both
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'caching',
     name: 'Caching Strategy',
     description: 'Reviews HTTP cache headers, CDN config, Redis patterns, and cache invalidation logic.',
@@ -1209,7 +1202,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-sky-400 hover:bg-sky-500/10',
     buttonClass: 'bg-sky-700 hover:bg-sky-600',
     placeholder: 'Paste your API routes, cache configuration, Redis code, or CDN settings...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['caching'],
     prepPrompt: `I'm preparing caching code and configuration for a **Caching Strategy** audit. Please help me collect the relevant files.
 
@@ -1283,8 +1275,8 @@ Format each file:
 - [ ] Note what happens to the cache during deployments
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'memory-profiler',
     name: 'Memory & Leak Detection',
     description: 'Identifies memory leaks, unbounded caches, listener accumulation, and heap growth patterns.',
@@ -1292,7 +1284,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
     buttonClass: 'bg-cyan-800 hover:bg-cyan-700',
     placeholder: 'Paste your component code, Node.js modules, heap snapshot summary, or profiler output...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['memory-profiler'],
     prepPrompt: `I'm preparing code for a **Memory & Leak Detection** audit. Please help me collect the relevant files and diagnostics.
 
@@ -1380,8 +1371,8 @@ Format each file:
 - [ ] Include any connection pool configuration (max connections, idle timeout)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'cloud-infra',
     name: 'Cloud Infrastructure',
     description: 'Reviews IAM policies, network exposure, storage security, and resilience for AWS/GCP/Azure.',
@@ -1389,7 +1380,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-teal-400 hover:bg-teal-500/10',
     buttonClass: 'bg-teal-800 hover:bg-teal-700',
     placeholder: 'Paste your Terraform, CDK, CloudFormation, or cloud config files...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['cloud-infra'],
     prepPrompt: `I'm preparing cloud infrastructure code for a **Cloud Infrastructure Security & Architecture** review. Please help me collect the relevant files.
 
@@ -1480,8 +1470,8 @@ Format each file:
 - [ ] Note which resources are in public vs private subnets
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'observability',
     name: 'Observability & Monitoring',
     description: 'Audits logging structure, metrics coverage, alerting rules, tracing, and incident readiness.',
@@ -1489,7 +1479,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-rose-400 hover:bg-rose-500/10',
     buttonClass: 'bg-rose-700 hover:bg-rose-600',
     placeholder: 'Paste your logging code, Prometheus rules, alert configs, or OpenTelemetry setup...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['observability'],
     prepPrompt: `I'm preparing observability code and configuration for an **Observability & Monitoring** audit. Please help me collect the relevant files.
 
@@ -1574,8 +1563,8 @@ Format each file:
 - [ ] Include error tracking config AND verify source maps are uploaded
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'database-infra',
     name: 'Database Infrastructure',
     description: 'Reviews schema design, indexing, connection pooling, migrations, backup, and replication.',
@@ -1583,7 +1572,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-indigo-400 hover:bg-indigo-500/10',
     buttonClass: 'bg-indigo-700 hover:bg-indigo-600',
     placeholder: 'Paste your schema SQL, migration files, ORM config, or database infrastructure code...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['database-infra'],
     prepPrompt: `I'm preparing database infrastructure code for a **Database Infrastructure** audit. Please help me collect the relevant files.
 
@@ -1668,8 +1656,8 @@ Format each file:
 - [ ] Note if you use connection pooling proxies (PgBouncer, ProxySQL) and their config
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'ux-review',
     name: 'UX Review',
     description: 'Evaluates user flows, interaction patterns, cognitive load, and usability heuristics.',
@@ -1677,7 +1665,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-violet-400 hover:bg-violet-500/10',
     buttonClass: 'bg-violet-700 hover:bg-violet-600',
     placeholder: 'Paste your component HTML/JSX, describe a user flow, or paste a screen description...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['ux-review'],
     prepPrompt: `I'm preparing a UI for a **UX Review** (Nielsen's heuristics + modern interaction design). Please help me collect the relevant markup and context.
 
@@ -1749,8 +1736,8 @@ Format each section:
 - [ ] Mention what analytics show about this page (bounce rate, drop-off, time on page) if available
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'design-system',
     name: 'Design System',
     description: 'Audits design tokens, component APIs, variant coverage, and documentation completeness.',
@@ -1758,7 +1745,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-fuchsia-400 hover:bg-fuchsia-500/10',
     buttonClass: 'bg-fuchsia-700 hover:bg-fuchsia-600',
     placeholder: 'Paste your design tokens, component code, Storybook stories, or token JSON...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['design-system'],
     prepPrompt: `I'm preparing a design system for a **Design System** audit. Please help me collect the relevant files.
 
@@ -1852,8 +1838,8 @@ Format each file:
 - [ ] Include components that deviate from the system (using hardcoded values instead of tokens)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'responsive-design',
     name: 'Responsive Design',
     description: 'Reviews breakpoints, fluid layouts, touch targets, and cross-device behaviour.',
@@ -1861,7 +1847,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-sky-400 hover:bg-sky-500/10',
     buttonClass: 'bg-sky-700 hover:bg-sky-600',
     placeholder: 'Paste your CSS, Tailwind classes, or component code for responsive analysis...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['responsive-design'],
     prepPrompt: `I'm preparing CSS and layout code for a **Responsive Design** audit. Please help me collect the relevant files.
 
@@ -1939,8 +1924,8 @@ Format each section:
 - [ ] Check for horizontal scrolling at any breakpoint — paste any overflow-x findings
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'color-typography',
     name: 'Color & Typography',
     description: 'Checks contrast ratios, type scales, palette harmony, and WCAG color compliance.',
@@ -1948,7 +1933,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-rose-400 hover:bg-rose-500/10',
     buttonClass: 'bg-rose-700 hover:bg-rose-600',
     placeholder: 'Paste your color tokens, CSS variables, Tailwind config, or typography definitions...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['color-typography'],
     prepPrompt: `I'm preparing design tokens for a **Color & Typography** audit (WCAG contrast + visual design). Please help me collect the relevant definitions and usage examples.
 
@@ -2043,8 +2027,8 @@ Format each section:
 - [ ] Note if any colours are hardcoded in components instead of using tokens
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'motion-interaction',
     name: 'Motion & Interaction',
     description: 'Reviews animations, transitions, micro-interactions, and reduced-motion accessibility.',
@@ -2052,7 +2036,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-lime-400 hover:bg-lime-500/10',
     buttonClass: 'bg-lime-800 hover:bg-lime-700',
     placeholder: 'Paste your CSS animations, Framer Motion code, or JavaScript animation logic...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['motion-interaction'],
     prepPrompt: `I'm preparing animation and transition code for a **Motion & Interaction** audit. Please help me collect the relevant files.
 
@@ -2155,8 +2138,8 @@ Format each file:
 - [ ] Note any animations that auto-play (carousels, video backgrounds) and their pause mechanism
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'data-security',
     name: 'Data Security',
     description: 'Audits encryption, key management, secrets handling, DLP, and secure data lifecycle.',
@@ -2164,7 +2147,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-amber-400 hover:bg-amber-500/10',
     buttonClass: 'bg-amber-800 hover:bg-amber-700',
     placeholder: 'Paste your database config, encryption code, secrets management setup, or data flow architecture...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['data-security'],
     prepPrompt: `I'm preparing code and configuration for a **Data Security** audit. Please help me collect the relevant files.
 
@@ -2248,8 +2230,8 @@ Format each file:
 - [ ] Note which compliance frameworks apply (SOC 2, PCI DSS, HIPAA, etc.)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'error-handling',
     name: 'Error Handling',
     description: 'Finds swallowed errors, missing catch blocks, unhandled rejections, and poor recovery patterns.',
@@ -2257,7 +2239,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-orange-400 hover:bg-orange-500/10',
     buttonClass: 'bg-orange-800 hover:bg-orange-700',
     placeholder: 'Paste your code with try/catch blocks, error boundaries, or async error handling...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['error-handling'],
     prepPrompt: `I'm preparing code for an **Error Handling** audit. Please help me collect the relevant files.
 
@@ -2310,8 +2291,8 @@ Format each file:
 - [ ] Look for \`catch (e) {}\` or \`catch (e) { console.log(e) }\` patterns
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'typescript-strictness',
     name: 'TypeScript Strictness',
     description: 'Finds unsafe any types, missing strict flags, weak generics, and type assertion risks.',
@@ -2319,7 +2300,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-blue-400 hover:bg-blue-500/10',
     buttonClass: 'bg-blue-700 hover:bg-blue-600',
     placeholder: 'Paste your TypeScript code, tsconfig.json, or type definitions...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['typescript-strictness'],
     prepPrompt: `I'm preparing TypeScript code for a **TypeScript Strictness** audit. Please help me collect the relevant files.
 
@@ -2369,8 +2349,8 @@ Format each file:
 - [ ] Check for \`as unknown as X\` double-assertion patterns
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'react-patterns',
     name: 'React Patterns',
     description: 'Reviews hooks, component design, state management, re-renders, and Server Component boundaries.',
@@ -2378,7 +2358,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
     buttonClass: 'bg-cyan-800 hover:bg-cyan-700',
     placeholder: 'Paste your React components, hooks, or state management code...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['react-patterns'],
     prepPrompt: `I'm preparing React code for a **React Patterns** audit. Please help me collect the relevant files.
 
@@ -2431,8 +2410,8 @@ Format each file:
 - [ ] Include any React.memo, useMemo, or useCallback usage with context
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'i18n',
     name: 'Internationalization',
     description: 'Finds hardcoded strings, locale-dependent formatting, RTL issues, and i18n architecture gaps.',
@@ -2440,7 +2419,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-indigo-400 hover:bg-indigo-500/10',
     buttonClass: 'bg-indigo-700 hover:bg-indigo-600',
     placeholder: 'Paste your UI components, translation files, or locale configuration...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['i18n'],
     prepPrompt: `I'm preparing code for an **Internationalization (i18n)** audit. Please help me collect the relevant files.
 
@@ -2496,8 +2474,8 @@ Format each file:
 - [ ] Check that error messages are externalized too
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'rate-limiting',
     name: 'Rate Limiting',
     description: 'Audits API throttling, abuse prevention, DDoS surface, and cost-based endpoint protection.',
@@ -2505,7 +2483,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-red-400 hover:bg-red-500/10',
     buttonClass: 'bg-red-700 hover:bg-red-600',
     placeholder: 'Paste your API routes, middleware, rate limiting config, or WAF rules...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['rate-limiting'],
     prepPrompt: `I'm preparing code for a **Rate Limiting** audit. Please help me collect the relevant files.
 
@@ -2556,8 +2533,8 @@ Format each file:
 - [ ] Note which endpoints are public (no auth required)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'logging',
     name: 'Logging & Monitoring',
     description: 'Reviews structured logging, log levels, PII exposure in logs, and audit trail completeness.',
@@ -2565,7 +2542,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-teal-400 hover:bg-teal-500/10',
     buttonClass: 'bg-teal-800 hover:bg-teal-700',
     placeholder: 'Paste your logging configuration, error handlers, or code with console/logger calls...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['logging'],
     prepPrompt: `I'm preparing code for a **Logging & Monitoring** audit. Please help me collect the relevant files.
 
@@ -2615,8 +2591,8 @@ Format each file:
 - [ ] Include any log rotation or retention configuration
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'database-migrations',
     name: 'Database Migrations',
     description: 'Reviews migration safety, lock risks, rollback plans, and zero-downtime schema changes.',
@@ -2624,7 +2600,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
     buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
     placeholder: 'Paste your migration files, schema definitions, or Drizzle/Prisma migration output...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['database-migrations'],
     prepPrompt: `I'm preparing database migrations for a **Migration Safety** audit. Please help me collect the relevant files.
 
@@ -2672,8 +2647,8 @@ Format each file:
 - [ ] Include the deployment process for running migrations
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'concurrency',
     name: 'Concurrency & Async',
     description: 'Finds race conditions, deadlocks, resource leaks, and unsafe async patterns.',
@@ -2681,7 +2656,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-700 hover:bg-pink-600',
     placeholder: 'Paste your async code, database transactions, queue consumers, or connection pool setup...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['concurrency'],
     prepPrompt: `I'm preparing code for a **Concurrency & Async** audit. Please help me collect the relevant files.
 
@@ -2734,8 +2708,8 @@ Format each file:
 - [ ] Check for fire-and-forget async calls (no await, no .catch)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'ci-cd',
     name: 'Git & CI/CD',
     description: 'Audits pipeline security, build performance, deployment strategy, and branch protection.',
@@ -2743,7 +2717,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-slate-300 hover:bg-slate-500/10',
     buttonClass: 'bg-slate-700 hover:bg-slate-600',
     placeholder: 'Paste your GitHub Actions workflows, CI config, Dockerfile, or deployment scripts...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['ci-cd'],
     prepPrompt: `I'm preparing CI/CD configuration for a **Git & CI/CD** audit. Please help me collect the relevant files.
 
@@ -2795,8 +2768,8 @@ Format each file:
 - [ ] Note the typical CI run time and any known bottlenecks
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'regex-review',
     name: 'Regex Review',
     description: 'Detects ReDoS vulnerabilities, incorrect matches, and unreadable patterns.',
@@ -2804,7 +2777,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-orange-400 hover:bg-orange-500/10',
     buttonClass: 'bg-orange-800 hover:bg-orange-700',
     placeholder: 'Paste code containing regular expressions...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['regex-review'],
     prepPrompt: `I'm preparing code for a **Regex Review** audit. Please help me collect the relevant files.
 
@@ -2827,8 +2799,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include any regex that has been "working but we're not sure why"
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'monorepo',
     name: 'Monorepo Structure',
     description: 'Reviews package boundaries, dependency graphs, build config, and shared code organization.',
@@ -2836,7 +2808,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-purple-400 hover:bg-purple-500/10',
     buttonClass: 'bg-purple-700 hover:bg-purple-600',
     placeholder: 'Paste your package.json files, workspace config, turborepo/nx config, or project structure...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['monorepo'],
     prepPrompt: `I'm preparing a monorepo for a **Structure** audit. Please help me collect the relevant files.
 
@@ -2858,8 +2829,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note which packages are publishable vs internal
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'graphql',
     name: 'GraphQL',
     description: 'Audits schema design, resolver performance, N+1 queries, field authorization, and depth limiting.',
@@ -2867,7 +2838,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-700 hover:bg-pink-600',
     placeholder: 'Paste your GraphQL schema, resolvers, or query code...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['graphql'],
     prepPrompt: `I'm preparing a GraphQL API for an audit. Please help me collect the relevant files.
 
@@ -2890,8 +2860,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include any persisted query configuration
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'websocket',
     name: 'WebSocket & Realtime',
     description: 'Reviews connection lifecycle, reconnection, auth on persistent connections, and backpressure.',
@@ -2899,7 +2869,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-violet-400 hover:bg-violet-500/10',
     buttonClass: 'bg-violet-700 hover:bg-violet-600',
     placeholder: 'Paste your WebSocket server/client code, Socket.IO config, or SSE implementation...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['websocket'],
     prepPrompt: `I'm preparing real-time code for a **WebSocket & Realtime** audit. Please help me collect the relevant files.
 
@@ -2922,8 +2891,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include reconnection logic (or note its absence)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'container-security',
     name: 'Container Security',
     description: 'Audits Dockerfiles for root users, image provenance, secret leaks, and runtime hardening.',
@@ -2931,7 +2900,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-red-400 hover:bg-red-500/10',
     buttonClass: 'bg-red-700 hover:bg-red-600',
     placeholder: 'Paste your Dockerfile, docker-compose.yml, or Kubernetes manifests...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['container-security'],
     prepPrompt: `I'm preparing container configuration for a **Container Security** audit. Please help me collect the relevant files.
 
@@ -2955,8 +2923,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include any secret mounting or env injection patterns
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'cors-headers',
     name: 'CORS & Headers',
     description: 'Audits CORS policy, security headers, cookie settings, and origin-based access control.',
@@ -2964,7 +2932,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-amber-400 hover:bg-amber-500/10',
     buttonClass: 'bg-amber-800 hover:bg-amber-700',
     placeholder: 'Paste your CORS configuration, middleware, security headers, or server config...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['cors-headers'],
     prepPrompt: `I'm preparing server configuration for a **CORS & Headers** audit. Please help me collect the relevant files.
 
@@ -2988,8 +2955,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include any CSP configuration
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'api-security',
     name: 'API Security',
     description: 'Audits OWASP API Top 10, endpoint hardening, BOLA/BFLA, input validation, and API abuse vectors.',
@@ -2997,7 +2964,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-red-400 hover:bg-red-500/10',
     buttonClass: 'bg-red-700 hover:bg-red-600',
     placeholder: 'Paste your API route handlers, middleware, OpenAPI spec, or endpoint definitions...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['api-security'],
     prepPrompt: `I'm preparing API code for an **API Security** audit (OWASP API Top 10). Please help me collect the relevant files.
 
@@ -3060,8 +3026,8 @@ Format each file:
 - [ ] Include any admin-only endpoints and how they're protected
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'secrets-scanner',
     name: 'Secrets Scanner',
     description: 'Scans for leaked API keys, tokens, credentials, .env contents, and hardcoded secrets.',
@@ -3069,7 +3035,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-rose-400 hover:bg-rose-500/10',
     buttonClass: 'bg-rose-800 hover:bg-rose-700',
     placeholder: 'Paste your source code, configuration files, or .env.example for secrets scanning...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['secrets-scanner'],
     prepPrompt: `I'm preparing code for a **Secrets Scanner** audit. Please help me collect the relevant files.
 
@@ -3131,8 +3096,8 @@ Format each file:
 - [ ] Include any existing secret scanning configuration
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'xss-prevention',
     name: 'XSS Prevention',
     description: 'Analyzes DOM XSS, reflected/stored XSS, mutation XSS, CSP, and output encoding.',
@@ -3140,7 +3105,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-red-400 hover:bg-red-500/10',
     buttonClass: 'bg-red-800 hover:bg-red-700',
     placeholder: 'Paste your frontend code, templates, rendering logic, or CSP configuration...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['xss-prevention'],
     prepPrompt: `I'm preparing code for an **XSS Prevention** audit. Please help me collect the relevant files.
 
@@ -3201,8 +3165,8 @@ Format each file:
 - [ ] Include any sanitization library configuration
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'csrf-ssrf',
     name: 'CSRF & SSRF',
     description: 'Audits request forgery vectors, SameSite cookies, CSRF tokens, SSRF to internal services.',
@@ -3210,7 +3174,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-rose-400 hover:bg-rose-500/10',
     buttonClass: 'bg-rose-700 hover:bg-rose-600',
     placeholder: 'Paste your form handlers, cookie config, server-side HTTP requests, or URL fetching logic...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['csrf-ssrf'],
     prepPrompt: `I'm preparing code for a **CSRF & SSRF** audit. Please help me collect the relevant files.
 
@@ -3267,8 +3230,8 @@ Format each file:
 - [ ] Include network/firewall configuration if available
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'cryptography',
     name: 'Cryptography Audit',
     description: 'Audits encryption algorithms, key sizes, TLS config, password hashing, and RNG usage.',
@@ -3276,7 +3239,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-orange-400 hover:bg-orange-500/10',
     buttonClass: 'bg-orange-800 hover:bg-orange-700',
     placeholder: 'Paste your encryption code, TLS configuration, password hashing, or key management setup...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['cryptography'],
     prepPrompt: `I'm preparing code for a **Cryptography** audit. Please help me collect the relevant files.
 
@@ -3338,8 +3300,8 @@ Format each file:
 - [ ] Include random token generation for ALL security purposes
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'cloud-iam',
     name: 'Cloud IAM',
     description: 'Audits AWS/GCP/Azure IAM permissions, least privilege, role sprawl, and trust policies.',
@@ -3347,7 +3309,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-amber-400 hover:bg-amber-500/10',
     buttonClass: 'bg-amber-800 hover:bg-amber-700',
     placeholder: 'Paste your IAM policies, Terraform IAM resources, role definitions, or cloud config...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['cloud-iam'],
     prepPrompt: `I'm preparing cloud IAM configuration for a **Cloud IAM** audit. Please help me collect the relevant files.
 
@@ -3410,8 +3371,8 @@ Format each file:
 - [ ] Include MFA and password policy configuration
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'secure-sdlc',
     name: 'Secure SDLC',
     description: 'Audits CI/CD security, code signing, artifact integrity, SLSA compliance, and supply chain.',
@@ -3419,7 +3380,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-red-400 hover:bg-red-500/10',
     buttonClass: 'bg-red-800 hover:bg-red-700',
     placeholder: 'Paste your CI/CD workflows, build scripts, deployment config, or branch protection settings...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['secure-sdlc'],
     prepPrompt: `I'm preparing CI/CD configuration for a **Secure SDLC** audit. Please help me collect the relevant files.
 
@@ -3481,8 +3441,8 @@ Format each file:
 - [ ] Include any artifact signing or SBOM generation configuration
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'threat-modeling',
     name: 'Threat Modeling',
     description: 'Performs STRIDE analysis, attack trees, trust boundary mapping, and MITRE ATT&CK alignment.',
@@ -3490,7 +3450,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-rose-400 hover:bg-rose-500/10',
     buttonClass: 'bg-rose-800 hover:bg-rose-700',
     placeholder: 'Paste your architecture description, system design, data flow, or infrastructure code...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['threat-modeling'],
     prepPrompt: `I'm preparing a system description for a **Threat Modeling** exercise. Please help me collect the relevant information.
 
@@ -3559,8 +3518,8 @@ Describe the architecture clearly:
 - [ ] Describe who the users are and what they can do
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'zero-trust',
     name: 'Zero Trust Audit',
     description: 'Audits network segmentation, mTLS, identity-based access, and implicit trust assumptions.',
@@ -3568,7 +3527,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-orange-400 hover:bg-orange-500/10',
     buttonClass: 'bg-orange-700 hover:bg-orange-600',
     placeholder: 'Paste your network config, service mesh setup, access policies, or infrastructure code...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['zero-trust'],
     prepPrompt: `I'm preparing infrastructure configuration for a **Zero Trust** audit. Please help me collect the relevant files.
 
@@ -3630,8 +3588,8 @@ Format each file:
 - [ ] Include any IP-based allowlists (these are anti-patterns in zero trust)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'incident-response',
     name: 'Incident Response',
     description: 'Audits IR playbooks, logging coverage, detection gaps, and forensic readiness.',
@@ -3639,7 +3597,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-red-400 hover:bg-red-500/10',
     buttonClass: 'bg-red-700 hover:bg-red-600',
     placeholder: 'Paste your logging config, alerting rules, IR playbooks, or monitoring setup...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['incident-response'],
     prepPrompt: `I'm preparing logging and monitoring configuration for an **Incident Response** readiness audit. Please help me collect the relevant files.
 
@@ -3704,8 +3661,8 @@ Format each file:
 - [ ] Show how logs are protected from tampering
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'compliance-audit',
     name: 'Compliance Audit',
     description: 'Maps controls to SOC 2, ISO 27001, PCI DSS, HIPAA, and identifies compliance gaps.',
@@ -3713,7 +3670,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-amber-400 hover:bg-amber-500/10',
     buttonClass: 'bg-amber-800 hover:bg-amber-700',
     placeholder: 'Paste your security controls, policies, infrastructure config, or access control setup...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['compliance-audit'],
     prepPrompt: `I'm preparing for a **Compliance Audit** readiness assessment. Please help me collect the relevant files and information.
 
@@ -3787,8 +3743,8 @@ Format each file:
 - [ ] Note which compliance framework(s) you're targeting
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-technical',
     name: 'SEO Technical',
     description: 'Reviews meta tags, structured data, canonical URLs, sitemap, and crawlability.',
@@ -3796,7 +3752,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-green-400 hover:bg-green-500/10',
     buttonClass: 'bg-green-800 hover:bg-green-700',
     placeholder: 'Paste your page components, layout files, head configuration, or robots.txt...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-technical'],
     prepPrompt: `I'm preparing my site for a **Technical SEO** audit. Please help me collect the relevant files.
 
@@ -3820,8 +3775,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include any canonical URL configuration
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'bundle-size',
     name: 'Bundle Size',
     description: 'Finds heavy dependencies, missing code splitting, tree-shaking failures, and optimization gaps.',
@@ -3829,7 +3784,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
     buttonClass: 'bg-yellow-800 hover:bg-yellow-700',
     placeholder: 'Paste your build output, package.json, import statements, or bundle analysis report...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['bundle-size'],
     prepPrompt: `I'm preparing my frontend for a **Bundle Size** audit. Please help me collect the relevant files.
 
@@ -3859,8 +3813,8 @@ npx @next/bundle-analyzer  # if using Next.js
 - [ ] Note any dependencies you suspect are heavy
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'forms-validation',
     name: 'Forms & Validation',
     description: 'Reviews form UX, input validation, error messaging, accessibility, and mobile usability.',
@@ -3868,7 +3822,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-fuchsia-400 hover:bg-fuchsia-500/10',
     buttonClass: 'bg-fuchsia-700 hover:bg-fuchsia-600',
     placeholder: 'Paste your form components, validation logic, or error handling UI...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['forms-validation'],
     prepPrompt: `I'm preparing forms for a **Forms & Validation** audit. Please help me collect the relevant files.
 
@@ -3891,8 +3844,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any multi-step or complex forms
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'dark-mode',
     name: 'Dark Mode',
     description: 'Audits color contrast in both themes, flash prevention, token usage, and system preference detection.',
@@ -3900,7 +3853,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-violet-400 hover:bg-violet-500/10',
     buttonClass: 'bg-violet-700 hover:bg-violet-600',
     placeholder: 'Paste your theme provider, CSS variables, Tailwind config, or component styles...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['dark-mode'],
     prepPrompt: `I'm preparing my theming code for a **Dark Mode** audit. Please help me collect the relevant files.
 
@@ -3923,8 +3875,8 @@ Keep total under 30,000 characters.`,
 - [ ] Check images/icons that should change per theme
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'email-templates',
     name: 'Email Templates',
     description: 'Reviews email rendering across clients, inline CSS, accessibility, and deliverability.',
@@ -3932,7 +3884,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-rose-400 hover:bg-rose-500/10',
     buttonClass: 'bg-rose-700 hover:bg-rose-600',
     placeholder: 'Paste your email HTML templates, React Email components, or email sending config...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['email-templates'],
     prepPrompt: `I'm preparing email templates for an audit. Please help me collect the relevant files.
 
@@ -3955,8 +3906,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note your current inbox/spam delivery rate if known
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'env-config',
     name: 'Environment Config',
     description: 'Audits env var hygiene, config validation, .env management, and 12-factor compliance.',
@@ -3964,7 +3915,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-teal-400 hover:bg-teal-500/10',
     buttonClass: 'bg-teal-800 hover:bg-teal-700',
     placeholder: 'Paste your .env.example, config validation code, or environment setup...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['env-config'],
     prepPrompt: `I'm preparing environment configuration for an audit. Please help me collect the relevant files.
 
@@ -3989,8 +3939,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include how secrets differ between environments
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'openapi',
     name: 'OpenAPI Spec',
     description: 'Reviews spec completeness, schema accuracy, error documentation, and API consumer usability.',
@@ -3998,7 +3948,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-green-400 hover:bg-green-500/10',
     buttonClass: 'bg-green-800 hover:bg-green-700',
     placeholder: 'Paste your OpenAPI/Swagger spec (YAML or JSON), or your API route handlers...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['openapi'],
     prepPrompt: `I'm preparing my API specification for an **OpenAPI Spec** audit. Please help me collect the relevant files.
 
@@ -4020,8 +3969,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note if the spec is auto-generated or manually maintained
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'state-machines',
     name: 'State Machines',
     description: 'Finds impossible states, missing transitions, deadlocks, and implicit state logic.',
@@ -4029,7 +3978,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-indigo-400 hover:bg-indigo-500/10',
     buttonClass: 'bg-indigo-700 hover:bg-indigo-600',
     placeholder: 'Paste components or modules with complex state (multi-step forms, payment flows, status tracking)...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['state-machines'],
     prepPrompt: `I'm preparing code with complex state for a **State Machine** audit. Please help me collect the relevant files.
 
@@ -4053,8 +4001,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note flows where users report getting "stuck"
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'pagination',
     name: 'Pagination & Filtering',
     description: 'Reviews cursor vs offset strategy, query performance, filter injection, and deep pagination safety.',
@@ -4062,7 +4010,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-sky-400 hover:bg-sky-500/10',
     buttonClass: 'bg-sky-700 hover:bg-sky-600',
     placeholder: 'Paste your paginated API endpoints, database queries, or list components...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['pagination'],
     prepPrompt: `I'm preparing paginated endpoints for an audit. Please help me collect the relevant files.
 
@@ -4086,10 +4033,10 @@ Keep total under 30,000 characters.`,
 - [ ] Include any search endpoint implementations
 
 Keep total under 30,000 characters.`,
-  },
+  }),
 
   // ─── SEO Foundations ─────────────────────────────────────────────
-  {
+  builtin({
     id: 'seo-basics',
     name: 'SEO Basics',
     description: 'Audits fundamental on-page SEO: title tags, meta descriptions, headings, URL structure, and internal linking.',
@@ -4097,7 +4044,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
     buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
     placeholder: 'Paste your page HTML, layout components, or metadata configuration...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-basics'],
     prepPrompt: `I'm preparing my site for an **SEO Basics** audit. Please help me collect the relevant files.
 
@@ -4121,8 +4067,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include robots.txt
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-search-engines',
     name: 'Search Engine Understanding',
     description: 'Analyzes how search engines crawl, render, and index your site — crawlability, JS rendering, and crawl budget.',
@@ -4130,7 +4076,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
     buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
     placeholder: 'Paste your robots.txt, sitemap, layout files, and routing configuration...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-search-engines'],
     prepPrompt: `I'm preparing my site for a **Search Engine Understanding** audit. Please help me collect the relevant files.
 
@@ -4156,8 +4101,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note approximate site size (number of pages)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-ranking-factors',
     name: 'Ranking Factors',
     description: 'Evaluates E-E-A-T signals, content quality, Core Web Vitals readiness, and on-page ranking signals.',
@@ -4165,7 +4110,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-amber-400 hover:bg-amber-500/10',
     buttonClass: 'bg-amber-700 hover:bg-amber-600',
     placeholder: 'Paste your page content, layout, about/author pages, and structured data...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-ranking-factors'],
     prepPrompt: `I'm preparing my site for a **Ranking Factors** audit. Please help me collect the relevant files.
 
@@ -4190,8 +4134,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include content from your most important 3–5 pages
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-quick-wins',
     name: 'SEO Quick Wins',
     description: 'Identifies high-impact, low-effort SEO improvements you can implement today for measurable results.',
@@ -4199,7 +4143,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-lime-400 hover:bg-lime-500/10',
     buttonClass: 'bg-lime-700 hover:bg-lime-600',
     placeholder: 'Paste your site HTML, metadata config, and key page content...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-quick-wins'],
     prepPrompt: `I'm looking for **SEO Quick Wins** on my site. Please help me collect the relevant files.
 
@@ -4224,10 +4167,10 @@ Keep total under 30,000 characters.`,
 - [ ] Include your Google Search Console top queries if available
 
 Keep total under 30,000 characters.`,
-  },
+  }),
 
   // ─── SEO Research ────────────────────────────────────────────────
-  {
+  builtin({
     id: 'seo-keyword-research',
     name: 'Keyword Research',
     description: 'Analyzes keyword targeting, cannibalization, long-tail coverage, and content gaps across your pages.',
@@ -4235,7 +4178,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-violet-400 hover:bg-violet-500/10',
     buttonClass: 'bg-violet-700 hover:bg-violet-600',
     placeholder: 'Paste your page content, titles, headings, and meta descriptions...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-keyword-research'],
     prepPrompt: `I'm preparing my site for a **Keyword Research** audit. Please help me collect the relevant content.
 
@@ -4259,8 +4201,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include your site's value proposition / unique selling points
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-serp-analysis',
     name: 'SERP Analysis',
     description: 'Reviews how your pages appear in search results — rich snippets, featured snippet eligibility, and CTR optimization.',
@@ -4268,7 +4210,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-orange-400 hover:bg-orange-500/10',
     buttonClass: 'bg-orange-800 hover:bg-orange-700',
     placeholder: 'Paste your page metadata, structured data, and content structure...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-serp-analysis'],
     prepPrompt: `I'm preparing my site for a **SERP Analysis** audit. Please help me collect the relevant files.
 
@@ -4294,8 +4235,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note your current click-through rates from Search Console if available
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-search-intent',
     name: 'Search Intent',
     description: 'Evaluates content alignment with user search intent — informational, navigational, transactional, and commercial.',
@@ -4303,7 +4244,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-700 hover:bg-pink-600',
     placeholder: 'Paste your page content, CTAs, and target keywords...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-search-intent'],
     prepPrompt: `I'm preparing my site for a **Search Intent** audit. Please help me collect the relevant content.
 
@@ -4328,8 +4268,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any pages where bounce rate is unexpectedly high
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-competitor-research',
     name: 'Competitor Research',
     description: 'Analyzes your SEO competitive position — content strategy gaps, technical advantages, and authority signals.',
@@ -4337,7 +4277,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-rose-400 hover:bg-rose-500/10',
     buttonClass: 'bg-rose-700 hover:bg-rose-600',
     placeholder: 'Paste your site content and structure. Mention your competitors if known...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-competitor-research'],
     prepPrompt: `I'm preparing my site for a **Competitor Research** SEO audit. Please help me collect the relevant content.
 
@@ -4367,8 +4306,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include content you're most proud of and content you think is weak
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-keyword-gap',
     name: 'Keyword Gap',
     description: 'Identifies untapped keyword opportunities, missing topic clusters, and content gaps to expand your search footprint.',
@@ -4376,7 +4315,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-teal-400 hover:bg-teal-500/10',
     buttonClass: 'bg-teal-800 hover:bg-teal-700',
     placeholder: 'Paste your sitemap, content index, blog posts, and target keywords...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-keyword-gap'],
     prepPrompt: `I'm preparing my site for a **Keyword Gap** analysis. Please help me collect the relevant content.
 
@@ -4403,10 +4341,10 @@ Keep total under 30,000 characters.`,
 - [ ] Note your content production capacity (how many pieces per month?)
 
 Keep total under 30,000 characters.`,
-  },
+  }),
 
   // ─── SEO Specialist ───────────────────────────────────────────────
-  {
+  builtin({
     id: 'seo-local',
     name: 'Local SEO',
     description: 'Audits local search presence, Google Business Profile optimization, NAP consistency, and local ranking factors.',
@@ -4414,7 +4352,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
     buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
     placeholder: 'Paste your website HTML, local landing pages, or Google Business Profile details...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-local'],
     prepPrompt: `I'm preparing my site for a **Local SEO** audit. Please help me collect the relevant content.
 
@@ -4439,8 +4376,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note your top local competitors
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-ecommerce',
     name: 'E-commerce SEO',
     description: 'Audits product page optimization, category architecture, faceted navigation, canonical strategy, and product schema.',
@@ -4448,7 +4385,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
     buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
     placeholder: 'Paste your product pages, category pages, faceted navigation HTML, and structured data...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-ecommerce'],
     prepPrompt: `I'm preparing my store for an **E-commerce SEO** audit. Please help me collect the relevant content.
 
@@ -4473,8 +4409,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any out-of-stock product handling strategy
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-content-audit',
     name: 'Content SEO Audit',
     description: 'Evaluates content quality, keyword cannibalization, thin content, topical authority, and content gap opportunities.',
@@ -4482,7 +4418,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
     buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
     placeholder: 'Paste your content pages, blog posts, content inventory, or sitemap...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-content-audit'],
     prepPrompt: `I'm preparing my site for a **Content SEO Audit**. Please help me collect the relevant content.
 
@@ -4506,8 +4441,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note which pages get the most and least traffic
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-link-building',
     name: 'Link Profile Analysis',
     description: 'Analyzes backlink quality, anchor text distribution, toxic links, internal linking, and link building opportunities.',
@@ -4515,7 +4450,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
     buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
     placeholder: 'Paste your backlink data, internal linking structure, anchor text reports, or link audit exports...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-link-building'],
     prepPrompt: `I'm preparing my site for a **Link Profile Analysis**. Please help me collect the relevant data.
 
@@ -4539,8 +4473,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any link building efforts already underway
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-mobile',
     name: 'Mobile SEO',
     description: 'Audits mobile-first indexing readiness, responsive design, mobile usability, page experience, and mobile search optimization.',
@@ -4548,7 +4482,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
     buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
     placeholder: 'Paste your responsive layout HTML, viewport configuration, mobile styles, and page experience data...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-mobile'],
     prepPrompt: `I'm preparing my site for a **Mobile SEO** audit. Please help me collect the relevant content.
 
@@ -4573,8 +4506,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any interstitials or popups shown on mobile
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-international',
     name: 'International SEO',
     description: 'Audits hreflang implementation, geo-targeting strategy, multilingual content, and cross-border SEO architecture.',
@@ -4582,7 +4515,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
     buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
     placeholder: 'Paste your hreflang tags, language routing config, localized pages, and geo-targeting setup...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-international'],
     prepPrompt: `I'm preparing my site for an **International SEO** audit. Please help me collect the relevant content.
 
@@ -4607,8 +4539,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note which countries/languages drive the most traffic
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-site-architecture',
     name: 'Site Architecture SEO',
     description: 'Audits URL structure, content siloing, crawl depth, internal linking topology, and information architecture for SEO.',
@@ -4616,7 +4548,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
     buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
     placeholder: 'Paste your sitemap, URL structure, navigation components, and routing configuration...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-site-architecture'],
     prepPrompt: `I'm preparing my site for a **Site Architecture SEO** audit. Please help me collect the relevant content.
 
@@ -4641,8 +4572,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note planned site growth (new sections, content types)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-core-web-vitals',
     name: 'Core Web Vitals SEO',
     description: 'Audits Core Web Vitals (LCP, CLS, INP) as ranking factors and page experience signals for search performance.',
@@ -4650,7 +4581,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
     buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
     placeholder: 'Paste your page HTML, performance data, Lighthouse reports, and layout/rendering code...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-core-web-vitals'],
     prepPrompt: `I'm preparing my site for a **Core Web Vitals SEO** audit. Please help me collect the relevant content.
 
@@ -4675,8 +4605,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any interstitials or intrusive popups
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-structured-data',
     name: 'Structured Data SEO',
     description: 'Audits Schema.org markup, JSON-LD implementation, rich result eligibility, and structured data opportunities.',
@@ -4684,7 +4614,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
     buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
     placeholder: 'Paste your JSON-LD markup, page HTML with structured data, or schema implementation code...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-structured-data'],
     prepPrompt: `I'm preparing my site for a **Structured Data SEO** audit. Please help me collect the relevant content.
 
@@ -4708,8 +4637,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any dynamically generated structured data
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-indexation',
     name: 'Indexation & Crawl Management',
     description: 'Audits indexation issues, canonical conflicts, crawl errors, orphan pages, index bloat, and crawl directives.',
@@ -4717,7 +4646,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
     buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
     placeholder: 'Paste your robots.txt, sitemap, canonical tags, meta robots directives, and Search Console data...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-indexation'],
     prepPrompt: `I'm preparing my site for an **Indexation & Crawl Management** audit. Please help me collect the relevant content.
 
@@ -4743,8 +4671,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any pages you want indexed but Google is ignoring
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'seo-video',
     name: 'Video SEO',
     description: 'Audits video optimization for search — video schema, sitemaps, YouTube SEO, thumbnails, transcripts, and SERP features.',
@@ -4752,7 +4680,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
     buttonClass: 'bg-emerald-800 hover:bg-emerald-700',
     placeholder: 'Paste your video embed code, video schema markup, YouTube metadata, or video sitemap...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['seo-video'],
     prepPrompt: `I'm preparing my site for a **Video SEO** audit. Please help me collect the relevant content.
 
@@ -4778,10 +4705,10 @@ Keep total under 30,000 characters.`,
 - [ ] Note your thumbnail creation process and A/B testing
 
 Keep total under 30,000 characters.`,
-  },
+  }),
 
   // ─── Bloat & Lean Code ──────────────────────────────────────────
-  {
+  builtin({
     id: 'code-bloat',
     name: 'Code Bloat',
     description: 'Finds dead code, over-abstraction, copy-paste duplication, unused dependencies, and unnecessary complexity.',
@@ -4789,7 +4716,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-orange-400 hover:bg-orange-500/10',
     buttonClass: 'bg-orange-800 hover:bg-orange-700',
     placeholder: 'Paste the code you suspect has bloat — the more files, the better the analysis...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['code-bloat'],
     prepPrompt: `I'm preparing code for a **Code Bloat** audit. Please help me collect the right files.
 
@@ -4829,10 +4755,10 @@ Run \`git log --format=format: --name-only --diff-filter=M --since="6 months ago
 - [ ] Note which modules feel "too complex for what they do"
 
 Keep total under 30,000 characters.`,
-  },
+  }),
 
   // ─── Pain Point Audits ─────────────────────────────────────────
-  {
+  builtin({
     id: 'marketing-pain-points',
     name: 'Marketing Pain Points',
     description: 'Finds conversion killers: unclear positioning, weak CTAs, missing trust signals, and messaging friction.',
@@ -4840,7 +4766,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-700 hover:bg-pink-600',
     placeholder: 'Paste your landing page HTML, marketing copy, or page components...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-pain-points'],
     prepPrompt: `I'm preparing my site for a **Marketing Pain Points** audit. Please help me collect the relevant materials.
 
@@ -4883,10 +4808,10 @@ Keep total under 30,000 characters.`,
 - [ ] Include any A/B test results from previous experiments
 
 Keep total under 30,000 characters.`,
-  },
+  }),
 
   // ─── Marketing Audits ─────────────────────────────────────────
-  {
+  builtin({
     id: 'marketing-copywriting',
     name: 'Copywriting Audit',
     description: 'Audits headlines, CTAs, value props, and persuasion structure using AIDA, PAS, and direct-response frameworks.',
@@ -4894,7 +4819,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your marketing copy, landing page text, ad creative, or email copy...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-copywriting'],
     prepPrompt: `I'm preparing copy for a **Copywriting Audit**. Please help me collect the relevant materials.
 
@@ -4934,8 +4858,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include the CTA button text AND surrounding context
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-landing-pages',
     name: 'Landing Page Audit',
     description: 'Optimizes landing pages for conversion: layout, messaging hierarchy, CTAs, trust signals, and mobile experience.',
@@ -4943,7 +4867,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your landing page HTML, component code, or page copy...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-landing-pages'],
     prepPrompt: `I'm preparing a landing page for a **Landing Page Audit**. Please help me collect the relevant materials.
 
@@ -4984,8 +4907,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include mobile-specific layouts if they differ
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-email-campaigns',
     name: 'Email Campaign Audit',
     description: 'Audits email campaigns for subject lines, deliverability, copy persuasion, CTA effectiveness, and segmentation.',
@@ -4993,7 +4916,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your email HTML, subject lines, campaign copy, or email sequence...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-email-campaigns'],
     prepPrompt: `I'm preparing emails for an **Email Campaign Audit**. Please help me collect the relevant materials.
 
@@ -5031,8 +4953,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any deliverability issues you've experienced
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-social-media',
     name: 'Social Media Audit',
     description: 'Evaluates social media profiles, content strategy, engagement patterns, and growth tactics across platforms.',
@@ -5040,7 +4962,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your social media profiles, recent posts, content calendar, or analytics...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-social-media'],
     prepPrompt: `I'm preparing for a **Social Media Audit**. Please help me collect the relevant materials.
 
@@ -5078,8 +4999,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any paid social campaigns running
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-brand-voice',
     name: 'Brand Voice Audit',
     description: 'Assesses tone consistency, messaging alignment, and brand personality across all touchpoints.',
@@ -5087,7 +5008,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste copy from multiple touchpoints: website, emails, social posts, product UI...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-brand-voice'],
     prepPrompt: `I'm preparing for a **Brand Voice Audit**. Please help me collect the relevant materials.
 
@@ -5131,8 +5051,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note which pieces were written by different teams/people
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-competitor-analysis',
     name: 'Competitor Analysis',
     description: 'Analyzes competitive positioning, messaging gaps, feature differentiation, and strategic white space.',
@@ -5140,7 +5060,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your marketing materials alongside competitor content for comparison...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-competitor-analysis'],
     prepPrompt: `I'm preparing for a **Competitor Analysis**. Please help me collect the relevant materials.
 
@@ -5179,8 +5098,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include pricing information for meaningful comparison
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-pricing-page',
     name: 'Pricing Page Audit',
     description: 'Audits pricing psychology, tier structure, objection handling, and decision architecture to maximize revenue.',
@@ -5188,7 +5107,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your pricing page HTML, pricing structure, or feature comparison matrix...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-pricing-page'],
     prepPrompt: `I'm preparing for a **Pricing Page Audit**. Please help me collect the relevant materials.
 
@@ -5224,8 +5142,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include any annual vs. monthly pricing differences
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-onboarding',
     name: 'Onboarding Flow Audit',
     description: 'Evaluates activation flow for time-to-value, progressive disclosure, motivation design, and retention mechanics.',
@@ -5233,7 +5151,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your onboarding flow code, screen copy, user journey, or wireframes...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-onboarding'],
     prepPrompt: `I'm preparing for an **Onboarding Flow Audit**. Please help me collect the relevant materials.
 
@@ -5271,8 +5188,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include both the UI copy and the flow logic
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-analytics',
     name: 'Marketing Analytics Audit',
     description: 'Audits tracking implementation, attribution models, funnel instrumentation, and KPI frameworks.',
@@ -5280,7 +5197,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your analytics configuration, tracking code, GTM setup, or measurement plan...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-analytics'],
     prepPrompt: `I'm preparing for a **Marketing Analytics Audit**. Please help me collect the relevant materials.
 
@@ -5318,8 +5234,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include consent/privacy implementation if relevant
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-content-strategy',
     name: 'Content Strategy Audit',
     description: 'Evaluates topic clusters, content gaps, funnel-stage coverage, SEO alignment, and content distribution.',
@@ -5327,7 +5243,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your content inventory, blog posts, content calendar, or sitemap...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-content-strategy'],
     prepPrompt: `I'm preparing for a **Content Strategy Audit**. Please help me collect the relevant materials.
 
@@ -5366,8 +5281,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include any competitor content you admire
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-conversion-rate',
     name: 'Conversion Rate Audit',
     description: 'Identifies conversion blockers using LIFT model, ICE scoring, and recommends A/B tests for key funnel steps.',
@@ -5375,7 +5290,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your conversion funnel code, analytics data, or user flow descriptions...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-conversion-rate'],
     prepPrompt: `I'm preparing for a **Conversion Rate Audit**. Please help me collect the relevant materials.
 
@@ -5412,8 +5326,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include form fields and their labels
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-product-positioning',
     name: 'Product Positioning Audit',
     description: 'Evaluates ICP fit, competitive frame, differentiation, and messaging using Obviously Awesome and JTBD frameworks.',
@@ -5421,7 +5335,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your product marketing materials, positioning docs, or website copy...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-product-positioning'],
     prepPrompt: `I'm preparing for a **Product Positioning Audit**. Please help me collect the relevant materials.
 
@@ -5462,8 +5375,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include competitor positioning for comparison
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-growth-loops',
     name: 'Growth Loops Audit',
     description: 'Maps viral mechanics, referral programs, content loops, and network effects for compounding growth.',
@@ -5471,7 +5384,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your product code, referral system, sharing mechanics, or growth strategy docs...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-growth-loops'],
     prepPrompt: `I'm preparing for a **Growth Loops Audit**. Please help me collect the relevant materials.
 
@@ -5509,8 +5421,8 @@ Keep total under 30,000 characters.`,
 - [ ] Describe the moment users naturally want to share
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-retention',
     name: 'Retention Audit',
     description: 'Identifies churn signals, evaluates engagement loops, lifecycle communication, and win-back strategies.',
@@ -5518,7 +5430,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your lifecycle emails, engagement data, cancellation flow, or retention strategy...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-retention'],
     prepPrompt: `I'm preparing for a **Retention Audit**. Please help me collect the relevant materials.
 
@@ -5557,8 +5468,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include any health score or engagement scoring logic
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-ab-testing',
     name: 'A/B Testing Strategy',
     description: 'Evaluates experimentation maturity: hypothesis quality, statistical rigor, test prioritization, and learning culture.',
@@ -5566,7 +5477,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your test results, experimentation docs, hypothesis backlog, or testing tool config...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-ab-testing'],
     prepPrompt: `I'm preparing for an **A/B Testing Strategy** audit. Please help me collect the relevant materials.
 
@@ -5604,8 +5514,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include the hypothesis for each test, not just the result
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-funnel',
     name: 'Marketing Funnel Audit',
     description: 'Analyzes full-funnel health: TOFU traffic, MOFU nurture, BOFU conversion, and stage transition rates.',
@@ -5613,7 +5523,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your funnel data, marketing strategy, campaign materials, or analytics...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-funnel'],
     prepPrompt: `I'm preparing for a **Marketing Funnel Audit**. Please help me collect the relevant materials.
 
@@ -5657,8 +5566,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include nurture email sequences, not just landing pages
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-value-proposition',
     name: 'Value Proposition Audit',
     description: 'Evaluates unique selling points, benefit clarity, customer-problem fit, and differentiation using the Value Proposition Canvas.',
@@ -5666,7 +5575,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your product messaging, marketing materials, or value proposition statements...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-value-proposition'],
     prepPrompt: `I'm preparing for a **Value Proposition Audit**. Please help me collect the relevant materials.
 
@@ -5705,8 +5613,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note your top 3 claimed benefits
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-user-research',
     name: 'User Research Audit',
     description: 'Assesses persona quality, JTBD alignment, research methodology, and insight-to-action pipeline.',
@@ -5714,7 +5622,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your personas, research findings, survey results, or interview transcripts...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-user-research'],
     prepPrompt: `I'm preparing for a **User Research Audit**. Please help me collect the relevant materials.
 
@@ -5754,8 +5661,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note what decisions were made based on this research
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'marketing-gtm-strategy',
     name: 'Go-to-Market Strategy Audit',
     description: 'Evaluates launch readiness: market definition, channel strategy, sales enablement, and execution sequencing.',
@@ -5763,7 +5670,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-pink-400 hover:bg-pink-500/10',
     buttonClass: 'bg-pink-800 hover:bg-pink-700',
     placeholder: 'Paste your GTM strategy, launch plan, marketing materials, or product brief...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['marketing-gtm-strategy'],
     prepPrompt: `I'm preparing for a **Go-to-Market Strategy Audit**. Please help me collect the relevant materials.
 
@@ -5808,8 +5714,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include success metrics and how you'll measure them
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'developer-pain-points',
     name: 'Developer Pain Points',
     description: 'Spots DX friction: confusing APIs, unhelpful errors, inconsistent patterns, and onboarding barriers.',
@@ -5817,7 +5723,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-amber-400 hover:bg-amber-500/10',
     buttonClass: 'bg-amber-700 hover:bg-amber-600',
     placeholder: 'Paste the code a new developer would need to understand and work with...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['developer-pain-points'],
     prepPrompt: `I'm preparing code for a **Developer Pain Points** audit. Please help me collect the most impactful files.
 
@@ -5862,10 +5767,10 @@ Keep total under 30,000 characters.`,
 - [ ] Note any areas where you've seen repeated questions in code reviews
 
 Keep total under 30,000 characters.`,
-  },
+  }),
 
   // ─── New Performance Agents ─────────────────────────────────────
-  {
+  builtin({
     id: 'network-performance',
     name: 'Network Performance',
     description: 'Audits HTTP/2, connection pooling, DNS resolution, CDN config, prefetch hints, and request waterfalls.',
@@ -5873,7 +5778,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-amber-400 hover:bg-amber-500/10',
     buttonClass: 'bg-amber-800 hover:bg-amber-700',
     placeholder: 'Paste your HTML head, server config, resource loading code, or Lighthouse network report...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['network-performance'],
     prepPrompt: `I'm preparing my application for a **Network Performance** audit. Please help me collect the relevant files.
 
@@ -5896,8 +5800,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include any redirect chains (HTTP->HTTPS, www->non-www)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'database-performance',
     name: 'Database Performance',
     description: 'Detects N+1 queries, missing indexes, full table scans, connection pool issues, and query anti-patterns.',
@@ -5905,7 +5809,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
     buttonClass: 'bg-yellow-800 hover:bg-yellow-700',
     placeholder: 'Paste your ORM models, database queries, API route handlers, or EXPLAIN output...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['database-performance'],
     prepPrompt: `I'm preparing my application for a **Database Performance** audit. Please help me collect the relevant files.
 
@@ -5930,8 +5833,8 @@ Keep total under 30,000 characters.`,
 - [ ] Show any caching layer between your app and the database
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'image-optimization',
     name: 'Image Optimization',
     description: 'Reviews image formats, responsive sizing, lazy loading, CDN delivery, and LCP image optimization.',
@@ -5939,7 +5842,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-amber-400 hover:bg-amber-500/10',
     buttonClass: 'bg-amber-800 hover:bg-amber-700',
     placeholder: 'Paste your image components, HTML with img tags, or image loading configuration...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['image-optimization'],
     prepPrompt: `I'm preparing my site for an **Image Optimization** audit. Please help me collect the relevant files.
 
@@ -5963,8 +5865,8 @@ Keep total under 30,000 characters.`,
 - [ ] Show the rendered HTML for image-heavy pages
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'ssr-performance',
     name: 'SSR Performance',
     description: 'Analyzes streaming SSR, selective hydration, server timing, TTFB, and rendering strategy selection.',
@@ -5972,7 +5874,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
     buttonClass: 'bg-yellow-800 hover:bg-yellow-700',
     placeholder: 'Paste your page components, data fetching logic, layout files, and server configuration...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['ssr-performance'],
     prepPrompt: `I'm preparing my application for an **SSR Performance** audit. Please help me collect the relevant files.
 
@@ -5997,8 +5898,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note which components are server vs client components
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'api-performance',
     name: 'API Performance',
     description: 'Reviews response times, payload sizes, batching, caching headers, and serialization efficiency.',
@@ -6006,7 +5907,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-amber-400 hover:bg-amber-500/10',
     buttonClass: 'bg-amber-800 hover:bg-amber-700',
     placeholder: 'Paste your API route handlers, middleware, serialization logic, or OpenAPI spec...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['api-performance'],
     prepPrompt: `I'm preparing my API for a **Performance** audit. Please help me collect the relevant files.
 
@@ -6031,8 +5931,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include pagination implementation
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'css-performance',
     name: 'CSS Performance',
     description: 'Audits critical CSS, unused styles, selector complexity, layout thrashing, and CLS-causing patterns.',
@@ -6040,7 +5940,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
     buttonClass: 'bg-yellow-800 hover:bg-yellow-700',
     placeholder: 'Paste your CSS files, styled components, Tailwind config, or component styling code...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['css-performance'],
     prepPrompt: `I'm preparing my styles for a **CSS Performance** audit. Please help me collect the relevant files.
 
@@ -6065,8 +5964,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any known layout shift issues
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'javascript-performance',
     name: 'JavaScript Performance',
     description: 'Analyzes main thread blocking, long tasks, code splitting, tree-shaking, and script loading strategy.',
@@ -6074,7 +5973,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-amber-400 hover:bg-amber-500/10',
     buttonClass: 'bg-amber-800 hover:bg-amber-700',
     placeholder: 'Paste your JS/TS entry points, component code, build config, or bundle analysis output...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['javascript-performance'],
     prepPrompt: `I'm preparing my JavaScript for a **Performance** audit. Please help me collect the relevant files.
 
@@ -6100,8 +5998,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any known slow interactions
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'animation-performance',
     name: 'Animation Performance',
     description: 'Reviews GPU compositing, jank prevention, requestAnimationFrame usage, will-change, and scroll effects.',
@@ -6109,7 +6007,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
     buttonClass: 'bg-yellow-800 hover:bg-yellow-700',
     placeholder: 'Paste your animation code, CSS transitions, scroll handlers, or Framer Motion components...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['animation-performance'],
     prepPrompt: `I'm preparing my animations for a **Performance** audit. Please help me collect the relevant files.
 
@@ -6133,8 +6030,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note which animations run on mobile (where GPU is weaker)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'web-vitals',
     name: 'Core Web Vitals',
     description: 'Optimizes LCP, INP, CLS, FCP, and TTFB against Google thresholds with specific remediation steps.',
@@ -6142,7 +6039,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-amber-400 hover:bg-amber-500/10',
     buttonClass: 'bg-amber-800 hover:bg-amber-700',
     placeholder: 'Paste your page components, Lighthouse report, or PageSpeed Insights results...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['web-vitals'],
     prepPrompt: `I'm preparing my site for a **Core Web Vitals** audit. Please help me collect the relevant files and data.
 
@@ -6167,8 +6063,8 @@ Keep total under 30,000 characters.`,
 - [ ] Test on mobile (CWV thresholds are for mobile by default)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'runtime-performance',
     name: 'Runtime Performance',
     description: 'Detects memory leaks, GC pressure, event listener accumulation, closure captures, and unbounded caches.',
@@ -6176,7 +6072,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
     buttonClass: 'bg-yellow-800 hover:bg-yellow-700',
     placeholder: 'Paste your components, event handlers, subscription code, or memory-intensive modules...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['runtime-performance'],
     prepPrompt: `I'm preparing my application for a **Runtime Performance** audit. Please help me collect the relevant files.
 
@@ -6201,8 +6096,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any "Maximum call stack" or "heap out of memory" errors
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'build-performance',
     name: 'Build Performance',
     description: 'Optimizes compile times, HMR speed, bundler config, caching strategies, and CI build pipelines.',
@@ -6210,7 +6105,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-amber-400 hover:bg-amber-500/10',
     buttonClass: 'bg-amber-800 hover:bg-amber-700',
     placeholder: 'Paste your build config, tsconfig, CI pipeline, or npm run build output...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['build-performance'],
     prepPrompt: `I'm preparing my build system for a **Build Performance** audit. Please help me collect the relevant files.
 
@@ -6236,8 +6130,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include monorepo config if applicable (turbo.json, nx.json)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'navigation-ux',
     name: 'Navigation UX',
     description: 'Audits information architecture, wayfinding, breadcrumbs, menus, and deep-linking patterns.',
@@ -6245,7 +6139,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-violet-400 hover:bg-violet-500/10',
     buttonClass: 'bg-violet-700 hover:bg-violet-600',
     placeholder: 'Paste your navigation markup, site map structure, menu components, or route configuration...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['navigation-ux'],
     prepPrompt: `I'm preparing navigation for a **Navigation UX** audit. Please help me collect the relevant files.
 
@@ -6271,8 +6164,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include URL structure for key pages
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'micro-interactions',
     name: 'Micro-interactions',
     description: 'Reviews feedback patterns, loading states, transitions, empty states, and state change animations.',
@@ -6280,7 +6173,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-purple-400 hover:bg-purple-500/10',
     buttonClass: 'bg-purple-700 hover:bg-purple-600',
     placeholder: 'Paste your UI components with state handling, loading patterns, empty states, or transition code...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['micro-interactions'],
     prepPrompt: `I'm preparing UI components for a **Micro-interactions** audit. Please help me collect the relevant files.
 
@@ -6305,8 +6197,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note which actions lack feedback entirely
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'error-ux',
     name: 'Error UX',
     description: 'Evaluates error messages, recovery flows, 404/500 pages, validation UX, and graceful degradation.',
@@ -6314,7 +6206,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-violet-400 hover:bg-violet-500/10',
     buttonClass: 'bg-violet-700 hover:bg-violet-600',
     placeholder: 'Paste your error pages, validation components, error boundary code, or error message patterns...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['error-ux'],
     prepPrompt: `I'm preparing error handling UI for an **Error UX** audit. Please help me collect the relevant files.
 
@@ -6339,8 +6230,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any places where errors are silently swallowed
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'mobile-ux',
     name: 'Mobile UX',
     description: 'Audits touch targets, gesture design, thumb zones, bottom sheets, and mobile-first interaction patterns.',
@@ -6348,7 +6239,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-fuchsia-400 hover:bg-fuchsia-500/10',
     buttonClass: 'bg-fuchsia-700 hover:bg-fuchsia-600',
     placeholder: 'Paste your mobile layouts, touch-interactive components, responsive CSS, or viewport configuration...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['mobile-ux'],
     prepPrompt: `I'm preparing mobile UI for a **Mobile UX** audit. Please help me collect the relevant files.
 
@@ -6372,8 +6262,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any horizontal scrolling issues
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'data-visualization',
     name: 'Data Visualization',
     description: 'Reviews charts, graphs, dashboards, and visual data accessibility for clarity and correctness.',
@@ -6381,7 +6271,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-purple-400 hover:bg-purple-500/10',
     buttonClass: 'bg-purple-700 hover:bg-purple-600',
     placeholder: 'Paste your chart components, dashboard layouts, D3/Recharts/Chart.js code, or visualization configs...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['data-visualization'],
     prepPrompt: `I'm preparing data visualizations for a **Data Visualization** audit. Please help me collect the relevant files.
 
@@ -6406,8 +6295,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any interactive features (zoom, filter, drill-down)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'content-design',
     name: 'Content Design',
     description: 'Audits microcopy, labels, help text, progressive disclosure, and content readability.',
@@ -6415,7 +6304,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-violet-400 hover:bg-violet-500/10',
     buttonClass: 'bg-violet-700 hover:bg-violet-600',
     placeholder: 'Paste your UI with labels, headings, help text, error messages, tooltips, or onboarding copy...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['content-design'],
     prepPrompt: `I'm preparing UI copy for a **Content Design** audit. Please help me collect the relevant content.
 
@@ -6441,8 +6329,8 @@ Keep total under 30,000 characters.`,
 - [ ] Include any existing voice/tone guidelines
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'onboarding-ux',
     name: 'Onboarding UX',
     description: 'Reviews first-run experience, tutorials, tooltips, progressive revelation, and user activation flow.',
@@ -6450,7 +6338,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-fuchsia-400 hover:bg-fuchsia-500/10',
     buttonClass: 'bg-fuchsia-700 hover:bg-fuchsia-600',
     placeholder: 'Paste your onboarding flow, setup wizard, tutorial components, or first-run experience code...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['onboarding-ux'],
     prepPrompt: `I'm preparing onboarding UI for an **Onboarding UX** audit. Please help me collect the relevant files.
 
@@ -6476,8 +6363,8 @@ Keep total under 30,000 characters.`,
 - [ ] Show what returning users see if they didn't finish setup
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'search-ux',
     name: 'Search UX',
     description: 'Evaluates autocomplete, filters, results display, no-results handling, and search accessibility.',
@@ -6485,7 +6372,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-purple-400 hover:bg-purple-500/10',
     buttonClass: 'bg-purple-700 hover:bg-purple-600',
     placeholder: 'Paste your search components, filter UI, results display, autocomplete logic, or search config...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['search-ux'],
     prepPrompt: `I'm preparing search UI for a **Search UX** audit. Please help me collect the relevant files.
 
@@ -6512,8 +6398,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note search accessibility (keyboard nav, screen reader)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'table-design',
     name: 'Table & List Design',
     description: 'Audits table sorting, filtering, pagination, responsive behavior, and data table accessibility.',
@@ -6521,7 +6407,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-violet-400 hover:bg-violet-500/10',
     buttonClass: 'bg-violet-700 hover:bg-violet-600',
     placeholder: 'Paste your data table components, list views, grid layouts, or tabular data display code...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['table-design'],
     prepPrompt: `I'm preparing data tables for a **Table & List Design** audit. Please help me collect the relevant files.
 
@@ -6547,8 +6432,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any tables with accessibility issues (missing headers, no keyboard nav)
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'notification-ux',
     name: 'Notification UX',
     description: 'Reviews toasts, alerts, badges, interruption hierarchy, and notification accessibility.',
@@ -6556,7 +6441,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-fuchsia-400 hover:bg-fuchsia-500/10',
     buttonClass: 'bg-fuchsia-700 hover:bg-fuchsia-600',
     placeholder: 'Paste your toast/snackbar components, alert banners, badge UI, or notification system code...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['notification-ux'],
     prepPrompt: `I'm preparing notification UI for a **Notification UX** audit. Please help me collect the relevant files.
 
@@ -6582,8 +6466,8 @@ Keep total under 30,000 characters.`,
 - [ ] Note any screen reader / aria-live attributes
 
 Keep total under 30,000 characters.`,
-  },
-  {
+  }),
+  builtin({
     id: 'spacing-layout',
     name: 'Spacing & Layout',
     description: 'Audits visual rhythm, whitespace strategy, grid systems, alignment, and spacing token consistency.',
@@ -6591,7 +6475,6 @@ Keep total under 30,000 characters.`,
     accentClass: 'text-purple-400 hover:bg-purple-500/10',
     buttonClass: 'bg-purple-700 hover:bg-purple-600',
     placeholder: 'Paste your CSS with spacing values, Tailwind config, layout components, or design tokens...',
-    kind: 'builtin' as const,
     systemPrompt: SYSTEM_PROMPTS['spacing-layout'],
     prepPrompt: `I'm preparing layout code for a **Spacing & Layout** audit. Please help me collect the relevant files.
 
@@ -6616,9 +6499,29 @@ Keep total under 30,000 characters.`,
 - [ ] Include responsive spacing changes across breakpoints
 
 Keep total under 30,000 characters.`,
-  },
+  }),
 ];
 
-export function getAgent(id: string): AgentConfig | undefined {
-  return agents.find((a) => a.id === id);
+export function getAgent(id: string): AgentConfig {
+  const agent = agents.find((a) => a.id === id);
+  if (!agent) {
+    throw new Error(
+      `Agent "${id}" not found in registry. This likely means VALID_AGENT_TYPES and the agents array are out of sync.`
+    );
+  }
+  return agent;
+}
+
+// DX-001: Startup validation — fail fast if registry and schema are out of sync.
+const registryIds = new Set(agents.map((a) => a.id));
+const schemaIds = new Set<string>(VALID_AGENT_TYPES);
+for (const id of registryIds) {
+  if (!schemaIds.has(id)) {
+    throw new Error(`Agent "${id}" is in registry but not in VALID_AGENT_TYPES. Add it to lib/schemas/auditRequest.ts`);
+  }
+}
+for (const id of schemaIds) {
+  if (!registryIds.has(id)) {
+    throw new Error(`"${id}" is in VALID_AGENT_TYPES but has no matching agent in registry. Add it to lib/agents/registry.ts`);
+  }
 }

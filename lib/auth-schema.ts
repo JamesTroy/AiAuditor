@@ -84,6 +84,11 @@ export const twoFactorTable = pgTable('twoFactor', {
   index('idx_twoFactor_userId').on(t.userId),
 ]);
 
+// ─── Shared types ──────────────────────────────────────────────
+
+export const AUDIT_STATUSES = ['pending', 'running', 'completed', 'failed'] as const;
+export type AuditStatus = typeof AUDIT_STATUSES[number];
+
 // ─── App-specific tables ────────────────────────────────────────
 
 export const audit = pgTable('audit', {
@@ -95,7 +100,7 @@ export const audit = pgTable('audit', {
   agentName: text('agentName').notNull(),
   input: text('input').notNull(),
   result: text('result'),
-  status: text('status').notNull().default('pending'),
+  status: text('status').$type<AuditStatus>().notNull().default('pending'),
   score: integer('score'),
   durationMs: integer('durationMs'),
   createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),

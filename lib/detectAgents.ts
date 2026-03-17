@@ -166,6 +166,13 @@ function sampleInput(input: string): string {
   return input.slice(0, SAMPLE_HEAD) + input.slice(-SAMPLE_TAIL);
 }
 
+/**
+ * Detect language, framework, and patterns from code input and recommend audit agents.
+ *
+ * **Performance note:** If ≥4 language/framework tags are detected early, the
+ * more expensive PATTERN_RULES are skipped. This means pattern-based agents
+ * (sql, auth, caching, etc.) may not be suggested for complex polyglot inputs.
+ */
 export function detectAgents(input: string): Detection {
   if (input.length < 10) {
     return { language: null, framework: null, patterns: [], recommendedAgents: [] };

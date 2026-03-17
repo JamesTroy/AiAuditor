@@ -7,20 +7,7 @@ import { createHash } from 'crypto';
 // When UPSTASH_REDIS_REST_URL is not set, falls back to a no-op cache
 // so the app still works without Redis (just without caching).
 
-let redis: import('@upstash/redis').Redis | null = null;
-
-async function getRedis() {
-  if (redis) return redis;
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-    return null;
-  }
-  const { Redis } = await import('@upstash/redis');
-  redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
-  });
-  return redis;
-}
+import { redis } from '@/lib/redis';
 
 function cacheKey(prefix: string, url: string): string {
   const hash = createHash('sha256').update(url).digest('hex').slice(0, 32);
@@ -37,9 +24,9 @@ export async function cachedFetch(
     fetchOptions?: RequestInit;
     prefix?: string;
   },
-): Promise<{ data: string; cached: boolean }> {
+): Promise<{ data: string; cached: boolean; truncated: boolean }> {
   const { ttlSeconds, maxBytes = 30_000, fetchOptions, prefix = 'fetch' } = options;
-  const client = await getRedis();
+  const client = redis;
   const key = cacheKey(prefix, url);
   // PERF-010: Hoist lockKey to function scope — used in both lock acquire and release.
   const lockKey = `lock:${key}`;
@@ -48,9 +35,11 @@ export async function cachedFetch(
   if (client) {
     try {
       const cached = await client.get<string>(key);
-      if (cached !== null) return { data: cached, cached: true };
-    } catch {
-      // Redis error — fall through to direct fetch.
+      if (cached !== null) return { data: cached, cached: true, truncated: false };
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', event: 'cache_read_failed', key, error: err instanceof Error ? err.message : String(err) }));
+      // Redis read failed — fall through to fetch
     }
 
     // CACHE-023: Acquire lock to prevent stampede.
@@ -63,12 +52,18 @@ export async function cachedFetch(
           await new Promise((r) => setTimeout(r, 50));
           try {
             const cached = await client.get<string>(key);
-            if (cached !== null) return { data: cached, cached: true };
-          } catch { break; }
+            if (cached !== null) return { data: cached, cached: true, truncated: false };
+          } catch (lockErr) {
+            // eslint-disable-next-line no-console
+            console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', event: 'cache_lock_poll_failed', key, error: lockErr instanceof Error ? lockErr.message : String(lockErr) }));
+            break;
+          }
         }
         // Lock holder may have failed — fall through to direct fetch.
       }
-    } catch {
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', event: 'cache_lock_acquire_failed', key, error: err instanceof Error ? err.message : String(err) }));
       // Lock acquisition failed — proceed without lock.
     }
   }
@@ -95,12 +90,12 @@ export async function cachedFetch(
     }
   }
 
-  return { data: truncated, cached: false };
+  return { data: truncated, cached: false, truncated: text.length > maxBytes };
 }
 
 // Direct cache get/set for arbitrary data (e.g., GitHub PR metadata).
 export async function cacheGet<T>(key: string): Promise<T | null> {
-  const client = await getRedis();
+  const client = redis;
   if (!client) return null;
   try {
     return await client.get<T>(key);
@@ -110,7 +105,7 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
 }
 
 export async function cacheSet(key: string, value: unknown, ttlSeconds: number): Promise<void> {
-  const client = await getRedis();
+  const client = redis;
   if (!client) return;
   try {
     await client.setex(key, ttlSeconds, JSON.stringify(value));

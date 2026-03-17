@@ -57,6 +57,12 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ── Auth gate ──────────────────────────────────────────────────
+  // SECURITY NOTE: getSessionCookie checks cookie *presence*, not *validity*.
+  // A stale or revoked session cookie will pass this gate. Full session
+  // verification happens server-side in route handlers and server components.
+  // We intentionally do NOT redirect logged-in users away from auth routes
+  // because the cookie may be stale, causing an infinite redirect loop:
+  //   /login → (middleware: cookie exists) → /dashboard → (no valid session) → /login
   const sessionCookie = getSessionCookie(request);
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
   const isAuthRoute = AUTH_ROUTES.some((p) => pathname.startsWith(p));
@@ -68,11 +74,6 @@ export function middleware(request: NextRequest) {
     loginUrl.searchParams.set('callbackUrl', safePath);
     return NextResponse.redirect(loginUrl);
   }
-
-  // NOTE: We intentionally do NOT redirect logged-in users away from auth routes.
-  // The session cookie may be stale/expired, which causes a redirect loop:
-  // /login → (middleware: cookie exists) → /dashboard → (no valid session) → /login.
-  // Let the login page handle already-authenticated users client-side instead.
 
   // ── CSP nonce ──────────────────────────────────────────────────
   // CRYPTO-003: Use crypto.getRandomValues for 128-bit nonce in base64url format

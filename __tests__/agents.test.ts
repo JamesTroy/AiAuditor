@@ -38,8 +38,8 @@ describe('Agent registry', () => {
     }
   });
 
-  it('getAgent returns undefined for unknown IDs', () => {
-    expect(getAgent('nonexistent')).toBeUndefined();
+  it('getAgent throws for unknown IDs', () => {
+    expect(() => getAgent('nonexistent')).toThrow(/not found in registry/);
   });
 
   it('every agent belongs to a known category', () => {

@@ -2,6 +2,9 @@ import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from '@/lib/auth-schema';
 
+// Supabase connection pooler (PgBouncer in transaction mode) uses a different
+// hostname. Transaction mode requires prepared statements to be disabled.
+// See: https://supabase.com/docs/guides/database/connecting-to-postgres#connection-pooler
 const isPooler = (process.env.DATABASE_URL ?? '').includes('pooler.supabase.com');
 
 // CLOUD-031: Tune pool size to avoid exhausting Supabase connection limits.

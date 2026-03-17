@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { db } from '@/lib/db';
-import { audit } from '@/lib/auth-schema';
+import { audit, type AuditStatus, AUDIT_STATUSES } from '@/lib/auth-schema';
 import { eq, desc, lt, count, and, isNotNull } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { scoreColorClass, relativeTime } from '@/lib/ui';
@@ -42,8 +42,8 @@ export default async function DashboardPage({
   const cursorDate = cursor ? new Date(cursor) : null;
   const conditions = [eq(audit.userId, session.user.id)];
   if (cursorDate) conditions.push(lt(audit.createdAt, cursorDate));
-  if (statusFilter && ['completed', 'failed', 'running'].includes(statusFilter)) {
-    conditions.push(eq(audit.status, statusFilter));
+  if (statusFilter && (AUDIT_STATUSES as readonly string[]).includes(statusFilter)) {
+    conditions.push(eq(audit.status, statusFilter as AuditStatus));
   }
   const paginationWhere = conditions.length === 1 ? conditions[0] : and(...conditions);
 

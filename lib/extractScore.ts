@@ -102,11 +102,23 @@ export function sanityCheckScore(score: number | null, markdown: string): number
   }
 
   // If many critical/high findings but score is suspiciously high, cap it
-  if (criticals >= 3 && score > 60) return Math.min(score, 60);
-  if (criticals >= 1 && highs >= 3 && score > 70) return Math.min(score, 70);
+  if (criticals >= 3 && score > 60) {
+    // eslint-disable-next-line no-console
+    console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', event: 'score_clamped', original: score, clamped: 60, reason: '3+ critical findings' }));
+    return Math.min(score, 60);
+  }
+  if (criticals >= 1 && highs >= 3 && score > 70) {
+    // eslint-disable-next-line no-console
+    console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', event: 'score_clamped', original: score, clamped: 70, reason: '1+ critical and 3+ high findings' }));
+    return Math.min(score, 70);
+  }
 
   // If only suggestions/informational and score is suspiciously low, floor it
-  if (total > 0 && !hasNonMinor && score < 60) return Math.max(score, 60);
+  if (total > 0 && !hasNonMinor && score < 60) {
+    // eslint-disable-next-line no-console
+    console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', event: 'score_clamped', original: score, clamped: 60, reason: 'only informational/suggestion findings' }));
+    return Math.max(score, 60);
+  }
 
   return score;
 }

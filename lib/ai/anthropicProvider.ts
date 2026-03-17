@@ -1,15 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { AIProvider } from './provider';
 import { anthropicCircuitBreaker } from './circuitBreaker';
-
-const MODEL = 'claude-sonnet-4-6';
-const MAX_TOKENS = 16384;
-
-// ARCH-018: Retry parameters for transient Anthropic API server errors.
-// RL-014: Do NOT retry on 429 — retrying a rate limit worsens cost and delays.
-// Only retry on genuine server errors (500, 502, 503, 529).
-const MAX_RETRIES = 3;
-const RETRY_BASE_MS = 1_000;
+import {
+  ANTHROPIC_MODEL,
+  ANTHROPIC_MAX_TOKENS,
+  ANTHROPIC_MAX_RETRIES,
+  ANTHROPIC_RETRY_BASE_MS,
+} from '@/lib/config/constants';
 
 const RETRYABLE_STATUS = new Set([500, 502, 503, 529]);
 
@@ -76,8 +73,8 @@ export class AnthropicProvider implements AIProvider {
             // repeated requests to the same agent.
             const stream = client.messages.stream(
               {
-                model: MODEL,
-                max_tokens: MAX_TOKENS,
+                model: ANTHROPIC_MODEL,
+                max_tokens: ANTHROPIC_MAX_TOKENS,
                 temperature: 0,
                 system: [
                   {
@@ -128,8 +125,8 @@ export class AnthropicProvider implements AIProvider {
 
             anthropicCircuitBreaker.onFailure();
 
-            if (attempt < MAX_RETRIES && isRetryable(err)) {
-              const delay = RETRY_BASE_MS * 2 ** (attempt - 1);
+            if (attempt < ANTHROPIC_MAX_RETRIES && isRetryable(err)) {
+              const delay = ANTHROPIC_RETRY_BASE_MS * 2 ** (attempt - 1);
               await sleepWithHeartbeat(delay, controller);
               continue;
             }

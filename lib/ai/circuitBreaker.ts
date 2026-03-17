@@ -8,6 +8,11 @@
 // NOTE: This is process-scoped (not shared across replicas). For multi-replica
 // deployments, a Redis-backed circuit breaker would provide cluster-wide state.
 
+// WARNING: This circuit breaker is process-scoped. In multi-replica deployments
+// (e.g., Railway with 2+ instances), each replica has independent state.
+// Replica A may open its circuit while Replica B continues sending requests.
+// For cluster-wide circuit breaking, consider a Redis-backed implementation.
+
 export class CircuitBreaker {
   private failures = 0;
   private lastFailureTime = 0;
@@ -30,7 +35,9 @@ export class CircuitBreaker {
       return false;
     }
 
-    // half-open: only one probe allowed (handled by transition above)
+    // half-open: one probe request was already allowed during the open→half-open
+    // transition above. Block all subsequent requests until onSuccess() (closes
+    // the circuit) or onFailure() (re-opens it) resolves the state.
     return false;
   }
 

@@ -11,16 +11,7 @@
 //   - `check()` is async to support the Redis path.
 
 import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
-
-// Initialize shared Redis client if credentials are available.
-const redis =
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    ? new Redis({
-        url: process.env.UPSTASH_REDIS_REST_URL,
-        token: process.env.UPSTASH_REDIS_REST_TOKEN,
-      })
-    : null;
+import { redis } from '@/lib/redis';
 
 export interface RateLimiterConfig {
   /** Length of the sliding window in milliseconds. */
@@ -116,8 +107,13 @@ export class RateLimiter {
           resetAt: result.reset,
           headers: this.buildHeaders(result.success, result.remaining, result.reset),
         };
-      } catch {
-        // Redis error — fall back to in-memory
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(JSON.stringify({
+          ts: new Date().toISOString(), level: 'warn',
+          event: 'redis_ratelimit_fallback',
+          error: err instanceof Error ? err.message : String(err),
+        }));
       }
     }
     return this.checkLocal(key);
@@ -275,7 +271,7 @@ export const authGeneralLimiter = new RateLimiter({
 export const dailyAuditBudget = new RateLimiter({
   windowMs: 24 * 60 * 60_000,
   maxRequests: 500,
-  maxEntries: 1, // single "global" key
+  maxEntries: 1, // single global key — this limiter tracks one counter for the entire service
   cleanupIntervalMs: 60 * 60_000,
   prefix: 'daily-budget',
 });

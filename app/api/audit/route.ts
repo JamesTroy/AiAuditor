@@ -5,6 +5,15 @@ import { auditLimiter, siteAuditLimiter, dailyAuditBudget, userDailyAuditLimiter
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { auditRequestSchema } from '@/lib/schemas/auditRequest';
 import { STREAM_RESPONSE_HEADERS, ALLOWED_ORIGINS } from '@/lib/config/apiHeaders';
+import {
+  STALE_AUDIT_THRESHOLD_MS,
+  STALE_CLEANUP_INTERVAL_MS,
+  MAX_CONTENT_LENGTH,
+  STREAM_TIMEOUT_MS,
+  CHUNK_TIMEOUT_MS,
+  MAX_RESULT_CHARS,
+  MAX_AUDIT_INPUT_CHARS,
+} from '@/lib/config/constants';
 import { auth } from '@/lib/auth';
 import { extractScore, sanityCheckScore } from '@/lib/extractScore';
 import { detectAgents } from '@/lib/detectAgents';
@@ -17,8 +26,8 @@ import { escapeXml } from '@/lib/escapeXml';
 // STALE-001: Mark 'running' audits older than 30 min as 'failed'.
 // Streams that crash or server restarts leave records stuck in 'running' forever.
 // This runs at most once per 5 minutes to avoid extra DB queries on every request.
-const STALE_AUDIT_THRESHOLD_MS = 30 * 60_000; // 30 minutes
-const STALE_CLEANUP_INTERVAL_MS = 5 * 60_000; // 5 minutes
+
+// DX-004: Process-scoped — resets on cold start and is NOT shared across replicas.
 let lastStaleCleanup = 0;
 
 async function cleanupStaleAudits() {
@@ -46,11 +55,7 @@ if (!process.env.ANTHROPIC_API_KEY) {
 
 export const runtime = 'nodejs';
 
-const MAX_CONTENT_LENGTH = 200_000; // ~200 KB; accounts for JSON overhead with 60K char inputs
-
-// ARCH-016: Hard server-side timeout. 5 min: security/architecture audits on
-// large inputs routinely exceed 2 min.
-const STREAM_TIMEOUT_MS = 300_000;
+// DX-020: Constants imported from @/lib/config/constants
 
 
 // ARCH-020: Structured JSON logging with anonymized IP.
@@ -61,14 +66,8 @@ function log(
 ) {
   const entry = { ts: new Date().toISOString(), level, event, ...data };
   // eslint-disable-next-line no-console
-  (level === 'info' ? console.log : level === 'warn' ? console.warn : console.error)(
-    JSON.stringify(entry),
-  );
-}
-
-// VULN-014: Use cryptographically random UUID instead of Math.random().
-function newRequestId(): string {
-  return crypto.randomUUID();
+  const consoleFn = { info: console.log, warn: console.warn, error: console.error }[level] ?? console.log;
+  consoleFn(JSON.stringify(entry));
 }
 
 // VULN-012: Anonymize IP before logging — zero last octet (IPv4) or keep
@@ -80,13 +79,10 @@ function anonymizeIp(ip: string): string {
   }
   // IPv4 — zero the last octet
   const parts = ip.split('.');
-  if (parts.length === 4) return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
+  if (parts.length === 4) return `${parts[0]}.${parts[1]}.${parts[2]}.0/24`;
   return ip;
 }
 
-// VULN-004: Escape XML closing tags in user input so they cannot break out of
-// the <user_content> wrapper and inject instructions at the prompt level.
-const escapeUserInput = escapeXml;
 
 // VULN-003: Prepend a meta-instruction to every custom system prompt so that
 // jailbreak attempts embedded in the prompt are less likely to succeed.
@@ -132,10 +128,6 @@ function makeStream(
   const upstream = anthropicProvider.streamAudit(systemPrompt, safeInput, {
     signal: combinedSignal,
   });
-  // PERF-NEW-03: Per-chunk read timeout prevents stalled streams from holding
-  // serverless functions open indefinitely if the upstream connection hangs.
-  const CHUNK_TIMEOUT_MS = 30_000;
-
   return new ReadableStream({
     async start(controller) {
       const reader = upstream.getReader();
@@ -143,34 +135,23 @@ function makeStream(
       let resultBuffer = '';
       // PERF-004: Single reusable timer — avoids ~500 allocations (Promise + setTimeout + closure per chunk).
       let chunkTimer: ReturnType<typeof setTimeout> | null = null;
+      const resetTimer = () => {
+        if (chunkTimer) clearTimeout(chunkTimer);
+        chunkTimer = setTimeout(() => { reader.cancel(new Error('Stream chunk timeout')); }, CHUNK_TIMEOUT_MS);
+      };
       try {
-        await new Promise<void>((resolve, reject) => {
-          const resetTimer = () => {
-            if (chunkTimer) clearTimeout(chunkTimer);
-            chunkTimer = setTimeout(() => reject(new Error('Stream chunk timeout')), CHUNK_TIMEOUT_MS);
-          };
-          (async () => {
-            try {
-              while (true) {
-                resetTimer();
-                const { done, value } = await reader.read();
-                if (done) break;
-                if (auditRecord && value) resultBuffer += streamDecoder.decode(value, { stream: true });
-                controller.enqueue(value);
-              }
-              if (chunkTimer) clearTimeout(chunkTimer);
-              resolve();
-            } catch (err) {
-              if (chunkTimer) clearTimeout(chunkTimer);
-              reject(err);
-            }
-          })();
-        });
+        while (true) {
+          resetTimer();
+          const { done, value } = await reader.read();
+          if (chunkTimer) clearTimeout(chunkTimer);
+          if (done) break;
+          if (auditRecord && value) resultBuffer += streamDecoder.decode(value, { stream: true });
+          controller.enqueue(value);
+        }
         log('info', 'audit_complete', logMeta);
 
         // DB-001/DB-021: Save completed audit with result truncation and proper error logging
         if (auditRecord) {
-          const MAX_RESULT_CHARS = 100_000;
           const fullResult = resultBuffer;
           const rawScore = extractScore(fullResult);
           const score = sanityCheckScore(rawScore, fullResult);
@@ -189,7 +170,7 @@ function makeStream(
             log('info', 'audit_saved', { requestId: logMeta.requestId, auditId: auditRecord.id });
             // PERF-031: Invalidate dashboard cache so user sees fresh stats.
             if (auditRecord.userId) {
-              try { revalidateTag(`dashboard-${auditRecord.userId}`); } catch { /* best-effort */ }
+              try { revalidateTag(`dashboard-${auditRecord.userId}`); } catch (e) { log('warn', 'revalidate_tag_failed', { requestId: logMeta.requestId, userId: auditRecord.userId, error: String(e) }); }
             }
           } catch (err) {
             log('error', 'audit_save_failed', { requestId: logMeta.requestId, auditId: auditRecord.id, error: String(err) });
@@ -212,12 +193,15 @@ function makeStream(
           }
         }
         try {
-          controller.enqueue(
-            streamEncoder.encode('\n\n[Audit interrupted — please try again.]'),
-          );
+          const isChunkTimeout = err instanceof Error && err.message === 'Stream chunk timeout';
+          const userMsg = isTimeout || isChunkTimeout
+            ? `\n\n[Audit timed out — please try again with smaller input. Ref: ${logMeta.requestId}]`
+            : `\n\n[Audit interrupted — please try again. Ref: ${logMeta.requestId}]`;
+          controller.enqueue(streamEncoder.encode(userMsg));
         } catch { /* controller may already be closed */ }
         controller.error(err);
       } finally {
+        if (chunkTimer) clearTimeout(chunkTimer);
         reader.releaseLock();
         controller.close();
       }
@@ -229,7 +213,7 @@ function makeStream(
 const STREAM_HEADERS = STREAM_RESPONSE_HEADERS;
 
 export async function POST(req: NextRequest) {
-  const requestId = newRequestId();
+  const requestId = crypto.randomUUID();
 
   // STALE-001/PERF-017: Await cleanup so it's not a floating promise in serverless.
   // The 5-min guard inside ensures this adds ~0ms on most requests.
@@ -334,7 +318,9 @@ export async function POST(req: NextRequest) {
 
   // VULN-004: Escape XML tags in user input before wrapping so </user_content>
   // cannot break out of the delimiter and inject prompt-level instructions.
-  const escapedInput = escapeUserInput(data.input);
+  // VULN-004: XML-escape user input so </user_content> cannot break out of
+  // the delimiter wrapper and inject prompt-level instructions.
+  const escapedInput = escapeXml(data.input);
   const safeInput = `<user_content>\n${escapedInput}\n</user_content>`;
 
   // Detect logged-in user (optional — audits work without auth)
@@ -367,7 +353,7 @@ export async function POST(req: NextRequest) {
         userId,
         agentId,
         agentName,
-        input: data.input.slice(0, 10_000), // store first 10K chars of input
+        input: data.input.slice(0, MAX_AUDIT_INPUT_CHARS),
         status: 'running',
       });
       return { id, startedAt: now, userId: userId ?? undefined };
