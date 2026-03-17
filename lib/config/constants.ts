@@ -2,7 +2,7 @@
 // Grouped by domain so related values are easy to find and tune together.
 
 // ── Anthropic API ────────────────────────────────────────────────
-export const ANTHROPIC_MODEL = 'claude-sonnet-4-6';
+export const ANTHROPIC_MODEL = 'claude-3-7-sonnet-20250219';
 export const ANTHROPIC_MAX_TOKENS = 16_384;
 export const ANTHROPIC_MAX_RETRIES = 3;
 export const ANTHROPIC_RETRY_BASE_MS = 1_000;
