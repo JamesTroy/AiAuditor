@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { db } from '@/lib/db';
-import { audit, type AuditStatus, AUDIT_STATUSES } from '@/lib/auth-schema';
+import { audit, organizationTable, type AuditStatus, AUDIT_STATUSES } from '@/lib/auth-schema';
 import { eq, desc, lt, count, and, isNotNull } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { scoreColorClass, relativeTime } from '@/lib/ui';
@@ -32,6 +32,8 @@ export default async function DashboardPage({
 
   if (!session) redirect('/login');
 
+  const activeOrgId = (session.session as Record<string, unknown>)?.activeOrganizationId as string | null ?? null;
+
   const params = await searchParams;
   const cursor = params.cursor;
   const statusFilter = params.status; // 'completed' | 'failed' | undefined (all)
@@ -40,7 +42,11 @@ export default async function DashboardPage({
   // PERF-016: Run all dashboard queries in parallel instead of sequentially.
   // Merges score stats + trend into one query to reduce from 4 → 3 queries.
   const cursorDate = cursor ? new Date(cursor) : null;
-  const conditions = [eq(audit.userId, session.user.id)];
+  // When an org is active, show all org audits; otherwise show personal audits.
+  const ownershipCondition = activeOrgId
+    ? eq(audit.organizationId, activeOrgId)
+    : eq(audit.userId, session.user.id);
+  const conditions = [ownershipCondition];
   if (cursorDate) conditions.push(lt(audit.createdAt, cursorDate));
   if (statusFilter && (AUDIT_STATUSES as readonly string[]).includes(statusFilter)) {
     conditions.push(eq(audit.status, statusFilter as AuditStatus));
@@ -49,26 +55,31 @@ export default async function DashboardPage({
 
   // PERF-031: Cache aggregate stats (count + scores) with 60s TTL.
   // Paginated list is NOT cached since it depends on cursor.
+  const cacheTag = activeOrgId ? `dashboard-org-${activeOrgId}` : `dashboard-${session.user.id}`;
   const getCachedStats = unstable_cache(
-    async (userId: string) => {
+    async (ownerId: string, isOrg: boolean) => {
+      const ownerFilter = isOrg
+        ? eq(audit.organizationId, ownerId)
+        : eq(audit.userId, ownerId);
       const [totalResult, allScoredAudits] = await Promise.all([
         db.select({ value: count() })
           .from(audit)
-          .where(eq(audit.userId, userId)),
+          .where(ownerFilter),
         db.select({ score: audit.score, createdAt: audit.createdAt })
           .from(audit)
-          .where(and(eq(audit.userId, userId), eq(audit.status, 'completed'), isNotNull(audit.score)))
+          .where(and(ownerFilter, eq(audit.status, 'completed'), isNotNull(audit.score)))
           .orderBy(desc(audit.createdAt))
           .limit(200),
       ]);
       return { totalResult, allScoredAudits };
     },
     ['dashboard-stats'],
-    { revalidate: 60, tags: [`dashboard-${session.user.id}`] },
+    { revalidate: 60, tags: [cacheTag] },
   );
 
+  const statsOwnerId = activeOrgId ?? session.user.id;
   const [{ totalResult, allScoredAudits }, rawAudits] = await Promise.all([
-    getCachedStats(session.user.id),
+    getCachedStats(statsOwnerId, !!activeOrgId),
     // PERF-030: Paginated list runs fresh (cursor-dependent).
     db.select()
       .from(audit)
@@ -107,15 +118,34 @@ export default async function DashboardPage({
   // Count completed audits from current page (for display)
   const pageCompleted = audits.filter((a) => a.status === 'completed').length;
 
+  // Fetch active org name for team view indicator
+  let activeOrgName: string | null = null;
+  if (activeOrgId) {
+    const orgRows = await db.select({ name: organizationTable.name })
+      .from(organizationTable)
+      .where(eq(organizationTable.id, activeOrgId))
+      .limit(1);
+    activeOrgName = orgRows[0]?.name ?? null;
+  }
+
   return (
     <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            {activeOrgName && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-500/25">
+                {activeOrgName}
+              </span>
+            )}
+          </div>
           <p className="text-sm text-gray-500 dark:text-zinc-500 mt-1">
-            {totalCount === 0
-              ? `Welcome, ${session.user.name}. Run your first audit to see findings, scores, and trends here.`
-              : `Welcome back, ${session.user.name}. Here's an overview of your audit history and scores.`}
+            {activeOrgName
+              ? `Team audit history for ${activeOrgName}.`
+              : totalCount === 0
+                ? `Welcome, ${session.user.name}. Run your first audit to see findings, scores, and trends here.`
+                : `Welcome back, ${session.user.name}. Here's an overview of your audit history and scores.`}
           </p>
         </div>
 

@@ -18,7 +18,7 @@ import { auth } from '@/lib/auth';
 import { extractScore, sanityCheckScore } from '@/lib/extractScore';
 import { detectAgents } from '@/lib/detectAgents';
 import { db } from '@/lib/db';
-import { audit as auditTable } from '@/lib/auth-schema';
+import { audit as auditTable, member as memberTable } from '@/lib/auth-schema';
 import { eq, and, lt } from 'drizzle-orm';
 import { revalidateTag } from 'next/cache';
 import { escapeXml } from '@/lib/escapeXml';
@@ -116,7 +116,7 @@ function makeStream(
   systemPrompt: string,
   safeInput: string,
   logMeta: Record<string, unknown>,
-  auditRecord?: { id: string; startedAt: number; userId?: string },
+  auditRecord?: { id: string; startedAt: number; userId?: string; organizationId?: string },
   requestSignal?: AbortSignal,
 ): ReadableStream {
   // PERF-NEW-07: Combine client disconnect signal with hard timeout so that
@@ -171,6 +171,9 @@ function makeStream(
             // PERF-031: Invalidate dashboard cache so user sees fresh stats.
             if (auditRecord.userId) {
               try { revalidateTag(`dashboard-${auditRecord.userId}`); } catch (e) { log('warn', 'revalidate_tag_failed', { requestId: logMeta.requestId, userId: auditRecord.userId, error: String(e) }); }
+              if (auditRecord.organizationId) {
+                try { revalidateTag(`dashboard-org-${auditRecord.organizationId}`); } catch { /* best effort */ }
+              }
             }
           } catch (err) {
             log('error', 'audit_save_failed', { requestId: logMeta.requestId, auditId: auditRecord.id, error: String(err) });
@@ -337,10 +340,23 @@ export async function POST(req: NextRequest) {
 
   // Detect logged-in user (optional — audits work without auth)
   let userId: string | null = null;
+  let organizationId: string | null = null;
   try {
     const session = await auth.api.getSession({ headers: await nextHeaders() });
     userId = session?.user?.id ?? null;
+    organizationId = (session?.session as Record<string, unknown>)?.activeOrganizationId as string | null ?? null;
   } catch { /* no session — anonymous audit */ }
+
+  // Validate org membership before associating audit with org
+  if (organizationId && userId) {
+    try {
+      const memberRows = await db.select({ id: memberTable.id })
+        .from(memberTable)
+        .where(and(eq(memberTable.organizationId, organizationId), eq(memberTable.userId, userId)))
+        .limit(1);
+      if (memberRows.length === 0) organizationId = null;
+    } catch { organizationId = null; }
+  }
 
   // RL-011: Per-user daily audit limit (50/day) for authenticated users.
   if (userId) {
@@ -355,7 +371,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Create audit record in DB if user is logged in
-  async function createAuditRecord(agentId: string, agentName: string) {
+  async function createAuditRecord(agentId: string, agentName: string): Promise<{ id: string; startedAt: number; userId?: string; organizationId?: string } | undefined> {
     if (!userId) return undefined;
     const id = crypto.randomUUID();
     const now = Date.now();
@@ -363,12 +379,13 @@ export async function POST(req: NextRequest) {
       await db.insert(auditTable).values({
         id,
         userId,
+        organizationId,
         agentId,
         agentName,
         input: data.input.slice(0, MAX_AUDIT_INPUT_CHARS),
         status: 'running',
       });
-      return { id, startedAt: now, userId: userId ?? undefined };
+      return { id, startedAt: now, userId: userId ?? undefined, organizationId: organizationId ?? undefined };
     } catch (err) {
       log('error', 'audit_record_create_failed', { requestId, error: String(err) });
       return undefined;

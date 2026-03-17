@@ -8,6 +8,13 @@
       "when": 1773522751525,
       "tag": "0000_cute_wrecker",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773785973101,
+      "tag": "0001_powerful_kronos",
+      "breakpoints": true
     }
   ]
 }

@@ -32,6 +32,8 @@ export const session = pgTable('session', {
   userAgent: text('userAgent'),
   createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+  // organization plugin
+  activeOrganizationId: text('activeOrganizationId'),
 }, (t) => [
   index('idx_session_userId').on(t.userId),
   index('idx_session_expiresAt').on(t.expiresAt),
@@ -84,6 +86,47 @@ export const twoFactorTable = pgTable('twoFactor', {
   index('idx_twoFactor_userId').on(t.userId),
 ]);
 
+// ─── Organization plugin tables ─────────────────────────────────
+
+export const organizationTable = pgTable('organization', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
+  logo: text('logo'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+  metadata: text('metadata'),
+});
+
+export const member = pgTable('member', {
+  id: text('id').primaryKey(),
+  organizationId: text('organizationId').notNull()
+    .references(() => organizationTable.id, { onDelete: 'cascade' }),
+  userId: text('userId').notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  role: text('role').notNull().default('member'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('idx_member_orgId').on(t.organizationId),
+  index('idx_member_userId').on(t.userId),
+  index('idx_member_orgId_userId').on(t.organizationId, t.userId),
+]);
+
+export const invitation = pgTable('invitation', {
+  id: text('id').primaryKey(),
+  organizationId: text('organizationId').notNull()
+    .references(() => organizationTable.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
+  role: text('role').notNull(),
+  status: text('status').notNull().default('pending'),
+  inviterId: text('inviterId').notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('idx_invitation_orgId').on(t.organizationId),
+  index('idx_invitation_email').on(t.email),
+]);
+
 // ─── Shared types ──────────────────────────────────────────────
 
 export const AUDIT_STATUSES = ['pending', 'running', 'completed', 'failed'] as const;
@@ -96,6 +139,8 @@ export const audit = pgTable('audit', {
   userId: text('userId')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
+  organizationId: text('organizationId')
+    .references(() => organizationTable.id, { onDelete: 'set null' }),
   agentId: text('agentId').notNull(),
   agentName: text('agentName').notNull(),
   input: text('input').notNull(),
@@ -112,6 +157,8 @@ export const audit = pgTable('audit', {
   index('idx_audit_user_status_created').on(t.userId, t.status, t.createdAt),
   // PERF-018: Index for stale audit cleanup query.
   index('idx_audit_status_updated').on(t.status, t.updatedAt),
+  // Team audit queries.
+  index('idx_audit_orgId_createdAt').on(t.organizationId, t.createdAt),
   check('audit_status_check', sql`${t.status} IN ('pending', 'running', 'completed', 'failed')`),
   check('audit_score_check', sql`${t.score} IS NULL OR (${t.score} >= 0 AND ${t.score} <= 100)`),
   check('audit_durationMs_check', sql`${t.durationMs} IS NULL OR ${t.durationMs} >= 0`),

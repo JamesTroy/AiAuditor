@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { db } from '@/lib/db';
-import { audit } from '@/lib/auth-schema';
+import { audit, member as memberTable } from '@/lib/auth-schema';
 import { eq, and, desc, lt, gt } from 'drizzle-orm';
 import AuditResultView from './AuditResultView';
 import { scoreColorClass } from '@/lib/ui';
@@ -22,25 +22,41 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
 
   if (!session) redirect('/login');
 
-  const rows = await db
-    .select()
-    .from(audit)
-    .where(and(eq(audit.id, id), eq(audit.userId, session.user.id)))
-    .limit(1);
-
+  // Fetch audit without ownership filter, then check access
+  const rows = await db.select().from(audit).where(eq(audit.id, id)).limit(1);
   const auditRecord = rows[0];
   if (!auditRecord) notFound();
+
+  // Check access: user owns it directly OR is a member of the audit's org
+  const isOwner = auditRecord.userId === session.user.id;
+  let isOrgMember = false;
+  if (!isOwner && auditRecord.organizationId) {
+    const memberRows = await db.select({ id: memberTable.id })
+      .from(memberTable)
+      .where(and(
+        eq(memberTable.organizationId, auditRecord.organizationId),
+        eq(memberTable.userId, session.user.id),
+      ))
+      .limit(1);
+    isOrgMember = memberRows.length > 0;
+  }
+  if (!isOwner && !isOrgMember) notFound();
+
+  // Determine navigation scope: org-scoped if audit belongs to an org the user can access
+  const navCondition = auditRecord.organizationId && isOrgMember
+    ? eq(audit.organizationId, auditRecord.organizationId)
+    : eq(audit.userId, session.user.id);
 
   // Fetch prev/next audit IDs for navigation
   const [prevRows, nextRows] = await Promise.all([
     db.select({ id: audit.id })
       .from(audit)
-      .where(and(eq(audit.userId, session.user.id), gt(audit.createdAt, auditRecord.createdAt)))
+      .where(and(navCondition, gt(audit.createdAt, auditRecord.createdAt)))
       .orderBy(audit.createdAt)
       .limit(1),
     db.select({ id: audit.id })
       .from(audit)
-      .where(and(eq(audit.userId, session.user.id), lt(audit.createdAt, auditRecord.createdAt)))
+      .where(and(navCondition, lt(audit.createdAt, auditRecord.createdAt)))
       .orderBy(desc(audit.createdAt))
       .limit(1),
   ]);

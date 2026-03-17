@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { admin, twoFactor } from 'better-auth/plugins';
+import { admin, twoFactor, organization } from 'better-auth/plugins';
 import { nextCookies } from 'better-auth/next-js';
 import { db } from '@/lib/db';
 import * as schema from '@/lib/auth-schema';
@@ -141,6 +141,32 @@ export const auth = betterAuth({
              <p>This code expires in 5 minutes.</p>`,
           );
         },
+      },
+    }),
+    organization({
+      allowUserToCreateOrganization: true,
+      organizationLimit: 5,
+      membershipLimit: 20,
+      creatorRole: 'owner',
+      invitationExpiresIn: 60 * 60 * 48, // 48 hours
+      async sendInvitationEmail(data) {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+        const acceptUrl = `${appUrl}/team/accept-invitation?id=${data.id}`;
+        await sendEmail(
+          data.email,
+          `You're invited to join ${escapeHtml(data.organization.name)} on Claudit`,
+          `<div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;">
+            <p>Hi,</p>
+            <p><strong>${escapeHtml(data.inviter.user.name)}</strong> has invited you to join
+            <strong>${escapeHtml(data.organization.name)}</strong> as a <strong>${escapeHtml(data.role)}</strong>.</p>
+            <p style="margin:24px 0;text-align:center;">
+              <a href="${acceptUrl}" style="background:#7c3aed;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">
+                Accept invitation
+              </a>
+            </p>
+            <p style="color:#6b7280;font-size:14px;">This invitation expires in 48 hours.</p>
+          </div>`,
+        );
       },
     }),
   ],

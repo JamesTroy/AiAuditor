@@ -1,15 +1,42 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession, signOut } from '@/lib/auth-client';
+import { useSession, signOut, authClient } from '@/lib/auth-client';
+
+interface UserOrg {
+  id: string;
+  name: string;
+}
 
 export default function UserNav() {
   const { data: session, isPending } = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [orgs, setOrgs] = useState<UserOrg[]>([]);
+  const [orgsLoaded, setOrgsLoaded] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const activeOrgId = session
+    ? ((session.session as Record<string, unknown>)?.activeOrganizationId as string | null ?? null)
+    : null;
+
+  const fetchOrgs = useCallback(async () => {
+    if (orgsLoaded) return;
+    try {
+      const res = await authClient.organization.list();
+      if (res.data) {
+        setOrgs(res.data.map((o: { id: string; name: string }) => ({ id: o.id, name: o.name })));
+      }
+    } catch { /* ignore */ }
+    setOrgsLoaded(true);
+  }, [orgsLoaded]);
+
+  // Fetch orgs when menu opens
+  useEffect(() => {
+    if (open && session) fetchOrgs();
+  }, [open, session, fetchOrgs]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -64,12 +91,57 @@ export default function UserNav() {
             </p>
           </div>
 
+          {/* Org switcher */}
+          {orgs.length > 0 && (
+            <div className="border-b border-gray-100 dark:border-zinc-800 py-1">
+              <p className="px-4 py-1 text-xs font-medium text-gray-400 dark:text-zinc-600 uppercase tracking-wider">Workspace</p>
+              <button
+                onClick={async () => {
+                  await authClient.organization.setActive({ organizationId: null });
+                  setOpen(false);
+                  router.refresh();
+                }}
+                className={`w-full text-left px-4 py-1.5 text-sm transition-colors ${
+                  !activeOrgId
+                    ? 'text-violet-600 dark:text-violet-400 font-medium'
+                    : 'text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                }`}
+              >
+                Personal
+              </button>
+              {orgs.map((org) => (
+                <button
+                  key={org.id}
+                  onClick={async () => {
+                    await authClient.organization.setActive({ organizationId: org.id });
+                    setOpen(false);
+                    router.refresh();
+                  }}
+                  className={`w-full text-left px-4 py-1.5 text-sm transition-colors ${
+                    activeOrgId === org.id
+                      ? 'text-violet-600 dark:text-violet-400 font-medium'
+                      : 'text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  {org.name}
+                </button>
+              ))}
+            </div>
+          )}
+
           <Link
             href="/dashboard"
             onClick={() => setOpen(false)}
             className="block px-4 py-2 text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800"
           >
             Dashboard
+          </Link>
+          <Link
+            href="/settings/team"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2 text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800"
+          >
+            Team Settings
           </Link>
           <Link
             href="/settings"

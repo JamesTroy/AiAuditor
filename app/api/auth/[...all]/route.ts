@@ -32,6 +32,9 @@ function getLimiterForPath(pathname: string): RateLimiter {
   if (pathname.endsWith('/two-factor/enable')) return auth2faLimiter;
   if (pathname.endsWith('/two-factor/disable')) return auth2faLimiter;
   if (pathname.endsWith('/verify-email')) return authGeneralLimiter;
+  // Organization endpoints
+  if (pathname.includes('/organization/create')) return authSignupLimiter;
+  if (pathname.includes('/organization/create-invitation')) return authGeneralLimiter;
   return authGeneralLimiter;
 }
 
