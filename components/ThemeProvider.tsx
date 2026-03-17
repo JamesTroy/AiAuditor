@@ -21,10 +21,11 @@ export function useTheme() {
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('dark');
 
-  // Load from localStorage after mount
+  // Load from localStorage or system preference after mount
   useEffect(() => {
     const stored = localStorage.getItem('claudit-theme') as Theme | null;
-    const resolved = stored ?? 'dark';
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const resolved = stored ?? (systemPrefersDark ? 'dark' : 'light');
     setTheme(resolved);
     document.documentElement.classList.toggle('dark', resolved === 'dark');
   }, []);

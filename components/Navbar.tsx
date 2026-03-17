@@ -11,6 +11,7 @@ import { useSession } from '@/lib/auth-client';
 const PUBLIC_LINKS = [
   { href: '/', label: 'Explore Audits', title: 'Browse all available audit types' },
   { href: '/site-audit', label: 'Site Audit', title: 'Run a comprehensive site audit' },
+  { href: '/pricing', label: 'Pricing', title: 'View pricing and plans' },
 ] as const;
 
 const AUTH_LINKS = [
@@ -105,20 +106,32 @@ export default function Navbar() {
                   key={item.href}
                   href={item.href}
                   title={'title' in item ? item.title : ''}
-                  className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
+                  className={`relative text-sm px-3 py-1.5 rounded-lg transition-colors ${
                     isActive
-                      ? 'text-gray-900 dark:text-zinc-100 bg-gray-100/80 dark:bg-zinc-800/80'
+                      ? 'text-gray-900 dark:text-zinc-100'
                       : 'text-gray-500 dark:text-zinc-500 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100/50 dark:hover:bg-zinc-800/50'
                   }`}
                 >
                   {item.label}
+                  {isActive && (
+                    <span className="absolute inset-x-2 -bottom-[13px] h-0.5 rounded-full bg-violet-500" />
+                  )}
                 </Link>
               );
             })}
           </div>
 
-          {/* Right: Hamburger (mobile) + Theme + User */}
+          {/* Right: CTA + separator + Theme + User */}
           <div className="flex items-center gap-2">
+            {pathname !== '/code-audit' && (
+              <Link
+                href="/code-audit"
+                className="hidden sm:inline-flex px-4 py-1.5 rounded-full text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring whitespace-nowrap shadow-sm shadow-violet-600/20"
+              >
+                {session ? 'New Audit' : 'Get Started Free'}
+              </Link>
+            )}
+            <span className="hidden sm:block w-px h-5 bg-gray-200 dark:bg-zinc-800" aria-hidden="true" />
             <ThemeToggle />
             <UserNav />
             <button
@@ -142,9 +155,9 @@ export default function Navbar() {
       {/* Mobile drawer overlay + panel */}
       {drawerOpen && (
         <div className="fixed inset-0 z-50 sm:hidden">
-          {/* Backdrop */}
+          {/* Backdrop with fade */}
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
             onClick={closeDrawer}
             aria-hidden="true"
           />
@@ -156,14 +169,27 @@ export default function Navbar() {
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
-            className="absolute inset-y-0 left-0 w-72 max-w-[calc(100vw-3rem)] bg-white dark:bg-zinc-950 border-r border-gray-200 dark:border-zinc-800 shadow-2xl flex flex-col animate-slide-in"
+            className="absolute inset-y-0 left-0 w-72 max-w-[calc(100vw-3rem)] bg-white dark:bg-zinc-950 border-r border-gray-200 dark:border-zinc-800 shadow-2xl flex flex-col animate-drawer-in"
           >
             {/* Drawer header */}
             <div className="flex items-center justify-between px-6 h-14 border-b border-gray-200 dark:border-zinc-800 shrink-0">
-              <Link href="/" className="flex items-center gap-2" onClick={closeDrawer}>
-                <Logo size={24} />
-                <span className="font-semibold text-sm text-gray-900 dark:text-zinc-100">Claudit</span>
-              </Link>
+              <div className="flex items-center gap-2 min-w-0">
+                {session ? (
+                  <>
+                    <div className="w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 flex items-center justify-center text-xs font-bold shrink-0">
+                      {(session.user?.name?.[0] ?? session.user?.email?.[0] ?? 'U').toUpperCase()}
+                    </div>
+                    <span className="text-sm font-medium text-gray-900 dark:text-zinc-100 truncate">
+                      {session.user?.name ?? session.user?.email ?? 'User'}
+                    </span>
+                  </>
+                ) : (
+                  <Link href="/" className="flex items-center gap-2" onClick={closeDrawer}>
+                    <Logo size={24} />
+                    <span className="font-semibold text-sm text-gray-900 dark:text-zinc-100">Claudit</span>
+                  </Link>
+                )}
+              </div>
               <button
                 onClick={closeDrawer}
                 className="flex items-center justify-center min-h-[44px] min-w-[44px] -mr-2 rounded-lg text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors focus-ring"
@@ -179,6 +205,19 @@ export default function Navbar() {
             {/* Drawer nav links */}
             <nav className="flex-1 overflow-y-auto px-4 py-4" aria-label="Mobile navigation">
               <ul className="flex flex-col gap-1">
+                <li>
+                  <Link
+                    href="/code-audit"
+                    onClick={closeDrawer}
+                    className={`flex items-center min-h-[48px] px-4 rounded-lg text-sm font-medium transition-colors ${
+                      pathname.startsWith('/code-audit')
+                        ? 'text-gray-900 dark:text-zinc-100 bg-gray-100 dark:bg-zinc-800'
+                        : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100/50 dark:hover:bg-zinc-800/50'
+                    }`}
+                  >
+                    Code Audit
+                  </Link>
+                </li>
                 {NAV_LINKS.map((item) => {
                   const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
                   return (
@@ -202,8 +241,17 @@ export default function Navbar() {
             </nav>
 
             {/* Drawer footer */}
-            <div className="border-t border-gray-200 dark:border-zinc-800 px-6 py-4 text-xs text-gray-400 dark:text-zinc-500">
-              Security · Performance · Accessibility · Compliance
+            <div className="border-t border-gray-200 dark:border-zinc-800 px-6 py-4 space-y-3">
+              <Link
+                href="/code-audit"
+                onClick={closeDrawer}
+                className="flex items-center justify-center min-h-[48px] px-4 rounded-full text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring shadow-sm shadow-violet-600/20"
+              >
+                {session ? 'New Audit' : 'Get Started Free'}
+              </Link>
+              <p className="text-xs text-gray-400 dark:text-zinc-500 text-center">
+                Security · Performance · Accessibility · Compliance
+              </p>
             </div>
           </div>
         </div>

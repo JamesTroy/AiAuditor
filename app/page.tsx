@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { agents } from '@/lib/agents/registry';
-import Logo from '@/components/Logo';
 import HomeSearch from '@/components/HomeSearch';
 import { JsonLd } from '@/components/JsonLd';
 
@@ -52,6 +51,18 @@ const FAQ_ITEMS = [
     q: 'What does a finding look like?',
     a: 'Every finding includes a severity rating (Critical, High, Medium, Low), the exact file and line number, an explanation of the issue, and a copy-paste fix suggestion. Scroll up to see example findings.',
   },
+  {
+    q: 'How long does an audit take?',
+    a: `All ${agents.length}+ auditors run in parallel — most audits finish in under 60 seconds. Results stream in real time so you can start reading findings before the full audit completes.`,
+  },
+  {
+    q: 'Do I need to create an account?',
+    a: 'No. You can run audits immediately without signing up. Creating a free account lets you save audit history and track improvements over time.',
+  },
+  {
+    q: 'Can I run Claudit on private repositories?',
+    a: 'Yes. For code audits, paste your code directly — nothing is sent to third parties. For site audits, enter any URL accessible from the public internet.',
+  },
 ];
 
 export default function Home() {
@@ -75,59 +86,62 @@ export default function Home() {
         <div className="absolute inset-0 bg-grid-pattern -z-10 opacity-50" />
 
         <div className="max-w-4xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <Logo size={48} />
-            <h1 className="text-[clamp(1.5rem,4vw+0.5rem,3.5rem)] font-bold tracking-tight dark:text-gradient">
-              Claudit
-            </h1>
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-500/25">
+              Early Access — Free
+            </span>
           </div>
 
-          <p className="text-gray-800 dark:text-zinc-200 text-[clamp(1.25rem,2.5vw+0.5rem,2rem)] font-semibold max-w-2xl mx-auto mb-3 leading-tight">
-            One audit covers security, performance, accessibility, and SEO.
-          </p>
-          <p className="text-gray-500 dark:text-zinc-400 text-base sm:text-lg max-w-xl mx-auto mb-10">
-            Stop juggling five different tools. Claudit runs {agents.length}+ specialized auditors across your code simultaneously — catching vulnerabilities, performance regressions, accessibility failures, and compliance gaps. Free, instant, no setup.
+          <h1 className="text-[clamp(1.75rem,4vw+0.5rem,3.5rem)] font-bold tracking-tight text-gray-900 dark:text-gradient max-w-3xl mx-auto mb-4 leading-[1.1]">
+            Find what your code review missed — in under 60 seconds
+          </h1>
+
+          <p className="text-gray-600 dark:text-zinc-300 text-base sm:text-lg max-w-2xl mx-auto mb-8 leading-relaxed">
+            Stop juggling SonarQube, Snyk, axe, and Lighthouse. Claudit runs {agents.length} specialized auditors in parallel — covering security, performance, accessibility, SEO, and compliance in a single pass.
           </p>
 
-          {/* Primary CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
-            <Link
-              href="/code-audit"
-              className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring whitespace-nowrap shadow-lg shadow-violet-600/20"
-            >
-              Run a Free Audit
-            </Link>
-            <div className="flex flex-col items-center gap-1.5">
+          {/* Primary CTA */}
+          <div className="flex flex-col items-center gap-3 mb-4">
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <Link
+                href="/code-audit"
+                className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring whitespace-nowrap shadow-lg shadow-violet-600/20"
+              >
+                Audit Your Code Free
+              </Link>
               <Link
                 href="/site-audit"
-                className="text-sm text-gray-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors focus-ring whitespace-nowrap underline underline-offset-4"
+                className="px-8 py-3.5 rounded-xl font-semibold text-base text-gray-700 dark:text-zinc-200 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus-ring whitespace-nowrap"
               >
-                or audit a live site &rarr;
-              </Link>
-              <Link
-                href="#agents"
-                className="text-xs text-gray-400 dark:text-zinc-500 hover:text-violet-600 dark:hover:text-violet-400 transition-colors focus-ring whitespace-nowrap underline underline-offset-4"
-              >
-                browse all {agents.length} audit types
+                Audit a Live Site
               </Link>
             </div>
+            <p className="text-xs text-gray-400 dark:text-zinc-500">
+              No account required — paste code or enter a URL and get results streaming in real time.
+            </p>
           </div>
+
+          {/* Privacy guarantee */}
+          <p className="text-xs text-gray-500 dark:text-zinc-400 mb-10 flex items-center justify-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+            Your code is never stored, never used for training, and never shared with third parties.
+          </p>
 
           {/* Trust stats */}
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-gray-500 dark:text-zinc-400">
             <div className="flex items-center gap-2">
-              <span className="text-violet-600 dark:text-violet-400 font-bold text-lg">{agents.length}+</span>
+              <span className="text-violet-600 dark:text-violet-400 font-bold text-lg">{agents.length}</span>
               <span>specialized auditors</span>
             </div>
             <span className="hidden sm:block w-px h-4 bg-gray-300 dark:bg-zinc-700" aria-hidden="true" />
             <div className="flex items-center gap-2">
-              <span className="text-violet-600 dark:text-violet-400 font-bold text-lg">7 domains</span>
-              <span>in one audit</span>
+              <span className="text-violet-600 dark:text-violet-400 font-bold text-lg">&lt; 60s</span>
+              <span>full audit</span>
             </div>
             <span className="hidden sm:block w-px h-4 bg-gray-300 dark:bg-zinc-700" aria-hidden="true" />
             <div className="flex items-center gap-2">
-              <span className="text-violet-600 dark:text-violet-400 font-bold text-lg">OWASP · GDPR · SOC 2</span>
-              <span>compliance coverage</span>
+              <span className="text-violet-600 dark:text-violet-400 font-bold text-lg">OWASP · WCAG · SOC 2</span>
+              <span>coverage</span>
             </div>
           </div>
         </div>
@@ -137,24 +151,24 @@ export default function Home() {
       <section className="px-4 sm:px-6 pb-20">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-10 text-center">
-            How it works
+            From code to fix in 3 steps
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
                 step: '1',
-                title: 'Submit your code',
-                desc: 'Paste a code snippet, upload a file, or enter a live URL for a full site audit.',
+                title: 'Paste code or enter a URL',
+                desc: 'Drop in a code snippet, upload a file, or point us at a live site — no setup, no config files.',
               },
               {
                 step: '2',
-                title: `${agents.length}+ auditors run simultaneously`,
-                desc: 'Each audit agent specializes in one domain — security, performance, accessibility, SEO, infrastructure, and compliance — running in parallel so you get comprehensive coverage in minutes.',
+                title: `${agents.length} auditors run in parallel`,
+                desc: 'Each agent specializes in one domain — security, performance, accessibility, SEO, infrastructure, and compliance — finishing in under 60 seconds.',
               },
               {
                 step: '3',
-                title: 'Get actionable results',
-                desc: 'Receive a severity-rated report with specific line references, explanations, and fix suggestions.',
+                title: 'Get a severity-rated report',
+                desc: 'Every finding includes the exact file and line, an explanation, and a copy-paste fix. Export as Markdown or JSON.',
               },
             ].map((item) => (
               <div key={item.step} className="text-center">
@@ -173,7 +187,7 @@ export default function Home() {
       <section className="px-4 sm:px-6 pb-20">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-4 text-center">
-            Example findings from real audits
+            See what Claudit catches
           </h2>
           <div className="space-y-4">
             {/* Security — Critical */}
@@ -239,11 +253,31 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ─── Mid-page CTA ─── */}
+      <section className="px-4 sm:px-6 pb-20">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/code-audit"
+              className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring shadow-lg shadow-violet-600/20"
+            >
+              Try It on Your Code
+            </Link>
+            <Link
+              href="/site-audit"
+              className="text-sm text-gray-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors focus-ring underline underline-offset-4"
+            >
+              or audit a live site &rarr;
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ─── Categories ─── */}
       <section className="px-4 sm:px-6 pb-20">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 dark:text-zinc-500 mb-8 text-center">
-            {agents.length} audits across {CATEGORIES.length} categories
+            {agents.length} audits across {CATEGORIES.length} domains — one tool
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
             {CATEGORIES.map((cat) => (
@@ -303,10 +337,10 @@ export default function Home() {
       <section className="px-4 sm:px-6 pb-20">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-zinc-100 mb-3">
-            Ready to find what you&apos;re missing?
+            Your next deploy could be safer
           </h2>
           <p className="text-gray-500 dark:text-zinc-400 text-sm sm:text-base mb-6">
-            Paste code, pick your audits, and get results streaming in real time. No credit card required.
+            Paste code or enter a URL — results stream in under 60 seconds. No account, no credit card.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link

@@ -67,7 +67,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   await headers();
 
   return (
-    <html lang="en-US" className="dark">
+    <html lang="en-US" className="dark" suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
         <meta name="theme-color" content="#f9fafb" media="(prefers-color-scheme: light)" />
@@ -88,11 +88,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <noscript>
               <div className="fixed inset-0 z-[200] bg-white dark:bg-zinc-950 flex items-center justify-center p-8">
                 <div className="text-center max-w-md">
-                  <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-zinc-100">JavaScript Required</h1>
-                  <p className="text-gray-600 dark:text-zinc-400 mb-6">Claudit requires JavaScript to run audits and display results. Please enable JavaScript in your browser settings.</p>
+                  <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-zinc-100">Enable JavaScript to run audits</h1>
+                  <p className="text-gray-600 dark:text-zinc-400 mb-6">Claudit streams audit results in real time, which requires JavaScript. Enable it in your browser settings to get started — your code is never stored or shared.</p>
                   <nav className="space-y-2 text-sm">
-                    <a href="/site-audit" className="block text-violet-600 underline">Site Audit</a>
-                    <a href="/about" className="block text-violet-600 underline">About</a>
+                    <a href="/about" className="block text-violet-600 underline">Learn more about Claudit</a>
                     <a href="/privacy" className="block text-violet-600 underline">Privacy Policy</a>
                     <a href="/terms" className="block text-violet-600 underline">Terms of Service</a>
                   </nav>

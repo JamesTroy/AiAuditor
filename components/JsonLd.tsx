@@ -1,3 +1,5 @@
+import { agents } from '@/lib/agents/registry';
+
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://claudit.consulting';
 
 interface JsonLdProps {
@@ -50,7 +52,7 @@ export function GlobalJsonLd() {
         operatingSystem: 'Web',
         url: BASE_URL,
         description:
-          'Automated code audit tool with 125+ specialized audits for security, quality, performance, accessibility, infrastructure, design, and compliance.',
+          `Automated code audit tool with ${agents.length} specialized audits for security, quality, performance, accessibility, infrastructure, design, and compliance.`,
         offers: {
           '@type': 'Offer',
           price: 0,
@@ -77,7 +79,7 @@ export function GlobalJsonLd() {
         estimatedCost: { '@type': 'MonetaryAmount', currency: 'USD', value: '0' },
         step: [
           { '@type': 'HowToStep', position: 1, name: 'Enter a URL or paste code', text: 'Point us at any website, or paste files directly.' },
-          { '@type': 'HowToStep', position: 2, name: 'Pick your audits', text: 'Choose from 125+ specialized audits — or run them all.' },
+          { '@type': 'HowToStep', position: 2, name: 'Pick your audits', text: `Choose from ${agents.length} specialized audits — or run them all.` },
           { '@type': 'HowToStep', position: 3, name: 'Get your report', text: 'Severity-rated findings with remediation steps — export as MD or JSON.' },
         ],
       },

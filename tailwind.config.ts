@@ -52,16 +52,22 @@ const config: Config = {
       },
       animation: {
         "fade-up": "fade-up 0.3s ease-out both",
+        "fade-in": "fade-in 0.2s ease-out both",
         "star-pop": "star-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both",
         "blink": "blink 1s step-end infinite",
         "pulse-slow": "pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "shimmer": "shimmer 2s linear infinite",
         "slide-in": "slide-in 0.2s ease-out both",
+        "drawer-in": "drawer-in 0.25s cubic-bezier(0.32, 0.72, 0, 1) both",
       },
       keyframes: {
         "fade-up": {
           from: { opacity: "0", transform: "translateY(8px)" },
           to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
         },
         "star-pop": {
           from: { opacity: "0", transform: "scale(0.5)" },
@@ -78,6 +84,10 @@ const config: Config = {
         "slide-in": {
           from: { opacity: "0", transform: "translateY(-4px)" },
           to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "drawer-in": {
+          from: { opacity: "0", transform: "translateX(-100%)" },
+          to: { opacity: "1", transform: "translateX(0)" },
         },
       },
     },
