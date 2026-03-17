@@ -635,6 +635,10 @@ export default function SiteAuditPage() {
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !loading && selected.size > 0) runSiteAudit(); }}
             placeholder="https://example.com"
+            required
+            aria-required="true"
+            pattern="https?://.+"
+            autoComplete="url"
             disabled={loading}
             className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-5 py-3.5 text-base text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 disabled-muted-light"
             aria-label="Website URL"
@@ -666,12 +670,15 @@ export default function SiteAuditPage() {
           <div className="mb-8">
             <button
               onClick={() => setPickerOpen(!pickerOpen)}
+              aria-expanded={pickerOpen}
+              aria-controls="audit-picker"
               className="flex items-center justify-between w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 transition-colors mb-3 group"
             >
               <span className="flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-300">
                 <svg
                   className={`w-4 h-4 transition-transform text-gray-400 dark:text-zinc-500 ${pickerOpen ? 'rotate-90' : ''}`}
                   fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"
+                  aria-hidden="true"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
@@ -687,7 +694,7 @@ export default function SiteAuditPage() {
             </button>
 
             {pickerOpen && (
-              <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4">
+              <div id="audit-picker" className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4">
                 {/* SAFE-005: Curated presets */}
                 <div className="flex flex-wrap gap-2 mb-4 pb-3 border-b border-gray-200 dark:border-zinc-800">
                   {PRESETS.map((preset) => {
@@ -785,7 +792,7 @@ export default function SiteAuditPage() {
                                     </svg>
                                   )}
                                 </span>
-                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor(agent.accentClass)}`} />
+                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor(agent.accentClass)}`} aria-hidden="true" />
                                 <span className="text-sm text-gray-700 dark:text-zinc-300 truncate">{agent.name}</span>
                               </label>
                             );
@@ -805,7 +812,7 @@ export default function SiteAuditPage() {
           <div className="mb-6 sticky top-0 z-10 bg-gray-50/95 dark:bg-zinc-950/95 backdrop-blur-sm py-3 -mx-6 px-6">
             {/* Progress summary bar */}
             {loading && selectedAgents.length > 0 && (
-              <div className="mb-3">
+              <div className="mb-3" role="status" aria-live="polite">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-medium text-gray-600 dark:text-zinc-400">
                     {budgetExhausted
@@ -895,7 +902,7 @@ export default function SiteAuditPage() {
                     }`}
                   >
                     {isActive && (
-                      <span className={`w-2 h-2 rounded-full ${dotColor(agent.accentClass)} animate-pulse flex-shrink-0`} />
+                      <span className={`w-2 h-2 rounded-full ${dotColor(agent.accentClass)} motion-safe:animate-pulse flex-shrink-0`} aria-hidden="true" />
                     )}
                     {isDone && (
                       <svg className="w-3 h-3 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" aria-hidden="true">
@@ -903,7 +910,7 @@ export default function SiteAuditPage() {
                       </svg>
                     )}
                     {isPending && (
-                      <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-zinc-700 flex-shrink-0" />
+                      <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-zinc-700 flex-shrink-0" aria-hidden="true" />
                     )}
                     {agent.name}
                   </span>
@@ -923,7 +930,7 @@ export default function SiteAuditPage() {
         {/* Streaming indicator */}
         {loading && !result && (
           <div className="flex items-center gap-2 text-gray-500 dark:text-zinc-500 text-sm mb-6">
-            <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-violet-500 motion-safe:animate-pulse" aria-hidden="true" />
             <span>Fetching and analyzing website…</span>
           </div>
         )}
@@ -936,7 +943,7 @@ export default function SiteAuditPage() {
               <span className="text-xs font-mono uppercase tracking-widest">
                 {loading ? (
                   <span className="flex items-center gap-1.5 text-violet-400">
-                    <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-violet-500 motion-safe:animate-pulse" aria-hidden="true" />
                     {runningIndices.size > 0
                       ? `Auditing — ${completedIndices.size} of ${selectedAgents.length} complete`
                       : 'Fetching site…'}
@@ -1005,7 +1012,7 @@ export default function SiteAuditPage() {
                     <div>
                       <p className="font-medium text-violet-900 dark:text-violet-200 text-sm">Create a free account to unlock more</p>
                       <p className="text-xs text-violet-700 dark:text-violet-400 mt-1">Sign up to save audit results to your dashboard, track scores over time, and generate remediation roadmaps.</p>
-                      <a href="/signup?callbackUrl=/site-audit" className="inline-block mt-2 text-xs font-semibold text-violet-600 dark:text-violet-300 hover:text-violet-500 underline underline-offset-2">Create free account →</a>
+                      <a href="/signup?callbackUrl=/site-audit" className="inline-block mt-2 text-xs font-semibold text-violet-600 dark:text-violet-300 hover:text-violet-500 underline underline-offset-2">Create free account <span aria-hidden="true">→</span></a>
                     </div>
                   </div>
                 )}
@@ -1039,7 +1046,7 @@ export default function SiteAuditPage() {
                   <span className="text-xs font-mono uppercase tracking-widest">
                     {synthStatus === 'loading' ? (
                       <span className="flex items-center gap-1.5 text-indigo-400">
-                        <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-indigo-500 motion-safe:animate-pulse" aria-hidden="true" />
                         Synthesizing findings…
                       </span>
                     ) : (
@@ -1082,7 +1089,7 @@ export default function SiteAuditPage() {
                   key={agent.id}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"
                 >
-                  <span className={`w-2 h-2 rounded-full ${dotColor(agent.accentClass)}`} />
+                  <span className={`w-2 h-2 rounded-full ${dotColor(agent.accentClass)}`} aria-hidden="true" />
                   {agent.name}
                 </span>
               ))}

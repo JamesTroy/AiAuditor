@@ -267,7 +267,7 @@ export default function Home() {
               href="/site-audit"
               className="text-sm text-gray-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors focus-ring underline underline-offset-4"
             >
-              or audit a live site &rarr;
+              or audit a live site <span aria-hidden="true">&rarr;</span>
             </Link>
           </div>
         </div>
@@ -320,7 +320,7 @@ export default function Home() {
               <details key={item.q} className="group">
                 <summary className="flex items-center justify-between cursor-pointer list-none py-3 text-sm font-semibold text-gray-900 dark:text-zinc-100 hover:text-violet-600 dark:hover:text-violet-400 transition-colors">
                   {item.q}
-                  <svg className="w-4 h-4 text-gray-400 dark:text-zinc-500 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-4 h-4 text-gray-400 dark:text-zinc-500 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                   </svg>
                 </summary>

@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation';
 import Logo from '@/components/Logo';
 
 const PRODUCT_LINKS = [
+  { href: '/code-audit', label: 'Code Audit' },
+  { href: '/site-audit', label: 'Site Audit' },
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/about', label: 'About' },
@@ -44,7 +46,7 @@ export default function Footer() {
               href="/code-audit"
               className="inline-flex text-sm text-violet-600 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-300 font-medium transition-colors focus-ring"
             >
-              Start a free audit &rarr;
+              Start a free audit <span aria-hidden="true">&rarr;</span>
             </Link>
           </div>
 

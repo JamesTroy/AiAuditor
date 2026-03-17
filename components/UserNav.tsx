@@ -52,7 +52,7 @@ export default function UserNav() {
     return (
       <Link
         href="/login"
-        className="text-xs font-medium text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+        className="text-xs font-medium text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 px-3 py-2 min-h-[44px] inline-flex items-center rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
       >
         Sign in
       </Link>
