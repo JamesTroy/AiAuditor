@@ -6500,6 +6500,92 @@ Keep total under 30,000 characters.`,
 
 Keep total under 30,000 characters.`,
   }),
+
+  // ── Subscription & Monetization ─────────────────────────────────
+  builtin({
+    id: 'subscription-billing',
+    name: 'Subscription Billing',
+    category: 'Code Quality',
+    description: 'Reviews subscription and billing integration code — Stripe, Paddle, Chargebee — for webhook security, idempotency, entitlement correctness, dunning logic, proration, and fraud vectors.',
+    accentClass: 'text-emerald-400 bg-emerald-400/10',
+    buttonClass: 'bg-emerald-600 hover:bg-emerald-500 text-white',
+    placeholder: `// Paste your billing integration code
+// e.g. webhook handlers, subscription creation,
+// entitlement checks, plan change logic`,
+    systemPrompt: SYSTEM_PROMPTS['subscription-billing'],
+  }),
+  builtin({
+    id: 'feature-entitlements',
+    name: 'Feature Entitlements',
+    category: 'Code Quality',
+    description: 'Audits feature flagging and entitlement systems — plan gates, RBAC, trial enforcement, seat limits — checking that paid features are never accessible client-side-only or without proper server-side verification.',
+    accentClass: 'text-violet-400 bg-violet-400/10',
+    buttonClass: 'bg-violet-600 hover:bg-violet-500 text-white',
+    placeholder: `// Paste your entitlement / feature-gate code
+// e.g. plan checks, feature flags, role guards,
+// trial restriction logic`,
+    systemPrompt: SYSTEM_PROMPTS['feature-entitlements'],
+  }),
+  builtin({
+    id: 'trial-conversion',
+    name: 'Trial Conversion',
+    category: 'Marketing',
+    description: 'Evaluates your trial-to-paid conversion flow — onboarding time-to-value, limit communication, upgrade prompt placement, upgrade friction, trial expiry handling, and trust signals — to increase paid conversion rates.',
+    accentClass: 'text-pink-400 bg-pink-400/10',
+    buttonClass: 'bg-pink-600 hover:bg-pink-500 text-white',
+    placeholder: `// Paste your trial onboarding or upgrade flow code
+// e.g. trial banner components, upgrade CTAs,
+// plan selection page, trial expiry handling`,
+    systemPrompt: SYSTEM_PROMPTS['trial-conversion'],
+  }),
+  builtin({
+    id: 'dunning-flow',
+    name: 'Dunning Flow',
+    category: 'Marketing',
+    description: 'Reviews your payment failure recovery and dunning strategy — retry schedules, email sequences, in-app payment update flows, access restriction timing, and winback logic — to maximize involuntary churn recovery.',
+    accentClass: 'text-amber-400 bg-amber-400/10',
+    buttonClass: 'bg-amber-600 hover:bg-amber-500 text-white',
+    placeholder: `// Paste your dunning / payment failure handling code
+// e.g. failed payment webhooks, dunning email templates,
+// in-app payment update UI, access restriction logic`,
+    systemPrompt: SYSTEM_PROMPTS['dunning-flow'],
+  }),
+  builtin({
+    id: 'pricing-architecture',
+    name: 'Pricing Architecture',
+    category: 'Marketing',
+    description: 'Audits your pricing model and implementation — value metric alignment, tier structure, pricing page effectiveness, hardcoded vs. dynamic pricing, and expansion revenue paths — to identify ARPU and conversion improvements.',
+    accentClass: 'text-indigo-400 bg-indigo-400/10',
+    buttonClass: 'bg-indigo-600 hover:bg-indigo-500 text-white',
+    placeholder: `// Paste your pricing page code or billing configuration
+// e.g. plan definitions, pricing page component,
+// price IDs, feature comparison table`,
+    systemPrompt: SYSTEM_PROMPTS['pricing-architecture'],
+  }),
+  builtin({
+    id: 'metered-billing',
+    name: 'Metered Billing',
+    category: 'Infrastructure',
+    description: 'Audits usage-based billing and metering infrastructure — event ingestion reliability, deduplication, aggregation logic, overage handling, customer usage transparency, and observability — to ensure billing accuracy and prevent revenue loss.',
+    accentClass: 'text-cyan-400 bg-cyan-400/10',
+    buttonClass: 'bg-cyan-600 hover:bg-cyan-500 text-white',
+    placeholder: `// Paste your metering / usage-based billing code
+// e.g. usage event emission, aggregation logic,
+// billing period cutover, limit enforcement`,
+    systemPrompt: SYSTEM_PROMPTS['metered-billing'],
+  }),
+  builtin({
+    id: 'churn-prevention',
+    name: 'Churn Prevention',
+    category: 'Marketing',
+    description: 'Reviews your churn prevention infrastructure — health scoring, churn signals, cancellation flow design, in-app retention triggers, customer success tooling, winback sequences, and retention analytics — to reduce monthly churn.',
+    accentClass: 'text-rose-400 bg-rose-400/10',
+    buttonClass: 'bg-rose-600 hover:bg-rose-500 text-white',
+    placeholder: `// Paste your churn prevention or cancellation flow code
+// e.g. cancellation modal, health scoring logic,
+// re-engagement emails, winback flow`,
+    systemPrompt: SYSTEM_PROMPTS['churn-prevention'],
+  }),
 ];
 
 export function getAgent(id: string): AgentConfig {

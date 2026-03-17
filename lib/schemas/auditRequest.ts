@@ -134,6 +134,14 @@ export const VALID_AGENT_TYPES = [
   'seo-structured-data',
   'seo-indexation',
   'seo-video',
+  // Subscription & Monetization
+  'subscription-billing',
+  'feature-entitlements',
+  'trial-conversion',
+  'dunning-flow',
+  'pricing-architecture',
+  'metered-billing',
+  'churn-prevention',
 ] as const;
 
 export type AgentTypeValue = (typeof VALID_AGENT_TYPES)[number];
