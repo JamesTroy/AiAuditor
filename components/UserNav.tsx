@@ -150,6 +150,15 @@ export default function UserNav() {
           >
             Settings
           </Link>
+          {(session.user as Record<string, unknown>).role === 'admin' && (
+            <Link
+              href="/admin"
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2 text-sm text-violet-600 dark:text-violet-400 hover:bg-gray-50 dark:hover:bg-zinc-800"
+            >
+              Admin
+            </Link>
+          )}
 
           <div className="border-t border-gray-100 dark:border-zinc-800 mt-1 pt-1">
             <button
