@@ -143,13 +143,10 @@ export default function Home() {
               <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">SQL Injection via unsanitized query parameter</h3>
               <div className="relative bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-3 font-mono text-xs leading-relaxed text-gray-700 dark:text-zinc-300 overflow-x-auto">
                 <span className="text-gray-400 dark:text-zinc-500 select-none">app/api/users/route.ts:42 &nbsp;</span>
-                <span className="text-red-600 dark:text-red-400">const result = await db.execute(</span><br />
-                <span className="text-gray-400 dark:text-zinc-500 select-none">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                <span className="text-red-600 dark:text-red-400">{"`SELECT * FROM users WHERE id = ${id}`"}</span>
-                <span className="text-red-600 dark:text-red-400">);</span>
+                <span className="text-red-600 dark:text-red-400">{"const query = \"SELECT * FROM users WHERE id = \" + req.params.id;"}</span>
               </div>
               <p className="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed">
-                <strong className="text-gray-800 dark:text-zinc-200">Fix:</strong> Use parameterized queries. Replace string interpolation with <code className="bg-gray-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-xs">{"db.execute(sql`SELECT * FROM users WHERE id = ${id}`)"}</code> to prevent injection attacks.
+                <strong className="text-gray-800 dark:text-zinc-200">Fix:</strong> Use parameterized queries instead of string concatenation: <code className="bg-gray-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-xs">{"db.execute(\"SELECT * FROM users WHERE id = ?\", [req.params.id])"}</code>
               </p>
             </div>
           </div>
