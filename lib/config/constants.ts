@@ -13,6 +13,28 @@ export const SITE_AUDIT_CONCURRENCY = 50;
 /** Maximum number of agents a user can select per site audit run. 0 = unlimited. */
 export const MAX_AGENTS_PER_RUN = 0;
 
+// ── Adaptive concurrency (safeguard #1 + #3) ──────────────────
+/** Floor for adaptive concurrency — never go below this. */
+export const MIN_CONCURRENCY = 5;
+/** Error rate threshold (0-1) that triggers concurrency reduction. */
+export const ERROR_RATE_THRESHOLD = 0.2;
+/** Factor to reduce concurrency by when error rate exceeds threshold. */
+export const CONCURRENCY_BACKOFF_FACTOR = 0.5;
+/** How long (ms) to wait before attempting to ramp concurrency back up. */
+export const CONCURRENCY_RECOVERY_MS = 15_000;
+
+// ── Per-run token budget (safeguard #2) ────────────────────────
+/** Max estimated output tokens per site audit run. 125 agents × 16K = ~2M; cap at 1.5M. */
+export const MAX_TOKENS_PER_RUN = 1_500_000;
+/** Estimated output tokens per agent (used for budget tracking before real counts arrive). */
+export const EST_TOKENS_PER_AGENT = 12_000;
+
+// ── Full-run cooldown (safeguard #7) ───────────────────────────
+/** Minimum seconds between full audit runs (50+ agents). */
+export const FULL_RUN_COOLDOWN_SECS = 300;  // 5 min
+/** Agent count threshold that triggers cooldown enforcement. */
+export const FULL_RUN_AGENT_THRESHOLD = 50;
+
 // ── Stream / request limits ─────────────────────────────────────
 /** Hard server-side timeout for audit streams. Security/architecture audits on large inputs routinely exceed 2 min. */
 export const STREAM_TIMEOUT_MS = 300_000;     // 5 min

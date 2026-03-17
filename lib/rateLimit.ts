@@ -218,10 +218,10 @@ export const auditLimiter = new RateLimiter({
   prefix: 'audit',
 });
 
-/** Site audit batch: 30 requests per minute per IP (higher cap for sequential multi-agent runs). */
+/** Site audit batch: 150 requests per minute per IP (supports 125 agents at concurrency 50). */
 export const siteAuditLimiter = new RateLimiter({
   windowMs: 60_000,
-  maxRequests: 30,
+  maxRequests: 150,
   prefix: 'site-audit',
 });
 
@@ -282,6 +282,14 @@ export const userDailyAuditLimiter = new RateLimiter({
   maxRequests: 50,
   cleanupIntervalMs: 60 * 60_000,
   prefix: 'user-daily',
+});
+
+// SAFE-006: Per-IP concurrent audit fairness — max 50 concurrent (sliding 30s window).
+// Prevents a single user from monopolizing the global API quota.
+export const perIpConcurrencyLimiter = new RateLimiter({
+  windowMs: 30_000,
+  maxRequests: 50,
+  prefix: 'ip-concurrent',
 });
 
 // CLOUD-014: Per-email login rate limiter — 10 attempts per hour per email.

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { headers as nextHeaders } from 'next/headers';
 import { getAgent } from '@/lib/agents/registry';
-import { auditLimiter, siteAuditLimiter, dailyAuditBudget, userDailyAuditLimiter } from '@/lib/rateLimit';
+import { auditLimiter, siteAuditLimiter, dailyAuditBudget, userDailyAuditLimiter, perIpConcurrencyLimiter } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { auditRequestSchema } from '@/lib/schemas/auditRequest';
 import { STREAM_RESPONSE_HEADERS, ALLOWED_ORIGINS } from '@/lib/config/apiHeaders';
@@ -314,6 +314,18 @@ export async function POST(req: NextRequest) {
       status: 429,
       headers: { ...dailyBudget.headers, 'X-Request-Id': requestId },
     });
+  }
+
+  // SAFE-006: Per-IP concurrent audit fairness — max 50 audits per 30s window.
+  if (isSiteAudit) {
+    const concurrencyRl = await perIpConcurrencyLimiter.check(ip);
+    if (!concurrencyRl.allowed) {
+      log('warn', 'ip_concurrency_limit', { requestId, ip: anonIp });
+      return new Response('Too many concurrent audits. Please wait for some to finish.', {
+        status: 429,
+        headers: { ...concurrencyRl.headers, 'X-Request-Id': requestId },
+      });
+    }
   }
 
   // VULN-004: Escape XML tags in user input before wrapping so </user_content>

@@ -7,6 +7,17 @@ import SafeMarkdown from '@/components/markdownComponents';
 import { saveAudit } from '@/lib/history';
 import { friendlyError } from '@/lib/friendlyError';
 import { useSession } from '@/lib/auth-client';
+import {
+  SITE_AUDIT_CONCURRENCY,
+  MIN_CONCURRENCY,
+  ERROR_RATE_THRESHOLD,
+  CONCURRENCY_BACKOFF_FACTOR,
+  CONCURRENCY_RECOVERY_MS,
+  MAX_TOKENS_PER_RUN,
+  EST_TOKENS_PER_AGENT,
+  FULL_RUN_COOLDOWN_SECS,
+  FULL_RUN_AGENT_THRESHOLD,
+} from '@/lib/config/constants';
 
 const DEFAULT_IDS = new Set([
   'security',
@@ -16,6 +27,40 @@ const DEFAULT_IDS = new Set([
   'responsive-design',
   'code-quality',
 ]);
+
+// SAFE-005: Curated presets so users don't blindly select all 125 agents.
+const PRESETS: { label: string; description: string; ids: string[] }[] = [
+  {
+    label: 'Quick Scan',
+    description: '6 core checks — fast overview',
+    ids: ['security', 'seo-performance', 'accessibility', 'frontend-performance', 'responsive-design', 'code-quality'],
+  },
+  {
+    label: 'Security Deep Dive',
+    description: '20 security & privacy auditors',
+    ids: allAgents.filter(a => a.category === 'Security & Privacy').map(a => a.id),
+  },
+  {
+    label: 'SEO & Marketing',
+    description: 'Full SEO + marketing audit',
+    ids: allAgents.filter(a => a.category === 'SEO' || a.category === 'Marketing').map(a => a.id),
+  },
+  {
+    label: 'Performance Sweep',
+    description: 'All performance + infrastructure',
+    ids: allAgents.filter(a => a.category === 'Performance' || a.category === 'Infrastructure').map(a => a.id),
+  },
+  {
+    label: 'Design & UX',
+    description: 'Full design + accessibility review',
+    ids: allAgents.filter(a => a.category === 'Design').map(a => a.id),
+  },
+  {
+    label: 'Full Audit',
+    description: `All ${allAgents.length} auditors — takes longer`,
+    ids: allAgents.map(a => a.id),
+  },
+];
 
 const CATEGORIES = ['Security & Privacy', 'Code Quality', 'Performance', 'Infrastructure', 'Design', 'SEO', 'Marketing'] as const;
 
@@ -92,6 +137,15 @@ export default function SiteAuditPage() {
   const synthAbortRef = useRef<AbortController | null>(null);
   const resultEndRef = useRef<HTMLDivElement>(null);
   const userScrolledUp = useRef(false);
+  // SAFE-007: Cooldown tracking for full runs.
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  // SAFE-001/003: Adaptive concurrency + error tracking for display.
+  const [currentConcurrency, setCurrentConcurrency] = useState(SITE_AUDIT_CONCURRENCY);
+  const [errorCount, setErrorCount] = useState(0);
+  // SAFE-002: Token budget tracking.
+  const [estimatedTokensUsed, setEstimatedTokensUsed] = useState(0);
+  const [budgetExhausted, setBudgetExhausted] = useState(false);
 
   // Derive ordered list of selected agents for progress tracking
   const selectedAgents = useMemo(
@@ -143,6 +197,10 @@ export default function SiteAuditPage() {
     setSelected(new Set());
   }, []);
 
+  const applyPreset = useCallback((ids: string[]) => {
+    setSelected(new Set(ids));
+  }, []);
+
   // Elapsed timer
   useEffect(() => {
     if (!loading) { setElapsed(0); return; }
@@ -180,6 +238,19 @@ export default function SiteAuditPage() {
       synthAbortRef.current?.abort();
     };
   }, []);
+
+  // SAFE-007: Cooldown countdown timer.
+  useEffect(() => {
+    if (cooldownUntil <= Date.now()) { setCooldownRemaining(0); return; }
+    const tick = () => {
+      const rem = Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
+      setCooldownRemaining(rem);
+      if (rem <= 0) clearInterval(id);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [cooldownUntil]);
 
   /** Stream a single audit and return the result text. */
   async function streamSingleAudit(
@@ -230,6 +301,14 @@ export default function SiteAuditPage() {
     const trimmed = url.trim();
     if (!trimmed || loading || selected.size === 0) return;
 
+    // SAFE-007: Enforce cooldown for full runs.
+    const agentsToRun = allAgents.filter((a) => selected.has(a.id));
+    if (agentsToRun.length >= FULL_RUN_AGENT_THRESHOLD && cooldownUntil > Date.now()) {
+      const secs = Math.ceil((cooldownUntil - Date.now()) / 1000);
+      setError(`Please wait ${secs}s before running another full audit (${FULL_RUN_AGENT_THRESHOLD}+ agents).`);
+      return;
+    }
+
     abortRef.current?.abort();
     abortRef.current = new AbortController();
 
@@ -243,15 +322,16 @@ export default function SiteAuditPage() {
     setError('');
     setRunningIndices(new Set());
     setCompletedIndices(new Set());
+    setErrorCount(0);
+    setEstimatedTokensUsed(0);
+    setBudgetExhausted(false);
+    setCurrentConcurrency(SITE_AUDIT_CONCURRENCY);
     // SM-013: Clear synthesis errors from previous run.
     setSynthError('');
     setSynthStatus('idle');
     setSynthesis('');
     // SM-016: Close picker so results are visible.
     setPickerOpen(false);
-
-    // Snapshot selected agents at audit start so UI stays consistent
-    const agentsToRun = allAgents.filter((a) => selected.has(a.id));
 
     try {
       // Step 1: Fetch site content once
@@ -276,15 +356,16 @@ export default function SiteAuditPage() {
 
       const siteContent = await fetchRes.text();
 
-      // PERF-002: Run audits concurrently with a concurrency cap.
-      // Each agent writes to its own slot; results are combined in order for display.
-      const CONCURRENCY = 10;
+      // SAFE-001/002/003/006: Adaptive concurrency queue with backoff, token budget, and fairness.
       const agentResults: string[] = new Array(agentsToRun.length).fill('');
-
-      // Simple concurrency limiter (avoids adding p-limit dependency).
       let activeCount = 0;
       let nextIndex = 0;
-      const queue: Array<() => void> = [];
+      let concurrency = SITE_AUDIT_CONCURRENCY;
+      let totalErrors = 0;
+      let totalCompleted = 0;
+      let tokensUsed = 0;
+      let budgetHit = false;
+      let backoffUntil = 0; // timestamp — pause queue until this time
 
       function rebuildResult() {
         const parts: string[] = [];
@@ -295,6 +376,28 @@ export default function SiteAuditPage() {
           }
         }
         setResult(parts.join(''));
+      }
+
+      // SAFE-003: Adjust concurrency based on error rate.
+      function adaptConcurrency() {
+        const total = totalCompleted + totalErrors;
+        if (total < 3) return; // need a minimum sample
+        const errorRate = totalErrors / total;
+        if (errorRate > ERROR_RATE_THRESHOLD && concurrency > MIN_CONCURRENCY) {
+          concurrency = Math.max(MIN_CONCURRENCY, Math.floor(concurrency * CONCURRENCY_BACKOFF_FACTOR));
+          setCurrentConcurrency(concurrency);
+        }
+      }
+
+      // SAFE-003: Schedule concurrency recovery.
+      function scheduleRecovery() {
+        setTimeout(() => {
+          if (concurrency < SITE_AUDIT_CONCURRENCY) {
+            concurrency = Math.min(SITE_AUDIT_CONCURRENCY, concurrency * 2);
+            setCurrentConcurrency(concurrency);
+            tryNext(); // fill newly available slots
+          }
+        }, CONCURRENCY_RECOVERY_MS);
       }
 
       async function runAgent(i: number) {
@@ -314,6 +417,16 @@ export default function SiteAuditPage() {
 
           agentResults[i] = agentResult;
           rebuildResult();
+          totalCompleted++;
+
+          // SAFE-002: Track estimated token usage.
+          const estimatedTokens = Math.ceil(agentResult.length / 4); // rough char→token
+          tokensUsed += estimatedTokens;
+          setEstimatedTokensUsed(tokensUsed);
+          if (tokensUsed >= MAX_TOKENS_PER_RUN) {
+            budgetHit = true;
+            setBudgetExhausted(true);
+          }
 
           saveAudit({
             agentId: agent.id,
@@ -327,29 +440,61 @@ export default function SiteAuditPage() {
           const errMsg = err instanceof Error ? err.message : String(err);
           agentResults[i] += `\n\n[Error: ${errMsg}]\n`;
           rebuildResult();
+          totalErrors++;
+          setErrorCount(totalErrors);
+
+          // SAFE-001: Progressive backoff on 429 / rate limit errors.
+          const is429 = errMsg.includes('429') || errMsg.toLowerCase().includes('rate') || errMsg.toLowerCase().includes('too many');
+          if (is429) {
+            // Pause the queue for exponential backoff: 2s, 4s, 8s…
+            const backoffMs = Math.min(30_000, 2_000 * 2 ** (Math.min(totalErrors, 5) - 1));
+            backoffUntil = Date.now() + backoffMs;
+          }
+
+          // SAFE-003: Adapt concurrency after each error.
+          adaptConcurrency();
+          scheduleRecovery();
         } finally {
           setRunningIndices((prev) => { const next = new Set(prev); next.delete(i); return next; });
           setCompletedIndices((prev) => new Set(prev).add(i));
           activeCount--;
-          if (queue.length > 0) queue.shift()!();
+          tryNext();
         }
       }
 
-      await new Promise<void>((resolveAll) => {
-        function tryNext() {
-          while (activeCount < CONCURRENCY && nextIndex < agentsToRun.length) {
-            if (abortRef.current?.signal.aborted) break;
-            const i = nextIndex++;
-            activeCount++;
-            runAgent(i).then(tryNext);
-          }
-          // All done when no more active and no more queued.
-          if (activeCount === 0 && nextIndex >= agentsToRun.length) {
-            resolveAll();
-          }
+      let resolveAll: () => void;
+      const allDone = new Promise<void>((r) => { resolveAll = r; });
+
+      function tryNext() {
+        // SAFE-001: Respect backoff pause.
+        if (backoffUntil > Date.now()) {
+          setTimeout(tryNext, backoffUntil - Date.now());
+          return;
         }
-        tryNext();
-      });
+        // SAFE-002: Stop queuing if token budget exhausted.
+        if (budgetHit && nextIndex < agentsToRun.length) {
+          // Let active agents finish but don't start new ones.
+          if (activeCount === 0) resolveAll!();
+          return;
+        }
+        while (activeCount < concurrency && nextIndex < agentsToRun.length) {
+          if (abortRef.current?.signal.aborted) break;
+          if (budgetHit) break;
+          const i = nextIndex++;
+          activeCount++;
+          runAgent(i);
+        }
+        if (activeCount === 0 && (nextIndex >= agentsToRun.length || budgetHit)) {
+          resolveAll!();
+        }
+      }
+      tryNext();
+      await allDone;
+
+      // SAFE-007: Set cooldown if this was a full run.
+      if (agentsToRun.length >= FULL_RUN_AGENT_THRESHOLD) {
+        setCooldownUntil(Date.now() + FULL_RUN_COOLDOWN_SECS * 1000);
+      }
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== 'AbortError') {
         setError(err.message);
@@ -360,7 +505,7 @@ export default function SiteAuditPage() {
       sessionStorage.removeItem('claudit-audit-url');
       setRunningIndices(new Set());
     }
-  }, [url, loading, selected]);
+  }, [url, loading, selected, cooldownUntil]);
 
   function handleStop() {
     abortRef.current?.abort();
@@ -448,6 +593,14 @@ export default function SiteAuditPage() {
           )}
         </div>
 
+        {/* SAFE-007: Cooldown notice */}
+        {cooldownRemaining > 0 && !loading && (
+          <div className="mb-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-300 flex items-center gap-2">
+            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            Full audit cooldown: <strong>{cooldownRemaining}s</strong> remaining. You can run a smaller audit ({`<`}{FULL_RUN_AGENT_THRESHOLD} agents) now, or wait.
+          </div>
+        )}
+
         {/* URL Input */}
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <input
@@ -509,20 +662,27 @@ export default function SiteAuditPage() {
 
             {pickerOpen && (
               <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4">
-                {/* Global controls */}
+                {/* SAFE-005: Curated presets */}
                 <div className="flex flex-wrap gap-2 mb-4 pb-3 border-b border-gray-200 dark:border-zinc-800">
-                  <button
-                    onClick={selectAll}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:bg-gray-300 dark:hover:bg-zinc-700 transition-colors"
-                  >
-                    Select All ({allAgents.length})
-                  </button>
-                  <button
-                    onClick={selectDefaults}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors"
-                  >
-                    Defaults (6)
-                  </button>
+                  {PRESETS.map((preset) => {
+                    const isActive = preset.ids.length === selected.size && preset.ids.every(id => selected.has(id));
+                    return (
+                      <button
+                        key={preset.label}
+                        onClick={() => applyPreset(preset.ids)}
+                        title={preset.description}
+                        className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                          isActive
+                            ? 'bg-violet-600 text-white'
+                            : preset.label === 'Full Audit'
+                              ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50'
+                              : 'bg-gray-200 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:bg-gray-300 dark:hover:bg-zinc-700'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
                   <button
                     onClick={clearAll}
                     className="text-xs px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:bg-gray-300 dark:hover:bg-zinc-700 transition-colors"
@@ -533,6 +693,13 @@ export default function SiteAuditPage() {
                     {allAgents.length} auditors available
                   </span>
                 </div>
+
+                {/* SAFE-002/005: Warning when selecting many agents */}
+                {selected.size >= FULL_RUN_AGENT_THRESHOLD && (
+                  <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-300">
+                    <strong>{selected.size} agents selected.</strong> This run will use significant API quota (~{Math.round(selected.size * EST_TOKENS_PER_AGENT / 1000)}K tokens estimated). Results may take several minutes.
+                  </div>
+                )}
 
                 {/* Categories */}
                 <div className="space-y-4">
@@ -615,13 +782,20 @@ export default function SiteAuditPage() {
               <div className="mb-3">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-medium text-gray-600 dark:text-zinc-400">
-                    {completedIndices.size === selectedAgents.length
-                      ? 'All audits complete'
-                      : runningIndices.size > 0
-                        ? `Running ${runningIndices.size} of ${selectedAgents.length} audits…`
-                        : 'Preparing audits…'}
+                    {budgetExhausted
+                      ? 'Token budget reached — finishing active audits'
+                      : completedIndices.size === selectedAgents.length
+                        ? 'All audits complete'
+                        : runningIndices.size > 0
+                          ? `Running ${runningIndices.size} of ${selectedAgents.length} audits (concurrency: ${currentConcurrency})…`
+                          : 'Preparing audits…'}
                   </span>
-                  <span className="text-xs font-mono text-gray-500 dark:text-zinc-500">
+                  <span className="text-xs font-mono text-gray-500 dark:text-zinc-500 flex items-center gap-2">
+                    {errorCount > 0 && (
+                      <span className="text-amber-500" title={`${errorCount} agent(s) failed — concurrency auto-adjusted`}>
+                        {errorCount} err
+                      </span>
+                    )}
                     {completedIndices.size}/{selectedAgents.length} complete
                   </span>
                 </div>
@@ -631,6 +805,20 @@ export default function SiteAuditPage() {
                     style={{ width: `${(completedIndices.size / selectedAgents.length) * 100}%` }}
                   />
                 </div>
+                {/* SAFE-002: Token budget bar */}
+                {selectedAgents.length >= FULL_RUN_AGENT_THRESHOLD && (
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <div className="flex-1 h-1 bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${budgetExhausted ? 'bg-red-500' : 'bg-emerald-500'}`}
+                        style={{ width: `${Math.min(100, (estimatedTokensUsed / MAX_TOKENS_PER_RUN) * 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-mono text-gray-400 dark:text-zinc-600 whitespace-nowrap">
+                      ~{Math.round(estimatedTokensUsed / 1000)}K / {Math.round(MAX_TOKENS_PER_RUN / 1000)}K tokens
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 
