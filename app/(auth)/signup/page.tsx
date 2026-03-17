@@ -211,7 +211,7 @@ export default function SignupPage() {
         </Link>
       </p>
       <p className="mt-4 text-center text-xs text-gray-400 dark:text-zinc-600">
-        Join developers running security, performance, and accessibility audits daily.
+        Your first audit takes less than 60 seconds — no credit card required.
       </p>
     </div>
   );

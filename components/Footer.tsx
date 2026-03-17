@@ -23,7 +23,7 @@ export default function Footer() {
         </Link>
 
         <p className="text-sm text-gray-500 dark:text-zinc-500">
-          Find issues before they reach production.
+          One audit covers security, performance, accessibility, and more.
         </p>
 
         <nav className="flex flex-wrap items-center justify-center gap-2 sm:gap-4" aria-label="Footer">

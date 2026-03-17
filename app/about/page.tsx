@@ -3,11 +3,11 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'About',
-  description: 'About Claudit — automated code auditing for security, performance, and compliance.',
+  description: 'Claudit runs 50+ specialized auditors across your code — security, performance, accessibility, SEO, and compliance — free, with results streaming in real time. No credit card required.',
   alternates: { canonical: '/about' },
   openGraph: {
     title: 'About — Claudit',
-    description: 'About Claudit — automated code auditing for security, performance, and compliance.',
+    description: 'Claudit runs 50+ specialized auditors across your code — security, performance, accessibility, SEO, and compliance — free, with real-time streaming results.',
     url: '/about',
   },
 };

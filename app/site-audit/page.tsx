@@ -438,7 +438,7 @@ export default function SiteAuditPage() {
             Full Site Audit
           </h1>
           <p className="text-gray-500 dark:text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto">
-            Enter a URL to scan for security vulnerabilities, performance issues, accessibility gaps, and more. Results stream in real time.
+            Enter any public URL — get a severity-rated report across security, performance, accessibility, SEO, and compliance. Results stream in real time.
           </p>
           {/* ONB-025: Light personalization hint about what defaults cover */}
           {!loading && !result && (
@@ -461,11 +461,11 @@ export default function SiteAuditPage() {
             aria-label="Website URL"
           />
           <button
-            onClick={() => { if (!session) { router.push('/login?callbackUrl=/site-audit'); return; } runSiteAudit(); }}
+            onClick={runSiteAudit}
             disabled={loading || !url.trim() || selected.size === 0}
             className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors disabled-muted focus-ring whitespace-nowrap"
           >
-            {loading ? `Auditing… ${elapsed}s` : selected.size === 1 ? 'Run 1 Audit' : `Run ${selected.size} Audits`}
+            {loading ? `Auditing… ${completedIndices.size}/${selectedAgents.length} complete` : selected.size === 1 ? 'Run 1 Audit' : `Run ${selected.size} Audits`}
           </button>
           {loading && (
             <button
@@ -476,6 +476,11 @@ export default function SiteAuditPage() {
             </button>
           )}
         </div>
+
+        <p className="text-xs text-gray-400 dark:text-zinc-500 mb-4 flex items-center gap-1.5">
+          <svg className="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+          Your code is analyzed and immediately discarded — never stored, never shared, never used for training.
+        </p>
 
         {/* Audit Picker */}
         {!loading && !result && (
@@ -780,6 +785,17 @@ export default function SiteAuditPage() {
                     </div>
                   </div>
                 )}
+                {!session && (
+                  <div className="mb-4 p-4 rounded-xl bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 flex items-start gap-3">
+                    <svg className="w-5 h-5 text-violet-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                    <div>
+                      <p className="font-medium text-violet-900 dark:text-violet-200 text-sm">Create a free account to unlock more</p>
+                      <p className="text-xs text-violet-700 dark:text-violet-400 mt-1">Sign up to save audit results to your dashboard, track scores over time, and generate remediation roadmaps.</p>
+                      <a href="/signup?callbackUrl=/site-audit" className="inline-block mt-2 text-xs font-semibold text-violet-600 dark:text-violet-300 hover:text-violet-500 underline underline-offset-2">Create free account →</a>
+                    </div>
+                  </div>
+                )}
+                {session && (<>
                 <button
                   onClick={runSynthesis}
                   className="w-full py-3.5 rounded-xl font-semibold text-base text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all focus-ring flex items-center justify-center gap-2"
@@ -791,8 +807,9 @@ export default function SiteAuditPage() {
                 </button>
                 {/* ONB-017: Explain what the synthesis does */}
                 <p className="text-xs text-gray-500 dark:text-zinc-500 mt-2 text-center">
-                  Synthesizes all findings into a prioritized action plan with effort estimates.
+                  Turn your findings into a step-by-step fix plan, prioritized by severity and effort. Know exactly what to fix first.
                 </p>
+                </>)}
               </div>
             )}
 
@@ -871,6 +888,9 @@ export default function SiteAuditPage() {
                 </div>
               ))}
             </div>
+            <p className="text-xs text-gray-400 dark:text-zinc-500 text-center mt-4">
+              For teams: track audit scores over time, assign findings, and generate compliance reports — all from your dashboard.
+            </p>
           </div>
         )}
       </div>

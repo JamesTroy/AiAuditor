@@ -24,9 +24,9 @@ export default function ActivationBanner() {
 
   return (
     <div className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm py-2.5 px-4 flex items-center justify-center gap-2 relative">
-      <span>Run your first audit — enter any URL to get security, performance, and accessibility findings.</span>
+      <span>Try it on your own site — enter any public URL, get a severity-rated report in under 60 seconds.</span>
       <Link href="/site-audit" className="underline font-semibold hover:text-violet-200 transition-colors whitespace-nowrap">
-        Start now →
+        Run your first audit →
       </Link>
       <button
         onClick={handleDismiss}

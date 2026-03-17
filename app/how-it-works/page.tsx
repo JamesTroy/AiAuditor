@@ -26,10 +26,10 @@ export default function HowItWorksPage() {
         {/* Hero */}
         <div className="mb-12">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
-            How It Works
+            From URL to full audit in under a minute
           </h1>
           <p className="text-lg text-gray-600 dark:text-zinc-400 max-w-2xl">
-            Actionable, severity-rated findings — streaming in real time.
+            Here&apos;s how it works — three steps, no setup, no credit card.
           </p>
         </div>
 
