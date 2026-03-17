@@ -278,7 +278,7 @@ export default function SiteAuditPage() {
 
       // PERF-002: Run audits concurrently with a concurrency cap.
       // Each agent writes to its own slot; results are combined in order for display.
-      const CONCURRENCY = 3;
+      const CONCURRENCY = 10;
       const agentResults: string[] = new Array(agentsToRun.length).fill('');
 
       // Simple concurrency limiter (avoids adding p-limit dependency).
@@ -530,7 +530,7 @@ export default function SiteAuditPage() {
                     Clear
                   </button>
                   <span className="ml-auto text-xs text-gray-400 dark:text-zinc-500 self-center">
-                    Max 20 per run
+                    {allAgents.length} auditors available
                   </span>
                 </div>
 
@@ -562,7 +562,7 @@ export default function SiteAuditPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                           {catAgents.map((agent) => {
                             const isSelected = selected.has(agent.id);
-                            const wouldExceedMax = !isSelected && selected.size >= 20;
+                            const wouldExceedMax = false;
                             return (
                               <label
                                 key={agent.id}

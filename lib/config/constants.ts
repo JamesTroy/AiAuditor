@@ -7,6 +7,12 @@ export const ANTHROPIC_MAX_TOKENS = 16_384;
 export const ANTHROPIC_MAX_RETRIES = 3;
 export const ANTHROPIC_RETRY_BASE_MS = 1_000;
 
+// ── Site audit limits ──────────────────────────────────────────
+/** How many audit agents stream concurrently during a site audit. Higher = faster but uses more API quota. */
+export const SITE_AUDIT_CONCURRENCY = 10;
+/** Maximum number of agents a user can select per site audit run. 0 = unlimited. */
+export const MAX_AGENTS_PER_RUN = 0;
+
 // ── Stream / request limits ─────────────────────────────────────
 /** Hard server-side timeout for audit streams. Security/architecture audits on large inputs routinely exceed 2 min. */
 export const STREAM_TIMEOUT_MS = 300_000;     // 5 min
