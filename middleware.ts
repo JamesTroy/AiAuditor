@@ -53,7 +53,11 @@ const REPORT_TO_HEADER = JSON.stringify({
   endpoints: [{ url: '/api/csp-report' }],
 });
 
+// PERF-025: Pre-serialize Reporting-Endpoints header at module scope.
+const REPORTING_ENDPOINTS = 'csp-endpoint="/api/csp-report"';
+
 export function middleware(request: NextRequest) {
+  const startMs = Date.now();
   const { pathname } = request.nextUrl;
 
   // ── Auth gate ──────────────────────────────────────────────────
@@ -119,6 +123,11 @@ export function middleware(request: NextRequest) {
   const requestId = crypto.randomUUID();
   response.headers.set('X-Request-Id', requestId);
   // SESS-005: HSTS — prevent SSL stripping attacks.
+  // Reporting-Endpoints: modern alternative to Report-To for CSP violation reports.
+  response.headers.set('Reporting-Endpoints', REPORTING_ENDPOINTS);
+  // Server-Timing: expose middleware latency for observability (visible in DevTools Network tab).
+  const mwMs = Date.now() - startMs;
+  response.headers.set('Server-Timing', `mw;dur=${mwMs};desc="Middleware"`);
   if (!isDev) {
     response.headers.set(
       'Strict-Transport-Security',

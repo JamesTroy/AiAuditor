@@ -38,7 +38,7 @@ export function GlobalJsonLd() {
           '@type': 'SearchAction',
           target: {
             '@type': 'EntryPoint',
-            urlTemplate: `${BASE_URL}/#agents?q={search_term_string}`,
+            urlTemplate: `${BASE_URL}/code-audit?q={search_term_string}`,
           },
           'query-input': 'required name=search_term_string',
         },
@@ -50,7 +50,7 @@ export function GlobalJsonLd() {
         operatingSystem: 'Web',
         url: BASE_URL,
         description:
-          'Automated code audit tool with 50 specialized audits for security, quality, performance, and compliance.',
+          'Automated code audit tool with 125+ specialized audits for security, quality, performance, accessibility, infrastructure, design, and compliance.',
         offers: {
           '@type': 'Offer',
           price: 0,
@@ -58,7 +58,17 @@ export function GlobalJsonLd() {
           availability: 'https://schema.org/InStock',
           url: BASE_URL,
         },
-        featureList: 'Security audit, Code quality analysis, Performance profiling, Accessibility testing, SEO analysis',
+        featureList: [
+          'Security & vulnerability scanning (OWASP Top 10, injection, XSS, CSRF)',
+          'Code quality analysis (anti-patterns, dead code, complexity)',
+          'Performance profiling (render-blocking, bundle size, Core Web Vitals)',
+          'Accessibility testing (WCAG 2.1 AA, ARIA, keyboard navigation)',
+          'SEO analysis (meta tags, structured data, crawlability)',
+          'Infrastructure review (CI/CD, Docker, database, observability)',
+          'Privacy & compliance (GDPR, SOC 2, data handling)',
+          'Design audit (responsive, dark mode, i18n, UX)',
+          'Marketing audit (CTAs, conversion, positioning)',
+        ],
       },
       {
         '@type': 'HowTo',
@@ -67,7 +77,7 @@ export function GlobalJsonLd() {
         estimatedCost: { '@type': 'MonetaryAmount', currency: 'USD', value: '0' },
         step: [
           { '@type': 'HowToStep', position: 1, name: 'Enter a URL or paste code', text: 'Point us at any website, or paste files directly.' },
-          { '@type': 'HowToStep', position: 2, name: 'Pick your audits', text: 'Choose from 50 specialized audits — or run them all.' },
+          { '@type': 'HowToStep', position: 2, name: 'Pick your audits', text: 'Choose from 125+ specialized audits — or run them all.' },
           { '@type': 'HowToStep', position: 3, name: 'Get your report', text: 'Severity-rated findings with remediation steps — export as MD or JSON.' },
         ],
       },

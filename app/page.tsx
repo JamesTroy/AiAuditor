@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { agents } from '@/lib/agents/registry';
 import Logo from '@/components/Logo';
 import HomeSearch from '@/components/HomeSearch';
+import { JsonLd } from '@/components/JsonLd';
 
 const FEATURED_IDS = [
   'security',
@@ -30,13 +31,47 @@ for (const a of agents) {
 
 const featuredAgents = FEATURED_IDS.map((id) => agents.find((a) => a.id === id)!).filter(Boolean);
 
+const FAQ_ITEMS = [
+  {
+    q: 'What happens to my code?',
+    a: 'Your code is analyzed in memory and immediately discarded — it is never stored on our servers, never used for model training, and never shared with third parties. We use no advertising and no third-party tracking scripts.',
+  },
+  {
+    q: 'How is Claudit different from SonarQube, Snyk, or a linter?',
+    a: `Traditional tools cover one domain — SonarQube for code quality, Snyk for dependency security, axe for accessibility. Claudit runs ${agents.length}+ specialized auditors across security, performance, accessibility, SEO, infrastructure, design, and marketing in a single pass. One tool instead of five.`,
+  },
+  {
+    q: 'Why is Claudit free?',
+    a: 'Claudit is free during early access. We plan to offer a paid tier for teams with features like CI/CD integration, team dashboards, and custom audit agents. Your code is never monetized.',
+  },
+  {
+    q: 'What languages and frameworks does it support?',
+    a: 'Claudit analyzes any web-facing codebase — JavaScript, TypeScript, Python, Go, Ruby, PHP, and more. For site audits, enter any public URL and we fetch and analyze the page directly.',
+  },
+  {
+    q: 'What does a finding look like?',
+    a: 'Every finding includes a severity rating (Critical, High, Medium, Low), the exact file and line number, an explanation of the issue, and a copy-paste fix suggestion. Scroll up to see example findings.',
+  },
+];
+
 export default function Home() {
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQ_ITEMS.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: { '@type': 'Answer', text: item.a },
+    })),
+  };
+
   return (
     <div className="text-gray-900 dark:text-zinc-100 overflow-x-clip">
+      <JsonLd data={faqSchema} />
       {/* ─── Hero ─── */}
       <section className="relative px-4 sm:px-6 pt-16 pb-20 sm:pt-20 sm:pb-28">
-        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[min(288px,80vw)] h-72 bg-violet-500/20 blur-3xl rounded-full -z-10 motion-safe:animate-pulse-slow will-change-[opacity]" />
-        <div className="absolute top-10 left-1/3 w-[min(384px,90vw)] h-[min(256px,40vh)] bg-indigo-500/15 blur-3xl rounded-full -z-10 motion-safe:animate-pulse-slow will-change-[opacity] [animation-delay:3s]" />
+        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[min(288px,80vw)] h-72 bg-violet-500/20 blur-3xl rounded-full -z-10 motion-safe:animate-pulse-slow motion-safe:will-change-[opacity]" />
+        <div className="absolute top-10 left-1/3 w-[min(384px,90vw)] h-[min(256px,40vh)] bg-indigo-500/15 blur-3xl rounded-full -z-10 motion-safe:animate-pulse-slow motion-safe:will-change-[opacity] [animation-delay:3s]" />
         <div className="absolute inset-0 bg-grid-pattern -z-10 opacity-50" />
 
         <div className="max-w-4xl mx-auto text-center">
@@ -51,7 +86,7 @@ export default function Home() {
             One audit covers security, performance, accessibility, and SEO.
           </p>
           <p className="text-gray-500 dark:text-zinc-400 text-base sm:text-lg max-w-xl mx-auto mb-10">
-            Stop juggling five different tools. Claudit runs 50+ specialized auditors across your code simultaneously — catching vulnerabilities, performance regressions, accessibility failures, and compliance gaps. Free, instant, no setup.
+            Stop juggling five different tools. Claudit runs {agents.length}+ specialized auditors across your code simultaneously — catching vulnerabilities, performance regressions, accessibility failures, and compliance gaps. Free, instant, no setup.
           </p>
 
           {/* Primary CTAs */}
@@ -113,7 +148,7 @@ export default function Home() {
               },
               {
                 step: '2',
-                title: '50+ auditors run simultaneously',
+                title: `${agents.length}+ auditors run simultaneously`,
                 desc: 'Each audit agent specializes in one domain — security, performance, accessibility, SEO, infrastructure, and compliance — running in parallel so you get comprehensive coverage in minutes.',
               },
               {
@@ -214,7 +249,7 @@ export default function Home() {
             {CATEGORIES.map((cat) => (
               <div
                 key={cat.name}
-                className="flex items-start gap-3 p-4 rounded-xl bg-white/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 hover:border-violet-500/40 hover:shadow-sm transition-all"
+                className="flex items-start gap-3 p-4 rounded-xl bg-white/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 hover:border-violet-500/40 hover:shadow-sm transition-[border-color,box-shadow]"
               >
                 <span className="text-xl leading-none mt-0.5" aria-hidden="true">{cat.icon}</span>
                 <div className="min-w-0">
@@ -247,28 +282,7 @@ export default function Home() {
             Frequently asked questions
           </h2>
           <div className="space-y-6">
-            {[
-              {
-                q: 'What happens to my code?',
-                a: 'Your code is analyzed in memory and immediately discarded — it is never stored on our servers, never used for model training, and never shared with third parties. We use no advertising and no third-party tracking scripts.',
-              },
-              {
-                q: 'How is Claudit different from SonarQube, Snyk, or a linter?',
-                a: 'Traditional tools cover one domain — SonarQube for code quality, Snyk for dependency security, axe for accessibility. Claudit runs 50+ specialized auditors across security, performance, accessibility, SEO, infrastructure, design, and marketing in a single pass. One tool instead of five.',
-              },
-              {
-                q: 'Why is Claudit free?',
-                a: 'Claudit is free during early access. We plan to offer a paid tier for teams with features like CI/CD integration, team dashboards, and custom audit agents. Your code is never monetized.',
-              },
-              {
-                q: 'What languages and frameworks does it support?',
-                a: 'Claudit analyzes any web-facing codebase — JavaScript, TypeScript, Python, Go, Ruby, PHP, and more. For site audits, enter any public URL and we fetch and analyze the page directly.',
-              },
-              {
-                q: 'What does a finding look like?',
-                a: 'Every finding includes a severity rating (Critical, High, Medium, Low), the exact file and line number, an explanation of the issue, and a copy-paste fix suggestion. Scroll up to see example findings.',
-              },
-            ].map((item) => (
+            {FAQ_ITEMS.map((item) => (
               <details key={item.q} className="group">
                 <summary className="flex items-center justify-between cursor-pointer list-none py-3 text-sm font-semibold text-gray-900 dark:text-zinc-100 hover:text-violet-600 dark:hover:text-violet-400 transition-colors">
                   {item.q}

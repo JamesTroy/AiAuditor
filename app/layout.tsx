@@ -43,6 +43,14 @@ export const metadata: Metadata = {
       'Paste code or enter a URL — get a severity-rated security, performance, and accessibility report with results streaming in real time. Audits covering OWASP, GDPR, SOC 2, and more.',
     images: ['/opengraph-image'],
   },
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: [
+      { url: '/logo.svg', type: 'image/svg+xml', sizes: '512x512' },
+    ],
+  },
   robots: {
     index: true,
     follow: true,
@@ -63,6 +71,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
         <meta name="theme-color" content="#f9fafb" media="(prefers-color-scheme: light)" />
+        <link rel="preconnect" href="https://avatars.githubusercontent.com" />
+        <link rel="dns-prefetch" href="https://avatars.githubusercontent.com" />
+        <link rel="preconnect" href="https://lh3.googleusercontent.com" />
+        <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
         <GlobalJsonLd />
         <Analytics />
       </head>
