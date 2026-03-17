@@ -5,7 +5,9 @@
 // This prevents attackers from using the site-audit URL fetcher to probe
 // internal infrastructure (e.g., 169.254.169.254, 10.x.x.x, localhost).
 
-import { lookup } from 'dns/promises';
+// PERF-014: Use resolve4/resolve6 (async c-ares) instead of lookup (libuv thread pool).
+// dns.lookup blocks a libuv thread; resolve4/resolve6 use the async c-ares resolver.
+import { resolve4, resolve6 } from 'dns/promises';
 
 /** IPv4 ranges that must never be fetched by user-supplied URLs. */
 const BLOCKED_IPV4_RANGES: Array<{ prefix: number[]; bits: number }> = [
@@ -115,14 +117,25 @@ export async function validateUrlForSSRF(urlString: string): Promise<string | nu
     return null;
   }
 
-  // DNS resolution — check all returned addresses
+  // PERF-014: DNS resolution using async c-ares resolver — does not block libuv thread pool.
+  // Fire both A and AAAA queries in parallel; treat ENODATA/ENOTFOUND as empty (not error).
   try {
-    const results = await lookup(hostname, { all: true });
-    for (const result of results) {
-      if (result.family === 4 && isBlockedIPv4(result.address)) {
+    const [ipv4s, ipv6s] = await Promise.all([
+      resolve4(hostname).catch(() => [] as string[]),
+      resolve6(hostname).catch(() => [] as string[]),
+    ]);
+
+    if (ipv4s.length === 0 && ipv6s.length === 0) {
+      return 'Could not resolve hostname. Please check the URL and try again.';
+    }
+
+    for (const ip of ipv4s) {
+      if (isBlockedIPv4(ip)) {
         return 'This URL resolves to a private or internal IP address';
       }
-      if (result.family === 6 && isBlockedIPv6(result.address)) {
+    }
+    for (const ip of ipv6s) {
+      if (isBlockedIPv6(ip)) {
         return 'This URL resolves to a private or internal IP address';
       }
     }

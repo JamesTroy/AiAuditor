@@ -46,12 +46,14 @@ export class AnthropicProvider implements AIProvider {
     this.client = new Anthropic();
   }
 
-  streamAudit(
+  // PERF-011: Shared streaming core — eliminates duplication between streamAudit and streamChat.
+  private _stream(
     systemPrompt: string,
-    userInput: string,
-    options?: { signal?: AbortSignal },
+    messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+    options?: { signal?: AbortSignal; trackTruncation?: boolean },
   ): ReadableStream<Uint8Array> {
     const client = this.client;
+    const trackTruncation = options?.trackTruncation ?? false;
 
     return new ReadableStream<Uint8Array>({
       async start(controller) {
@@ -84,7 +86,7 @@ export class AnthropicProvider implements AIProvider {
                     cache_control: { type: 'ephemeral' as const },
                   },
                 ],
-                messages: [{ role: 'user', content: userInput }],
+                messages,
               },
               options?.signal ? { signal: options.signal } : undefined,
             );
@@ -98,16 +100,14 @@ export class AnthropicProvider implements AIProvider {
                 controller.enqueue(encoder.encode(chunk.delta.text));
               }
               // FP-009: Track stop_reason to detect max_tokens truncation.
-              if (chunk.type === 'message_delta' && 'delta' in chunk) {
+              if (trackTruncation && chunk.type === 'message_delta' && 'delta' in chunk) {
                 const delta = chunk.delta as { stop_reason?: string };
                 if (delta.stop_reason) stopReason = delta.stop_reason;
               }
             }
 
             // FP-009: Warn user if output was truncated due to max_tokens.
-            // Truncated audits may be missing the overall score section and
-            // later findings, which leads to incomplete/misleading results.
-            if (stopReason === 'max_tokens') {
+            if (trackTruncation && stopReason === 'max_tokens') {
               controller.enqueue(encoder.encode(
                 '\n\n---\n\n> **Note:** This report was truncated because it exceeded the maximum output length. ' +
                 'Some findings or the overall score section may be missing. Consider running a more targeted audit ' +
@@ -144,81 +144,27 @@ export class AnthropicProvider implements AIProvider {
     });
   }
 
+  streamAudit(
+    systemPrompt: string,
+    userInput: string,
+    options?: { signal?: AbortSignal },
+  ): ReadableStream<Uint8Array> {
+    return this._stream(systemPrompt, [{ role: 'user', content: userInput }], {
+      ...options,
+      trackTruncation: true,
+    });
+  }
+
   streamChat(
     systemPrompt: string,
     messages: { role: 'user' | 'assistant'; content: string }[],
     options?: { signal?: AbortSignal },
   ): ReadableStream<Uint8Array> {
-    const client = this.client;
-
-    return new ReadableStream<Uint8Array>({
-      async start(controller) {
-        // CLOUD-030: Check circuit breaker before making API call.
-        // FP-008: Enqueue a visible error before erroring the stream so
-        // clients see an explanation instead of a silent stream end.
-        if (!anthropicCircuitBreaker.allowRequest()) {
-          controller.enqueue(encoder.encode('\n\n[Service temporarily unavailable. Please try again in a few minutes.]'));
-          controller.error(new Error('Circuit breaker open: Anthropic API unavailable. Try again later.'));
-          return;
-        }
-
-        let attempt = 0;
-
-        while (true) {
-          attempt++;
-          try {
-            // CACHE-014: Prompt caching for chat system prompt.
-            // Chat uses standard mode (no extended thinking) for faster responses.
-            const stream = client.messages.stream(
-              {
-                model: MODEL,
-                max_tokens: MAX_TOKENS,
-                temperature: 0,
-                system: [
-                  {
-                    type: 'text' as const,
-                    text: systemPrompt,
-                    cache_control: { type: 'ephemeral' as const },
-                  },
-                ],
-                messages: messages.map((m) => ({ role: m.role, content: m.content })),
-              },
-              options?.signal ? { signal: options.signal } : undefined,
-            );
-
-            for await (const chunk of stream) {
-              if (
-                chunk.type === 'content_block_delta' &&
-                chunk.delta.type === 'text_delta'
-              ) {
-                controller.enqueue(encoder.encode(chunk.delta.text));
-              }
-            }
-
-            anthropicCircuitBreaker.onSuccess();
-            break;
-          } catch (err) {
-            if (options?.signal?.aborted) {
-              controller.error(err);
-              return;
-            }
-
-            anthropicCircuitBreaker.onFailure();
-
-            if (attempt < MAX_RETRIES && isRetryable(err)) {
-              const delay = RETRY_BASE_MS * 2 ** (attempt - 1);
-              await sleepWithHeartbeat(delay, controller);
-              continue;
-            }
-
-            controller.error(err);
-            return;
-          }
-        }
-
-        controller.close();
-      },
-    });
+    return this._stream(
+      systemPrompt,
+      messages.map((m) => ({ role: m.role, content: m.content })),
+      options,
+    );
   }
 }
 

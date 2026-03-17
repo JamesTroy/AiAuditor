@@ -78,7 +78,9 @@ interface ArchitectureInfo {
   signals: string[];
 }
 
-function detectArchitecture(html: string): ArchitectureInfo {
+function detectArchitecture(fullHtml: string): ArchitectureInfo {
+  // PERF-003: Cap to first 15KB — framework markers and <body> are always near the top.
+  const html = fullHtml.slice(0, 15_000);
   const signals: string[] = [];
   let framework: string | null = null;
 
@@ -116,7 +118,9 @@ function detectArchitecture(html: string): ArchitectureInfo {
   const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
   const bodyContent = bodyMatch?.[1] ?? '';
   const textContent = bodyContent.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-  const scriptCount = (html.match(/<script[\s>]/g) ?? []).length;
+  let scriptCount = 0;
+  const scriptRe = /<script[\s>]/g;
+  while (scriptRe.exec(html) !== null) scriptCount++;
 
   if (textContent.length < 200 && scriptCount > 3) {
     signals.push(`Thin HTML shell (${textContent.length} chars of text content, ${scriptCount} script tags) — likely client-rendered SPA`);
@@ -307,24 +311,21 @@ export async function POST(req: NextRequest) {
   try {
     const signal = AbortSignal.timeout(15_000);
 
-    // Fetch 1: Get live headers + nonces from an uncached request.
-    const req1 = await fetchLiveHeaders(url, signal);
+    // PERF-007+008: Parallelize both live header fetches upfront.
+    // SSRF validation already passed above — no need to re-validate.
+    // Both requests fire simultaneously; nonce comparison happens after both resolve.
+    const [req1, req2Result] = await Promise.all([
+      fetchLiveHeaders(url, signal),
+      fetchLiveHeaders(url, AbortSignal.timeout(15_000)).catch(() => null),
+    ]);
 
-    // Fetch 2: Second request to verify nonce rotation (parallel-safe).
     let nonceRotates: boolean | null = null;
     let nonce2: string[] = [];
 
-    if (req1.nonces.length > 0) {
-      try {
-        const req2 = await fetchLiveHeaders(url, AbortSignal.timeout(10_000));
-        nonce2 = req2.nonces;
-        // Nonces rotate if at least one nonce differs between requests
-        const nonce1Set = new Set(req1.nonces);
-        nonceRotates = nonce2.some((n) => !nonce1Set.has(n));
-      } catch {
-        // Second request failed — can't verify rotation
-        nonceRotates = null;
-      }
+    if (req1.nonces.length > 0 && req2Result) {
+      nonce2 = req2Result.nonces;
+      const nonce1Set = new Set(req1.nonces);
+      nonceRotates = nonce2.some((n) => !nonce1Set.has(n));
     }
 
     // Use cached HTML for the main content (saves bandwidth on repeated audits).

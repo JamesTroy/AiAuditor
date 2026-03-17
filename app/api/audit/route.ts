@@ -139,23 +139,39 @@ function makeStream(
   return new ReadableStream({
     async start(controller) {
       const reader = upstream.getReader();
-      const chunks: string[] = [];
+      // PERF-005: String concat via += uses V8 rope strings — avoids 100+ separate array entries.
+      let resultBuffer = '';
+      // PERF-004: Single reusable timer — avoids ~500 allocations (Promise + setTimeout + closure per chunk).
+      let chunkTimer: ReturnType<typeof setTimeout> | null = null;
       try {
-        while (true) {
-          const timeout = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('Stream chunk timeout')), CHUNK_TIMEOUT_MS),
-          );
-          const { done, value } = await Promise.race([reader.read(), timeout]);
-          if (done) break;
-          if (auditRecord && value) chunks.push(streamDecoder.decode(value, { stream: true }));
-          controller.enqueue(value);
-        }
+        await new Promise<void>((resolve, reject) => {
+          const resetTimer = () => {
+            if (chunkTimer) clearTimeout(chunkTimer);
+            chunkTimer = setTimeout(() => reject(new Error('Stream chunk timeout')), CHUNK_TIMEOUT_MS);
+          };
+          (async () => {
+            try {
+              while (true) {
+                resetTimer();
+                const { done, value } = await reader.read();
+                if (done) break;
+                if (auditRecord && value) resultBuffer += streamDecoder.decode(value, { stream: true });
+                controller.enqueue(value);
+              }
+              if (chunkTimer) clearTimeout(chunkTimer);
+              resolve();
+            } catch (err) {
+              if (chunkTimer) clearTimeout(chunkTimer);
+              reject(err);
+            }
+          })();
+        });
         log('info', 'audit_complete', logMeta);
 
         // DB-001/DB-021: Save completed audit with result truncation and proper error logging
         if (auditRecord) {
           const MAX_RESULT_CHARS = 100_000;
-          const fullResult = chunks.join('');
+          const fullResult = resultBuffer;
           const rawScore = extractScore(fullResult);
           const score = sanityCheckScore(rawScore, fullResult);
           try {

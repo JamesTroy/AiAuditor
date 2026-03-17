@@ -41,6 +41,8 @@ export async function cachedFetch(
   const { ttlSeconds, maxBytes = 30_000, fetchOptions, prefix = 'fetch' } = options;
   const client = await getRedis();
   const key = cacheKey(prefix, url);
+  // PERF-010: Hoist lockKey to function scope — used in both lock acquire and release.
+  const lockKey = `lock:${key}`;
 
   // Try cache first.
   if (client) {
@@ -52,14 +54,18 @@ export async function cachedFetch(
     }
 
     // CACHE-023: Acquire lock to prevent stampede.
-    const lockKey = `lock:${key}`;
     try {
       const acquired = await client.set(lockKey, '1', { nx: true, ex: 10 });
       if (!acquired) {
-        // Another request is populating — wait briefly and retry cache.
-        await new Promise((r) => setTimeout(r, 300));
-        const cached = await client.get<string>(key);
-        if (cached !== null) return { data: cached, cached: true };
+        // PERF-009: Poll in 50ms intervals (up to 500ms) instead of a fixed 300ms sleep.
+        // Resolves faster when the lock holder finishes quickly.
+        for (let waited = 0; waited < 500; waited += 50) {
+          await new Promise((r) => setTimeout(r, 50));
+          try {
+            const cached = await client.get<string>(key);
+            if (cached !== null) return { data: cached, cached: true };
+          } catch { break; }
+        }
         // Lock holder may have failed — fall through to direct fetch.
       }
     } catch {
@@ -77,7 +83,6 @@ export async function cachedFetch(
 
   // Write to cache (best-effort).
   if (client) {
-    const lockKey = `lock:${key}`;
     try {
       await client.setex(key, ttlSeconds, truncated);
     } catch {

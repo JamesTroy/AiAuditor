@@ -38,20 +38,27 @@ export function extractScore(text: string): number | null {
     return normalizeScore(boldScore[1], boldScore[2]);
   }
 
+  // PERF-002: Use exec loop tracking last match — avoids spreading all matches into an array.
   // 4. Explicit "N/100" — use LAST match (overall score appears at the end)
-  const allSlash100 = [...text.matchAll(/(\d{1,3})\s*\/\s*100/g)];
-  if (allSlash100.length > 0) {
-    const last = allSlash100[allSlash100.length - 1];
-    const val = parseInt(last[1], 10);
-    if (val >= 0 && val <= 100) return val;
+  {
+    const re = /(\d{1,3})\s*\/\s*100/g;
+    let last: RegExpExecArray | null = null, m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) last = m;
+    if (last) {
+      const val = parseInt(last[1], 10);
+      if (val >= 0 && val <= 100) return val;
+    }
   }
 
   // 4b. Explicit "N/10" — use LAST match (composite score at end of table)
-  const allSlash10 = [...text.matchAll(/(\d{1,2}(?:\.\d+)?)\s*\/\s*10(?!\d)/g)];
-  if (allSlash10.length > 0) {
-    const last = allSlash10[allSlash10.length - 1];
-    const val = parseFloat(last[1]);
-    if (val >= 0 && val <= 10) return Math.round(val * 10);
+  {
+    const re = /(\d{1,2}(?:\.\d+)?)\s*\/\s*10(?!\d)/g;
+    let last: RegExpExecArray | null = null, m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) last = m;
+    if (last) {
+      const val = parseFloat(last[1]);
+      if (val >= 0 && val <= 10) return Math.round(val * 10);
+    }
   }
 
   // 5. "Overall Score: N" or "Overall: N/10" or "Score: N"
@@ -82,24 +89,24 @@ function normalizeScore(numStr: string, denomStr?: string): number | null {
 export function sanityCheckScore(score: number | null, markdown: string): number | null {
   if (score === null) return null;
 
+  // PERF-001: Single-pass counting — no intermediate array or filter passes.
   const severityRe = /\*?\*?\[?(CRITICAL|HIGH|MEDIUM|LOW|INFORMATIONAL)\]?\*?\*?\s*[-—]/gi;
-  const severities: string[] = [];
+  let criticals = 0, highs = 0, total = 0, hasNonMinor = false;
   let match: RegExpExecArray | null;
   while ((match = severityRe.exec(markdown)) !== null) {
-    severities.push(match[1].toUpperCase());
+    const s = match[1].toUpperCase();
+    if (s === 'CRITICAL') { criticals++; hasNonMinor = true; }
+    else if (s === 'HIGH') { highs++; hasNonMinor = true; }
+    else if (s === 'MEDIUM') { hasNonMinor = true; }
+    total++;
   }
-
-  const criticals = severities.filter((s) => s === 'CRITICAL').length;
-  const highs = severities.filter((s) => s === 'HIGH').length;
 
   // If many critical/high findings but score is suspiciously high, cap it
   if (criticals >= 3 && score > 60) return Math.min(score, 60);
   if (criticals >= 1 && highs >= 3 && score > 70) return Math.min(score, 70);
 
   // If only suggestions/informational and score is suspiciously low, floor it
-  const onlySuggestions = severities.length > 0 &&
-    severities.every((s) => s === 'INFORMATIONAL' || s === 'LOW');
-  if (onlySuggestions && score < 60) return Math.max(score, 60);
+  if (total > 0 && !hasNonMinor && score < 60) return Math.max(score, 60);
 
   return score;
 }
