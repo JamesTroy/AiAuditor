@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { agents as allAgents } from '@/lib/agents/registry';
 import SafeMarkdown from '@/components/markdownComponents';
 import { saveAudit } from '@/lib/history';
 import { friendlyError } from '@/lib/friendlyError';
+import { useSession } from '@/lib/auth-client';
 
 const DEFAULT_IDS = new Set([
   'security',
@@ -55,7 +57,19 @@ function dotColor(accentClass: string): string {
 }
 
 export default function SiteAuditPage() {
-  const [url, setUrl] = useState('');
+  const { data: session } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // ONB-030: Restore URL from sessionStorage or query param (ONB-002/021: ?url= pre-fill)
+  const [url, setUrl] = useState(() => {
+    const qUrl = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('url') : null;
+    if (qUrl) return qUrl;
+    if (typeof window !== 'undefined') return sessionStorage.getItem('claudit-audit-url') ?? '';
+    return '';
+  });
+  const isWelcome = searchParams.get('welcome') === '1';
+  // ONB-016: Track whether this is the user's first audit (for completion banner)
+  const [isFirstAudit, setIsFirstAudit] = useState(false);
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -155,6 +169,11 @@ export default function SiteAuditPage() {
     }
   }, [loading, result]);
 
+  // ONB-030: Persist URL to sessionStorage so it survives navigation
+  useEffect(() => {
+    if (url) sessionStorage.setItem('claudit-audit-url', url);
+  }, [url]);
+
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
@@ -213,6 +232,11 @@ export default function SiteAuditPage() {
 
     abortRef.current?.abort();
     abortRef.current = new AbortController();
+
+    // ONB-016: Detect first audit by checking if any audits exist in localStorage history
+    const historyKey = 'claudit-history';
+    const hasHistory = typeof window !== 'undefined' && (localStorage.getItem(historyKey) ?? '[]') !== '[]';
+    setIsFirstAudit(!hasHistory);
 
     setLoading(true);
     setResult('');
@@ -332,6 +356,8 @@ export default function SiteAuditPage() {
       }
     } finally {
       setLoading(false);
+      // ONB-030: Clear persisted URL after successful audit
+      sessionStorage.removeItem('claudit-audit-url');
       setRunningIndices(new Set());
     }
   }, [url, loading, selected]);
@@ -414,6 +440,12 @@ export default function SiteAuditPage() {
           <p className="text-gray-500 dark:text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto">
             Enter a URL to scan for security vulnerabilities, performance issues, accessibility gaps, and more. Results stream in real time.
           </p>
+          {/* ONB-025: Light personalization hint about what defaults cover */}
+          {!loading && !result && (
+            <p className="text-xs text-gray-400 dark:text-zinc-600 mt-2">
+              Defaults cover security, SEO, accessibility, performance, responsive design, and code quality.
+            </p>
+          )}
         </div>
 
         {/* URL Input */}
@@ -429,7 +461,7 @@ export default function SiteAuditPage() {
             aria-label="Website URL"
           />
           <button
-            onClick={runSiteAudit}
+            onClick={() => { if (!session) { router.push('/login?callbackUrl=/site-audit'); return; } runSiteAudit(); }}
             disabled={loading || !url.trim() || selected.size === 0}
             className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors disabled-muted focus-ring whitespace-nowrap"
           >
@@ -459,7 +491,11 @@ export default function SiteAuditPage() {
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
-                <span className="font-medium">{selected.size} of {allAgents.length} audits selected</span>
+                <span className="font-medium">
+                  {selected.size === DEFAULT_IDS.size && [...DEFAULT_IDS].every(id => selected.has(id))
+                    ? `${selected.size} recommended audits selected`
+                    : `${selected.size} of ${allAgents.length} audits selected`}
+                </span>
               </span>
               <span className="text-xs text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-300 transition-colors">
                 {pickerOpen ? 'Close' : 'Customize'}
@@ -591,6 +627,13 @@ export default function SiteAuditPage() {
                   />
                 </div>
               </div>
+            )}
+
+            {/* ONB-019: First-time tooltip explaining agent badges */}
+            {isFirstAudit && loading && completedIndices.size === 0 && (
+              <p className="text-xs text-gray-400 dark:text-zinc-500 mb-2">
+                Each agent runs a specialized check — results stream in as they complete.
+              </p>
             )}
 
             {/* Agent badges */}
@@ -726,15 +769,31 @@ export default function SiteAuditPage() {
         {!loading && result && (
           <div className="mt-6">
             {synthStatus === 'idle' && (
-              <button
-                onClick={runSynthesis}
-                className="w-full py-3.5 rounded-xl font-semibold text-base text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all focus-ring flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
-                </svg>
-                Generate Remediation Roadmap
-              </button>
+              <div>
+                {/* ONB-016: First audit completion banner */}
+                {isFirstAudit && (
+                  <div className="mb-4 p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <div>
+                      <p className="font-medium text-green-900 dark:text-green-200 text-sm">First audit complete</p>
+                      <p className="text-xs text-green-700 dark:text-green-400 mt-1">Your findings are saved to your dashboard. Generate a remediation roadmap below, or run another audit.</p>
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={runSynthesis}
+                  className="w-full py-3.5 rounded-xl font-semibold text-base text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all focus-ring flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+                  </svg>
+                  Generate Remediation Roadmap
+                </button>
+                {/* ONB-017: Explain what the synthesis does */}
+                <p className="text-xs text-gray-500 dark:text-zinc-500 mt-2 text-center">
+                  Synthesizes all findings into a prioritized action plan with effort estimates.
+                </p>
+              </div>
             )}
 
             {synthError && (
@@ -775,6 +834,17 @@ export default function SiteAuditPage() {
         {/* Selected audits preview + what you'll get — idle state */}
         {!loading && !result && !error && !pickerOpen && selected.size > 0 && (
           <div className="space-y-6">
+            {/* ONB-002/004: Welcome banner for new users redirected from dashboard */}
+            {isWelcome && (
+              <div className="p-4 rounded-xl bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 flex items-start gap-3">
+                <svg className="w-5 h-5 text-violet-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
+                <div>
+                  <p className="font-medium text-violet-900 dark:text-violet-200 text-sm">Welcome to Claudit — let&apos;s run your first audit</p>
+                  <p className="text-xs text-violet-700 dark:text-violet-400 mt-1">Enter any public URL below. Results stream in real time with severity-rated findings and fix suggestions.</p>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-2">
               {selectedAgents.map((agent) => (
                 <span
@@ -787,14 +857,15 @@ export default function SiteAuditPage() {
               ))}
             </div>
 
-            {/* What you'll get */}
+            {/* ONB-022: What you'll get — with icons */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
               {[
-                { label: 'Severity-rated findings', desc: 'Critical, High, Medium, Low' },
-                { label: 'Line-level references', desc: 'Exact file and line numbers' },
-                { label: 'Fix suggestions', desc: 'Copy-paste remediation steps' },
+                { label: 'Severity-rated findings', desc: 'Critical, High, Medium, Low', icon: <svg className="w-5 h-5 text-red-500 mx-auto mb-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg> },
+                { label: 'Line-level references', desc: 'Exact file and line numbers', icon: <svg className="w-5 h-5 text-blue-500 mx-auto mb-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" /></svg> },
+                { label: 'Fix suggestions', desc: 'Copy-paste remediation steps', icon: <svg className="w-5 h-5 text-green-500 mx-auto mb-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
               ].map((item) => (
-                <div key={item.label} className="px-4 py-3 rounded-xl bg-gray-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800">
+                <div key={item.label} className="px-4 py-4 rounded-xl bg-gray-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800">
+                  {item.icon}
                   <p className="text-xs font-semibold text-gray-700 dark:text-zinc-300">{item.label}</p>
                   <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">{item.desc}</p>
                 </div>

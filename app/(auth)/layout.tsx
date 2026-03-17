@@ -23,6 +23,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <p className="text-sm text-gray-500 dark:text-zinc-500 mt-1">
             Automated security, performance, and compliance audits
           </p>
+          <p className="text-xs text-gray-400 dark:text-zinc-600 mt-2">
+            Create an account → Verify email → Run your first audit
+          </p>
         </div>
         {children}
       </div>

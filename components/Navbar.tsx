@@ -9,12 +9,12 @@ import UserNav from '@/components/UserNav';
 import { useSession } from '@/lib/auth-client';
 
 const PUBLIC_LINKS = [
-  { href: '/', label: 'All Audits' },
-  { href: '/site-audit', label: 'Site Audit' },
+  { href: '/', label: 'Explore Audits', title: 'Browse all available audit types' },
+  { href: '/site-audit', label: 'Site Audit', title: 'Run a comprehensive site audit' },
 ] as const;
 
 const AUTH_LINKS = [
-  { href: '/dashboard', label: 'Dashboard' },
+  { href: '/dashboard', label: 'Dashboard', title: 'View your audit history and scores' },
 ] as const;
 
 export default function Navbar() {
@@ -98,19 +98,20 @@ export default function Navbar() {
 
           {/* Center: Desktop nav links */}
           <div className="hidden sm:flex items-center gap-1">
-            {NAV_LINKS.map(({ href, label }) => {
-              const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
+            {NAV_LINKS.map((item) => {
+              const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
               return (
                 <Link
-                  key={href}
-                  href={href}
+                  key={item.href}
+                  href={item.href}
+                  title={'title' in item ? item.title : ''}
                   className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
                     isActive
                       ? 'text-gray-900 dark:text-zinc-100 bg-gray-100/80 dark:bg-zinc-800/80'
                       : 'text-gray-500 dark:text-zinc-500 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100/50 dark:hover:bg-zinc-800/50'
                   }`}
                 >
-                  {label}
+                  {item.label}
                 </Link>
               );
             })}
@@ -178,12 +179,13 @@ export default function Navbar() {
             {/* Drawer nav links */}
             <nav className="flex-1 overflow-y-auto px-4 py-4" aria-label="Mobile navigation">
               <ul className="flex flex-col gap-1">
-                {NAV_LINKS.map(({ href, label }) => {
-                  const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
+                {NAV_LINKS.map((item) => {
+                  const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
                   return (
-                    <li key={href}>
+                    <li key={item.href}>
                       <Link
-                        href={href}
+                        href={item.href}
+                        title={'title' in item ? item.title : ''}
                         onClick={closeDrawer}
                         className={`flex items-center min-h-[48px] px-4 rounded-lg text-sm font-medium transition-colors ${
                           isActive
@@ -191,7 +193,7 @@ export default function Navbar() {
                             : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100/50 dark:hover:bg-zinc-800/50'
                         }`}
                       >
-                        {label}
+                        {item.label}
                       </Link>
                     </li>
                   );

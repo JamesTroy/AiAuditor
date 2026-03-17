@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { headers } from 'next/headers';
 import ThemeProvider from '@/components/ThemeProvider';
 import Navbar from '@/components/Navbar';
+import ActivationBanner from '@/components/ActivationBanner';
 import Footer from '@/components/Footer';
 
 import { GlobalJsonLd } from '@/components/JsonLd';
@@ -70,6 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <SmoothScroll />
           <div className="flex flex-col min-h-screen">
             <Navbar />
+            <ActivationBanner />
             <main id="main-content" role="main" tabIndex={-1} className="flex-1">{children}</main>
             <noscript>
               <div className="fixed inset-0 z-[200] bg-white dark:bg-zinc-950 flex items-center justify-center p-8">

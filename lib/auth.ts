@@ -100,10 +100,13 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       await sendEmail(
         user.email,
-        'Verify your Claudit email',
-        `<p>Hi ${escapeHtml(user.name ?? '')},</p>
-         <p>Click below to verify your email address:</p>
-         <p><a href="${url}">Verify email</a></p>`,
+        'Verify your email to start auditing',
+        `<div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;">
+ <p style="color:#374151;">Hi ${escapeHtml(user.name ?? 'there')},</p>
+ <p style="color:#374151;">You're one step away from running your first security, performance, and accessibility audit.</p>
+ <p style="margin:24px 0;text-align:center;"><a href="${url}" style="background:#7c3aed;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Verify email and start auditing &rarr;</a></p>
+ <p style="color:#6b7280;font-size:14px;">After verifying, enter any public URL to get severity-rated findings with fix suggestions — results stream in real time.</p>
+</div>`,
       );
     },
   },

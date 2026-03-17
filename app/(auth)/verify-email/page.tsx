@@ -50,14 +50,12 @@ export default function VerifyEmailPage() {
           <svg className="w-10 h-10 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
         </div>
         <h2 className="text-xl font-semibold text-gray-900 dark:text-zinc-100 mb-2">Email verified</h2>
-        <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">
-          Your email has been verified. You can now use all features of your account.
-        </p>
+        <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">Your email has been verified. You&apos;re ready to run your first security, performance, and accessibility audit.</p>
         <Link
-          href="/dashboard"
+          href="/site-audit"
           className="inline-flex items-center gap-1 text-sm text-violet-600 dark:text-violet-400 hover:text-violet-500 font-medium"
         >
-          Go to dashboard
+          Run your first audit
         </Link>
       </div>
     );

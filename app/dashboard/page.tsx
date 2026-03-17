@@ -24,7 +24,7 @@ const PAGE_SIZE = 20;
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cursor?: string; status?: string }>;
+  searchParams: Promise<{ cursor?: string; status?: string; stay?: string }>;
 }) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -35,6 +35,7 @@ export default async function DashboardPage({
   const params = await searchParams;
   const cursor = params.cursor;
   const statusFilter = params.status; // 'completed' | 'failed' | undefined (all)
+  const stayParam = params.stay;
 
   // PERF-016: Run all dashboard queries in parallel instead of sequentially.
   // Merges score stats + trend into one query to reduce from 4 → 3 queries.
@@ -78,6 +79,11 @@ export default async function DashboardPage({
 
   const totalCount = totalResult[0]?.value ?? 0;
 
+  // ONB-004: Redirect first-time users to site-audit page.
+  if (totalCount === 0 && !cursor && !statusFilter && stayParam !== '1') {
+    redirect('/site-audit?welcome=1');
+  }
+
   const allScores = allScoredAudits.map((a) => a.score!);
   const avgScore = allScores.length > 0
     ? Math.round(allScores.reduce((sum, s) => sum + s, 0) / allScores.length)
@@ -107,11 +113,13 @@ export default async function DashboardPage({
         <div className="mb-8">
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-sm text-gray-500 dark:text-zinc-500 mt-1">
-            Welcome back, {session.user.name}. Here&apos;s an overview of your audit history and scores.
+            {totalCount === 0
+              ? `Welcome, ${session.user.name}. Run your first audit to see findings, scores, and trends here.`
+              : `Welcome back, ${session.user.name}. Here's an overview of your audit history and scores.`}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        {totalCount > 0 && <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 border-l-2 border-l-violet-500 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
             <p className="text-2xl font-bold">{totalCount}</p>
             <p className="text-xs text-gray-500 dark:text-zinc-500 mt-1">Total audits</p>
@@ -144,7 +152,7 @@ export default async function DashboardPage({
               )}
             </div>
           </div>
-        </div>
+        </div>}
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-semibold">Recent audits</h2>
@@ -191,14 +199,27 @@ export default async function DashboardPage({
             </svg>
             <p className="text-gray-900 dark:text-zinc-100 font-medium mb-1">No audits yet</p>
             <p className="text-sm text-gray-500 dark:text-zinc-500 mb-5 max-w-xs mx-auto">
-              Run your first code audit to see severity-rated findings, scores, and trends here.
+              {(() => {
+                const daysSinceSignup = Math.floor((Date.now() - new Date(session.user.createdAt).getTime()) / 86400000);
+                if (daysSinceSignup === 0) return 'Run your first audit to see severity-rated findings, scores, and trends here.';
+                if (daysSinceSignup <= 3) return 'You signed up a few days ago \u2014 your first audit takes under 60 seconds.';
+                return 'You haven\u2019t run an audit yet. Enter any public URL to get started \u2014 it takes under 60 seconds.';
+              })()}
             </p>
-            <Link
-              href="/site-audit"
-              className="inline-block px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring"
-            >
-              Run a Site Audit
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href="/site-audit"
+                className="inline-block px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring"
+              >
+                Run a Site Audit
+              </Link>
+              <Link
+                href="/site-audit?url=https%3A%2F%2Fexample.com"
+                className="inline-block px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-zinc-400 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-600 transition-colors focus-ring"
+              >
+                Try with a sample URL
+              </Link>
+            </div>
           </div>
         ) : (
           <>

@@ -79,6 +79,7 @@ export default function SignupPage() {
             className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-colors"
             placeholder="Your name"
           />
+          <p className="mt-1 text-xs text-gray-400 dark:text-zinc-500">Used to personalize your dashboard</p>
         </div>
 
         <div>
@@ -138,6 +139,9 @@ export default function SignupPage() {
                     ? 'Fair'
                     : 'Weak'}
               </span>
+              {password.length > 0 && password.length < 8 && (
+                <span className="text-xs text-red-500 dark:text-red-400 ml-1">· min 8 chars</span>
+              )}
             </div>
           )}
           {password.length === 0 && (
@@ -205,6 +209,9 @@ export default function SignupPage() {
         <Link href="/login" className="text-violet-600 dark:text-violet-400 hover:text-violet-500 font-medium">
           Sign in
         </Link>
+      </p>
+      <p className="mt-4 text-center text-xs text-gray-400 dark:text-zinc-600">
+        Join developers running security, performance, and accessibility audits daily.
       </p>
     </div>
   );
