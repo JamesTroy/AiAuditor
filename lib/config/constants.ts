@@ -2,14 +2,14 @@
 // Grouped by domain so related values are easy to find and tune together.
 
 // ── Anthropic API ────────────────────────────────────────────────
-export const ANTHROPIC_MODEL = 'claude-3-7-sonnet-20250219';
+export const ANTHROPIC_MODEL = 'claude-sonnet-4-6';
 export const ANTHROPIC_MAX_TOKENS = 16_384;
 export const ANTHROPIC_MAX_RETRIES = 3;
 export const ANTHROPIC_RETRY_BASE_MS = 1_000;
 
 // ── Site audit limits ──────────────────────────────────────────
 /** How many audit agents stream concurrently during a site audit. Higher = faster but uses more API quota. */
-export const SITE_AUDIT_CONCURRENCY = 10;
+export const SITE_AUDIT_CONCURRENCY = 50;
 /** Maximum number of agents a user can select per site audit run. 0 = unlimited. */
 export const MAX_AGENTS_PER_RUN = 0;
 
