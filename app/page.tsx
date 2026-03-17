@@ -57,17 +57,25 @@ export default function Home() {
           {/* Primary CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
             <Link
-              href="/site-audit"
+              href="/code-audit"
               className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring whitespace-nowrap shadow-lg shadow-violet-600/20"
             >
               Run a Free Audit
             </Link>
-            <Link
-              href="#agents"
-              className="text-sm text-gray-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors focus-ring whitespace-nowrap underline underline-offset-4"
-            >
-              or browse all {agents.length} audit types &rarr;
-            </Link>
+            <div className="flex flex-col items-center gap-1.5">
+              <Link
+                href="/site-audit"
+                className="text-sm text-gray-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors focus-ring whitespace-nowrap underline underline-offset-4"
+              >
+                or audit a live site &rarr;
+              </Link>
+              <Link
+                href="#agents"
+                className="text-xs text-gray-400 dark:text-zinc-500 hover:text-violet-600 dark:hover:text-violet-400 transition-colors focus-ring whitespace-nowrap underline underline-offset-4"
+              >
+                browse all {agents.length} audit types
+              </Link>
+            </div>
           </div>
 
           {/* Trust stats */}
@@ -286,12 +294,20 @@ export default function Home() {
           <p className="text-gray-500 dark:text-zinc-400 text-sm sm:text-base mb-6">
             Paste code, pick your audits, and get results streaming in real time. No credit card required.
           </p>
-          <Link
-            href="/site-audit"
-            className="inline-block px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring shadow-lg shadow-violet-600/20"
-          >
-            Start Your Free Audit
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/code-audit"
+              className="inline-block px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring shadow-lg shadow-violet-600/20"
+            >
+              Audit Your Code
+            </Link>
+            <Link
+              href="/site-audit"
+              className="inline-block px-8 py-3.5 rounded-xl font-semibold text-base text-gray-700 dark:text-zinc-200 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus-ring"
+            >
+              Audit a Live Site
+            </Link>
+          </div>
         </div>
       </section>
     </div>
