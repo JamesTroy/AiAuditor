@@ -268,18 +268,20 @@ export const authGeneralLimiter = new RateLimiter({
 });
 
 // RL-010: Global daily audit call budget (in-memory; replace with Redis for multi-instance).
+// 2000/day supports ~16 full 125-agent runs across all users.
 export const dailyAuditBudget = new RateLimiter({
   windowMs: 24 * 60 * 60_000,
-  maxRequests: 500,
+  maxRequests: 2000,
   maxEntries: 1, // single global key — this limiter tracks one counter for the entire service
   cleanupIntervalMs: 60 * 60_000,
   prefix: 'daily-budget',
 });
 
-// RL-011: Per-user daily audit limit — 50 audits per day per authenticated user.
+// RL-011: Per-user daily audit limit — 500 audits per day per authenticated user.
+// Raised from 50 to support multi-agent runs (125 agents = 1 run; 500 = ~4 full runs/day).
 export const userDailyAuditLimiter = new RateLimiter({
   windowMs: 24 * 60 * 60_000,
-  maxRequests: 50,
+  maxRequests: 500,
   cleanupIntervalMs: 60 * 60_000,
   prefix: 'user-daily',
 });

@@ -225,7 +225,7 @@ export default function CodeAuditPage() {
     const res = await fetch('/api/audit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ agentType: agentId, input }),
+      body: JSON.stringify({ agentType: agentId, input, siteAudit: true }),
       signal,
     });
 
