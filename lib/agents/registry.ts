@@ -6789,7 +6789,7 @@ Keep total under 30,000 characters.`,
   builtin({
     id: 'subscription-billing',
     name: 'Subscription Billing',
-    category: 'Code Quality',
+    category: 'Monetization',
     description: 'Reviews subscription and billing integration code — Stripe, Paddle, Chargebee — for webhook security, idempotency, entitlement correctness, dunning logic, proration, and fraud vectors.',
     accentClass: 'text-emerald-400 bg-emerald-400/10',
     buttonClass: 'bg-emerald-600 hover:bg-emerald-500 text-white',
@@ -6801,7 +6801,7 @@ Keep total under 30,000 characters.`,
   builtin({
     id: 'feature-entitlements',
     name: 'Feature Entitlements',
-    category: 'Code Quality',
+    category: 'Monetization',
     description: 'Audits feature flagging and entitlement systems — plan gates, RBAC, trial enforcement, seat limits — checking that paid features are never accessible client-side-only or without proper server-side verification.',
     accentClass: 'text-violet-400 bg-violet-400/10',
     buttonClass: 'bg-violet-600 hover:bg-violet-500 text-white',
@@ -6813,7 +6813,7 @@ Keep total under 30,000 characters.`,
   builtin({
     id: 'trial-conversion',
     name: 'Trial Conversion',
-    category: 'Marketing',
+    category: 'Monetization',
     description: 'Evaluates your trial-to-paid conversion flow — onboarding time-to-value, limit communication, upgrade prompt placement, upgrade friction, trial expiry handling, and trust signals — to increase paid conversion rates.',
     accentClass: 'text-pink-400 bg-pink-400/10',
     buttonClass: 'bg-pink-600 hover:bg-pink-500 text-white',
@@ -6825,7 +6825,7 @@ Keep total under 30,000 characters.`,
   builtin({
     id: 'dunning-flow',
     name: 'Dunning Flow',
-    category: 'Marketing',
+    category: 'Monetization',
     description: 'Reviews your payment failure recovery and dunning strategy — retry schedules, email sequences, in-app payment update flows, access restriction timing, and winback logic — to maximize involuntary churn recovery.',
     accentClass: 'text-amber-400 bg-amber-400/10',
     buttonClass: 'bg-amber-600 hover:bg-amber-500 text-white',
@@ -6837,7 +6837,7 @@ Keep total under 30,000 characters.`,
   builtin({
     id: 'pricing-architecture',
     name: 'Pricing Architecture',
-    category: 'Marketing',
+    category: 'Monetization',
     description: 'Audits your pricing model and implementation — value metric alignment, tier structure, pricing page effectiveness, hardcoded vs. dynamic pricing, and expansion revenue paths — to identify ARPU and conversion improvements.',
     accentClass: 'text-indigo-400 bg-indigo-400/10',
     buttonClass: 'bg-indigo-600 hover:bg-indigo-500 text-white',
@@ -6849,7 +6849,7 @@ Keep total under 30,000 characters.`,
   builtin({
     id: 'metered-billing',
     name: 'Metered Billing',
-    category: 'Infrastructure',
+    category: 'Monetization',
     description: 'Audits usage-based billing and metering infrastructure — event ingestion reliability, deduplication, aggregation logic, overage handling, customer usage transparency, and observability — to ensure billing accuracy and prevent revenue loss.',
     accentClass: 'text-cyan-400 bg-cyan-400/10',
     buttonClass: 'bg-cyan-600 hover:bg-cyan-500 text-white',
@@ -6861,7 +6861,7 @@ Keep total under 30,000 characters.`,
   builtin({
     id: 'churn-prevention',
     name: 'Churn Prevention',
-    category: 'Marketing',
+    category: 'Monetization',
     description: 'Reviews your churn prevention infrastructure — health scoring, churn signals, cancellation flow design, in-app retention triggers, customer success tooling, winback sequences, and retention analytics — to reduce monthly churn.',
     accentClass: 'text-rose-400 bg-rose-400/10',
     buttonClass: 'bg-rose-600 hover:bg-rose-500 text-white',
@@ -6869,6 +6869,549 @@ Keep total under 30,000 characters.`,
 // e.g. cancellation modal, health scoring logic,
 // re-engagement emails, winback flow`,
     systemPrompt: SYSTEM_PROMPTS['churn-prevention'],
+  }),
+
+  // ── Code Quality (new) ─────────────────────────────────────────
+  builtin({
+    id: 'naming-conventions',
+    name: 'Naming Conventions',
+    description: 'Audits variable, function, and file naming for consistency, semantic clarity, and casing conventions.',
+    category: 'Code Quality',
+    accentClass: 'text-blue-400 hover:bg-blue-500/10',
+    buttonClass: 'bg-blue-700 hover:bg-blue-600',
+    placeholder: 'Paste your source files, modules, or components to audit naming conventions...',
+    systemPrompt: SYSTEM_PROMPTS['naming-conventions'],
+    prepPrompt: `I'm preparing code for a **Naming Conventions** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Language / framework: [e.g. TypeScript + React, Python + Django, Go 1.22]
+- Naming style guide in use (if any): [e.g. Airbnb style guide, PEP 8, Google Go style]
+- Areas of concern: [e.g. "inconsistent casing across modules", "abbreviations vs full words"]
+
+## Files to gather
+- Core source files from 2–3 modules with the most contributors
+- Shared utility and helper files (often the worst naming offenders)
+- Type definitions, interfaces, and enum files
+- Configuration and constant files
+- Any existing naming or style documentation
+- A sample test file to check test naming patterns
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'dependency-management',
+    name: 'Dependency Management',
+    description: 'Reviews package dependencies for outdated versions, license risks, duplicates, and unused packages.',
+    category: 'Code Quality',
+    accentClass: 'text-blue-400 hover:bg-blue-500/10',
+    buttonClass: 'bg-blue-700 hover:bg-blue-600',
+    placeholder: 'Paste your package.json, lock file excerpts, or dependency tree output...',
+    systemPrompt: SYSTEM_PROMPTS['dependency-management'],
+    prepPrompt: `I'm preparing code for a **Dependency Management** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Language / package manager: [e.g. npm, yarn, pnpm, pip, cargo, go mod]
+- Monorepo or single repo: [e.g. Turborepo with 5 packages, single Next.js app]
+- Known concerns: [e.g. "duplicate React versions", "haven't audited licenses", "many unused deps"]
+
+## Files to gather
+- package.json / pyproject.toml / go.mod / Cargo.toml (all manifest files)
+- Lock file excerpt (first 200 lines of package-lock.json / yarn.lock)
+- Output of \`npm ls --depth=1\` or equivalent dependency tree
+- Any Renovate / Dependabot configuration files
+- Bundler config (webpack/vite/esbuild) for tree-shaking context
+- CI dependency caching configuration
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'git-hygiene',
+    name: 'Git Hygiene',
+    description: 'Audits commit messages, branch strategy, PR size, .gitignore completeness, and merge discipline.',
+    category: 'Code Quality',
+    accentClass: 'text-blue-400 hover:bg-blue-500/10',
+    buttonClass: 'bg-blue-700 hover:bg-blue-600',
+    placeholder: 'Paste your .gitignore, recent git log output, branch list, or PR descriptions...',
+    systemPrompt: SYSTEM_PROMPTS['git-hygiene'],
+    prepPrompt: `I'm preparing code for a **Git Hygiene** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Team size and branching model: [e.g. 6 devs, GitHub Flow, trunk-based]
+- CI/CD platform: [e.g. GitHub Actions, GitLab CI, CircleCI]
+- Known concerns: [e.g. "huge PRs", "no commit message convention", "secrets leaked once"]
+
+## Files to gather
+- .gitignore and any nested .gitignore files
+- Output of \`git log --oneline -30\` for recent commit message samples
+- Output of \`git branch -a\` for branch naming review
+- PR template file (.github/pull_request_template.md)
+- Branch protection rules or CODEOWNERS file
+- CI workflow files that run on PRs
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'code-duplication',
+    name: 'Code Duplication',
+    description: 'Detects copy-paste code, DRY violations, repeated logic, and extract-and-reuse opportunities.',
+    category: 'Code Quality',
+    accentClass: 'text-blue-400 hover:bg-blue-500/10',
+    buttonClass: 'bg-blue-700 hover:bg-blue-600',
+    placeholder: 'Paste source files you suspect contain duplicated logic or repeated patterns...',
+    systemPrompt: SYSTEM_PROMPTS['code-duplication'],
+    prepPrompt: `I'm preparing code for a **Code Duplication** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Language / framework: [e.g. TypeScript + Next.js, Python + FastAPI]
+- Areas of suspected duplication: [e.g. "API route handlers are very similar", "form components repeat validation"]
+- Codebase age: [e.g. "2 years, 3 major rewrites"]
+
+## Files to gather
+- Source files from the module or feature area with suspected duplication
+- Similar-looking components, handlers, or services (include 3–5 pairs)
+- Shared utility files that may already have extractable helpers
+- Any existing shared/common module or base class files
+- Test files that repeat setup patterns
+- Configuration files that duplicate values across environments
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'complexity-metrics',
+    name: 'Complexity Metrics',
+    description: 'Measures cyclomatic complexity, cognitive complexity, function length, nesting depth, and file size.',
+    category: 'Code Quality',
+    accentClass: 'text-blue-400 hover:bg-blue-500/10',
+    buttonClass: 'bg-blue-700 hover:bg-blue-600',
+    placeholder: 'Paste your most complex source files, longest functions, or deeply nested logic...',
+    systemPrompt: SYSTEM_PROMPTS['complexity-metrics'],
+    prepPrompt: `I'm preparing code for a **Complexity Metrics** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Language / framework: [e.g. TypeScript + React, Java + Spring Boot]
+- Hotspot areas: [e.g. "checkout flow", "permission resolver", "report generator"]
+- Known pain points: [e.g. "one 800-line function", "deeply nested conditionals in auth"]
+
+## Files to gather
+- The 3–5 largest source files by line count
+- Files with the most if/else or switch/case branching
+- Any functions known to be hard to understand or modify
+- Core business logic files (often the most complex)
+- Middleware or interceptor chains with layered logic
+- Any existing linting output showing complexity warnings
+
+Keep total under 30,000 characters.`,
+  }),
+
+  // ── Infrastructure (new) ───────────────────────────────────────
+  builtin({
+    id: 'kubernetes',
+    name: 'Kubernetes',
+    description: 'Audits K8s manifests for resource limits, RBAC, probes, pod security, and Helm chart quality.',
+    category: 'Infrastructure',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-700 hover:bg-emerald-600',
+    placeholder: 'Paste your Kubernetes manifests, Helm charts, or deployment configs...',
+    systemPrompt: SYSTEM_PROMPTS['kubernetes'],
+    prepPrompt: `I'm preparing code for a **Kubernetes** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- K8s distribution: [e.g. EKS, GKE, AKS, self-managed, k3s]
+- Deployment method: [e.g. Helm, Kustomize, raw manifests, ArgoCD]
+- Cluster scale: [e.g. 3 nodes, 20 services, multi-tenant]
+- Known concerns: [e.g. "no resource limits set", "RBAC is too permissive"]
+
+## Files to gather
+- Deployment, StatefulSet, and DaemonSet manifests
+- Service, Ingress, and NetworkPolicy definitions
+- RBAC roles, bindings, and service account configs
+- Helm values.yaml and Chart.yaml (if using Helm)
+- Pod security policies or pod security standards
+- HPA/VPA autoscaling configurations
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'terraform-iac',
+    name: 'Terraform / IaC',
+    description: 'Reviews infrastructure-as-code for state management, module structure, provider versioning, and drift risk.',
+    category: 'Infrastructure',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-700 hover:bg-emerald-600',
+    placeholder: 'Paste your Terraform files, module definitions, or IaC configurations...',
+    systemPrompt: SYSTEM_PROMPTS['terraform-iac'],
+    prepPrompt: `I'm preparing code for a **Terraform / IaC** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- IaC tool: [e.g. Terraform 1.7, OpenTofu, Pulumi, CloudFormation]
+- Cloud provider(s): [e.g. AWS, GCP, Azure, multi-cloud]
+- State backend: [e.g. S3 + DynamoDB, Terraform Cloud, local]
+- Known concerns: [e.g. "state file has drifted", "no module versioning", "secrets in tfvars"]
+
+## Files to gather
+- Main Terraform files (main.tf, variables.tf, outputs.tf)
+- Provider and backend configuration
+- Module definitions and module call sites
+- terraform.tfvars or .auto.tfvars (redact secrets)
+- State configuration and lock files
+- CI/CD pipeline files for plan/apply workflows
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'feature-flags',
+    name: 'Feature Flags',
+    description: 'Audits feature flag hygiene, stale flags, rollout strategy, cleanup discipline, and dependency chains.',
+    category: 'Infrastructure',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-700 hover:bg-emerald-600',
+    placeholder: 'Paste your feature flag definitions, flag evaluation code, or flag management configs...',
+    systemPrompt: SYSTEM_PROMPTS['feature-flags'],
+    prepPrompt: `I'm preparing code for a **Feature Flags** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Flag system: [e.g. LaunchDarkly, Unleash, Flipt, custom/homegrown]
+- Number of active flags: [e.g. ~30 flags, unknown]
+- Cleanup process: [e.g. "we never clean up", "quarterly review", "tech debt tickets"]
+- Known concerns: [e.g. "flags from 2 years ago still in code", "nested flag dependencies"]
+
+## Files to gather
+- Feature flag configuration or definition files
+- Flag evaluation/check code (where flags are consumed)
+- Flag provider/context setup code
+- Any flag cleanup or lifecycle documentation
+- Components or routes with multiple flag checks
+- Tests that mock or override feature flags
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'message-queues',
+    name: 'Message Queues',
+    description: 'Reviews event-driven patterns, dead letter queues, retry/backoff, idempotency, and schema evolution.',
+    category: 'Infrastructure',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-700 hover:bg-emerald-600',
+    placeholder: 'Paste your message queue producers, consumers, event schemas, or queue configs...',
+    systemPrompt: SYSTEM_PROMPTS['message-queues'],
+    prepPrompt: `I'm preparing code for a **Message Queues** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Queue system: [e.g. RabbitMQ, SQS, Kafka, Redis Streams, BullMQ]
+- Message patterns: [e.g. pub/sub, work queues, event sourcing, CQRS]
+- Scale: [e.g. ~1000 msgs/sec, 15 consumer services]
+- Known concerns: [e.g. "messages getting lost", "no dead letter queue", "duplicate processing"]
+
+## Files to gather
+- Message producer/publisher code
+- Consumer/subscriber handler code
+- Event schema definitions or contracts
+- Dead letter queue configuration and handlers
+- Retry and backoff logic
+- Queue infrastructure configuration (connection, topology)
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'dns-cdn',
+    name: 'DNS & CDN',
+    description: 'Audits DNS configuration, CDN caching rules, edge routing, TTL strategy, and cache invalidation.',
+    category: 'Infrastructure',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-700 hover:bg-emerald-600',
+    placeholder: 'Paste your DNS records, CDN configuration, caching rules, or edge routing configs...',
+    systemPrompt: SYSTEM_PROMPTS['dns-cdn'],
+    prepPrompt: `I'm preparing code for a **DNS & CDN** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- DNS provider: [e.g. Cloudflare, Route 53, Google Cloud DNS]
+- CDN provider: [e.g. Cloudflare, CloudFront, Fastly, Vercel Edge]
+- Domain count: [e.g. 3 domains, 12 subdomains]
+- Known concerns: [e.g. "cache hit ratio is low", "TTLs are all default", "no cache invalidation strategy"]
+
+## Files to gather
+- DNS zone files or record exports
+- CDN configuration (caching rules, page rules, edge functions)
+- Cache-Control and caching header configuration in application code
+- Edge routing or redirect rules
+- SSL/TLS certificate configuration
+- Any IaC files managing DNS or CDN resources
+
+Keep total under 30,000 characters.`,
+  }),
+
+  // ── Design (new) ───────────────────────────────────────────────
+  builtin({
+    id: 'tooltip-popover',
+    name: 'Tooltip & Popover',
+    description: 'Audits tooltip timing, popover positioning, touch fallbacks, hover vs click triggers, and accessibility.',
+    category: 'Design',
+    accentClass: 'text-violet-400 hover:bg-violet-500/10',
+    buttonClass: 'bg-violet-700 hover:bg-violet-600',
+    placeholder: 'Paste your tooltip or popover components, trigger logic, or positioning code...',
+    systemPrompt: SYSTEM_PROMPTS['tooltip-popover'],
+    prepPrompt: `I'm preparing code for a **Tooltip & Popover** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- UI framework: [e.g. React + Radix, Vue + Headless UI, Svelte]
+- Tooltip/popover library: [e.g. Floating UI, Tippy.js, custom built]
+- Touch device support required: [yes/no]
+- Known concerns: [e.g. "tooltips clip on mobile", "no keyboard access", "inconsistent delay timing"]
+
+## Files to gather
+- Tooltip and popover component source files
+- Trigger/wrapper components that invoke tooltips
+- Positioning and portal logic
+- CSS/styles for tooltip appearance and animation
+- Accessibility-related ARIA attribute usage
+- Mobile or touch-specific tooltip handling
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'file-upload',
+    name: 'File Upload',
+    description: 'Reviews upload UX including drag-to-upload, progress indicators, file validation, and error recovery.',
+    category: 'Design',
+    accentClass: 'text-fuchsia-400 hover:bg-fuchsia-500/10',
+    buttonClass: 'bg-fuchsia-700 hover:bg-fuchsia-600',
+    placeholder: 'Paste your file upload components, dropzone logic, or upload handler code...',
+    systemPrompt: SYSTEM_PROMPTS['file-upload'],
+    prepPrompt: `I'm preparing code for a **File Upload** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- UI framework: [e.g. React, Vue, Svelte]
+- Upload destination: [e.g. S3 presigned URLs, direct server upload, Cloudinary]
+- File types supported: [e.g. images only, documents, any file type]
+- Known concerns: [e.g. "no progress bar", "drag-drop doesn't work on mobile", "large files fail silently"]
+
+## Files to gather
+- File upload / dropzone component source
+- Upload progress and status indicator components
+- File validation logic (size limits, type checking, virus scanning)
+- Server-side upload handler or presigned URL generation
+- Error handling and retry logic for failed uploads
+- Any thumbnail preview or file processing code
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'date-time-picker',
+    name: 'Date & Time Picker',
+    description: 'Audits date/time input patterns, timezone handling, locale formatting, and calendar accessibility.',
+    category: 'Design',
+    accentClass: 'text-purple-400 hover:bg-purple-500/10',
+    buttonClass: 'bg-purple-700 hover:bg-purple-600',
+    placeholder: 'Paste your date picker components, timezone handling, or calendar UI code...',
+    systemPrompt: SYSTEM_PROMPTS['date-time-picker'],
+    prepPrompt: `I'm preparing code for a **Date & Time Picker** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- UI framework: [e.g. React, Vue, Angular]
+- Date library: [e.g. date-fns, Day.js, Luxon, native Intl API]
+- Timezone requirements: [e.g. multi-timezone, UTC only, user-local]
+- Known concerns: [e.g. "timezone bugs", "calendar not keyboard accessible", "locale formatting wrong"]
+
+## Files to gather
+- Date and time picker component source files
+- Calendar/date grid rendering components
+- Timezone conversion and display utilities
+- Locale and internationalization configuration
+- Date validation and range-checking logic
+- Any date formatting helper functions
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'breadcrumb-wayfinding',
+    name: 'Breadcrumb & Wayfinding',
+    description: 'Reviews breadcrumbs, back-button behavior, location awareness, and navigation hierarchy clarity.',
+    category: 'Design',
+    accentClass: 'text-rose-400 hover:bg-rose-500/10',
+    buttonClass: 'bg-rose-700 hover:bg-rose-600',
+    placeholder: 'Paste your breadcrumb components, navigation hierarchy, or routing configuration...',
+    systemPrompt: SYSTEM_PROMPTS['breadcrumb-wayfinding'],
+    prepPrompt: `I'm preparing code for a **Breadcrumb & Wayfinding** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- UI framework and router: [e.g. Next.js App Router, React Router, Vue Router]
+- Navigation depth: [e.g. 3 levels, deeply nested admin panels]
+- Breadcrumb generation: [e.g. manual per-page, auto from route, CMS-driven]
+- Known concerns: [e.g. "breadcrumbs don't match URL", "back button breaks", "users get lost"]
+
+## Files to gather
+- Breadcrumb component source files
+- Route/page hierarchy configuration
+- Layout components that render navigation chrome
+- Back-button or history management logic
+- Page title and meta/heading management
+- Any sitemap or navigation tree data structures
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'dashboard-layout',
+    name: 'Dashboard Layout',
+    description: 'Audits dashboard composition, widget density, data hierarchy, KPI prominence, and responsive grid patterns.',
+    category: 'Design',
+    accentClass: 'text-indigo-400 hover:bg-indigo-500/10',
+    buttonClass: 'bg-indigo-700 hover:bg-indigo-600',
+    placeholder: 'Paste your dashboard page components, widget/card layouts, or grid system code...',
+    systemPrompt: SYSTEM_PROMPTS['dashboard-layout'],
+    prepPrompt: `I'm preparing code for a **Dashboard Layout** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- UI framework: [e.g. React + Tailwind, Vue + Vuetify, Angular Material]
+- Dashboard purpose: [e.g. analytics, admin panel, customer portal, internal ops]
+- Grid system: [e.g. CSS Grid, flexbox, charting library grid]
+- Known concerns: [e.g. "too many widgets", "not responsive", "KPIs buried below fold"]
+
+## Files to gather
+- Main dashboard page/layout component
+- Individual widget or card components (3–5 examples)
+- Grid or layout system configuration
+- Data fetching hooks or services for dashboard data
+- Responsive breakpoint and media query handling
+- Any dashboard customization or widget arrangement logic
+
+Keep total under 30,000 characters.`,
+  }),
+
+  // ── AI / LLM ───────────────────────────────────────────────────
+  builtin({
+    id: 'prompt-engineering',
+    name: 'Prompt Engineering',
+    description: 'Reviews LLM prompt quality, injection defense, output parsing, few-shot patterns, and token efficiency.',
+    category: 'AI / LLM',
+    accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
+    placeholder: 'Paste your LLM prompt templates, completion handlers, or prompt construction code...',
+    systemPrompt: SYSTEM_PROMPTS['prompt-engineering'],
+    prepPrompt: `I'm preparing code for a **Prompt Engineering** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- LLM provider(s): [e.g. OpenAI, Anthropic, local Llama, multiple]
+- Use case: [e.g. chatbot, code generation, content summarization, data extraction]
+- Prompt management: [e.g. hardcoded strings, template files, prompt management platform]
+- Known concerns: [e.g. "prompt injection risk", "output is inconsistent", "token costs too high"]
+
+## Files to gather
+- All prompt templates and system prompt definitions
+- LLM API call wrappers and completion handlers
+- Output parsing and validation logic
+- Any prompt injection defense or input sanitization
+- Few-shot example definitions
+- Token counting or context window management code
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'ai-safety',
+    name: 'AI Safety',
+    description: 'Audits AI guardrails, content filtering, bias detection, hallucination mitigation, and abuse prevention.',
+    category: 'AI / LLM',
+    accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
+    placeholder: 'Paste your AI safety guardrails, content filters, or moderation pipeline code...',
+    systemPrompt: SYSTEM_PROMPTS['ai-safety'],
+    prepPrompt: `I'm preparing code for an **AI Safety** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- AI features in product: [e.g. chatbot, content generation, recommendation engine]
+- Moderation approach: [e.g. pre/post filtering, human-in-the-loop, none yet]
+- User-facing AI: [yes/no, and whether users can provide free-form input]
+- Known concerns: [e.g. "no content filtering", "hallucinated links", "potential for abuse"]
+
+## Files to gather
+- Content filtering and moderation logic
+- Input validation and sanitization for AI inputs
+- Output validation and safety checking code
+- Bias detection or fairness evaluation code
+- Rate limiting and abuse prevention for AI endpoints
+- Logging and monitoring configuration for AI outputs
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'rag-patterns',
+    name: 'RAG Patterns',
+    description: 'Reviews retrieval-augmented generation architecture, chunking strategy, embedding quality, and citation accuracy.',
+    category: 'AI / LLM',
+    accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
+    placeholder: 'Paste your RAG pipeline code, embedding logic, vector store queries, or retrieval chains...',
+    systemPrompt: SYSTEM_PROMPTS['rag-patterns'],
+    prepPrompt: `I'm preparing code for a **RAG Patterns** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Vector store: [e.g. Pinecone, Weaviate, pgvector, Chroma, FAISS]
+- Embedding model: [e.g. OpenAI text-embedding-3, Cohere, local model]
+- Document types: [e.g. PDFs, markdown docs, database records, web pages]
+- Known concerns: [e.g. "retrieval misses relevant docs", "chunks too large", "no citation tracking"]
+
+## Files to gather
+- Document ingestion and chunking pipeline
+- Embedding generation and storage code
+- Vector similarity search and retrieval logic
+- Context assembly and prompt construction with retrieved docs
+- Citation extraction and source attribution code
+- Any re-ranking or relevance scoring logic
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'ai-ux',
+    name: 'AI UX',
+    description: 'Audits AI-powered feature UX including confidence display, streaming output, error communication, and feedback loops.',
+    category: 'AI / LLM',
+    accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
+    placeholder: 'Paste your AI-powered UI components, streaming handlers, or AI feature interaction code...',
+    systemPrompt: SYSTEM_PROMPTS['ai-ux'],
+    prepPrompt: `I'm preparing code for an **AI UX** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- AI feature type: [e.g. chat interface, autocomplete, content generator, search]
+- Streaming support: [yes/no, and which protocol — SSE, WebSocket, etc.]
+- User feedback mechanism: [e.g. thumbs up/down, regenerate button, none]
+- Known concerns: [e.g. "no loading state for AI", "errors show raw API messages", "no confidence indicators"]
+
+## Files to gather
+- AI-powered UI components (chat, suggestions, completions)
+- Streaming response handling and progressive rendering
+- Loading, error, and empty state components for AI features
+- User feedback collection components (ratings, corrections)
+- Confidence or uncertainty display logic
+- Fallback and graceful degradation when AI is unavailable
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'llm-cost',
+    name: 'LLM Cost Optimization',
+    description: 'Reviews token usage, model selection strategy, prompt/response caching, batching, and cost monitoring.',
+    category: 'AI / LLM',
+    accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
+    placeholder: 'Paste your LLM API integration code, caching logic, or cost tracking implementation...',
+    systemPrompt: SYSTEM_PROMPTS['llm-cost'],
+    prepPrompt: `I'm preparing code for an **LLM Cost Optimization** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- LLM provider(s) and models: [e.g. GPT-4o, Claude Sonnet, mixed models]
+- Monthly LLM spend: [e.g. $500, $10K, unknown]
+- Caching strategy: [e.g. semantic cache, exact match, none]
+- Known concerns: [e.g. "costs spiking", "no caching", "using GPT-4 for everything", "no token tracking"]
+
+## Files to gather
+- LLM API client wrapper and configuration
+- Model selection and routing logic
+- Prompt and response caching implementation
+- Token counting and budget enforcement code
+- Request batching or queue management
+- Cost monitoring, logging, and alerting setup
+
+Keep total under 30,000 characters.`,
   }),
 ];
 

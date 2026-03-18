@@ -150,6 +150,30 @@ export const VALID_AGENT_TYPES = [
   'pricing-architecture',
   'metered-billing',
   'churn-prevention',
+  // Code Quality
+  'naming-conventions',
+  'dependency-management',
+  'git-hygiene',
+  'code-duplication',
+  'complexity-metrics',
+  // Infrastructure
+  'kubernetes',
+  'terraform-iac',
+  'feature-flags',
+  'message-queues',
+  'dns-cdn',
+  // Design
+  'tooltip-popover',
+  'file-upload',
+  'date-time-picker',
+  'breadcrumb-wayfinding',
+  'dashboard-layout',
+  // AI / LLM
+  'prompt-engineering',
+  'ai-safety',
+  'rag-patterns',
+  'ai-ux',
+  'llm-cost',
 ] as const;
 
 export type AgentTypeValue = (typeof VALID_AGENT_TYPES)[number];
