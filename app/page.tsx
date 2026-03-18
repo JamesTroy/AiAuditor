@@ -104,13 +104,13 @@ export default function Home() {
           <div className="flex flex-col items-center gap-3 mb-4">
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <Link
-                href="/code-audit"
+                href="/audit"
                 className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 active:scale-[0.98] active:bg-violet-700 transition-colors focus-ring whitespace-nowrap shadow-lg shadow-violet-600/20"
               >
                 Audit Your Code Free
               </Link>
               <Link
-                href="/site-audit"
+                href="/audit?tab=url"
                 className="px-8 py-3.5 rounded-xl font-semibold text-base text-gray-700 dark:text-zinc-200 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 active:scale-[0.98] transition-colors focus-ring whitespace-nowrap"
               >
                 Audit a Live Site
@@ -258,13 +258,13 @@ export default function Home() {
         <div className="max-w-2xl mx-auto text-center">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
-              href="/code-audit"
+              href="/audit"
               className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 active:scale-[0.98] active:bg-violet-700 transition-colors focus-ring shadow-lg shadow-violet-600/20"
             >
               Try It on Your Code
             </Link>
             <Link
-              href="/site-audit"
+              href="/audit?tab=url"
               className="text-sm text-gray-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors focus-ring underline underline-offset-4"
             >
               or audit a live site <span aria-hidden="true">&rarr;</span>
@@ -344,13 +344,13 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
-              href="/code-audit"
+              href="/audit"
               className="inline-block px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 active:scale-[0.98] active:bg-violet-700 transition-colors focus-ring shadow-lg shadow-violet-600/20"
             >
               Audit Your Code
             </Link>
             <Link
-              href="/site-audit"
+              href="/audit?tab=url"
               className="inline-block px-8 py-3.5 rounded-xl font-semibold text-base text-gray-700 dark:text-zinc-200 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 active:scale-[0.98] transition-colors focus-ring"
             >
               Audit a Live Site

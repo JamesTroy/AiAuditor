@@ -40,7 +40,7 @@ export function GlobalJsonLd() {
           '@type': 'SearchAction',
           target: {
             '@type': 'EntryPoint',
-            urlTemplate: `${BASE_URL}/code-audit?q={search_term_string}`,
+            urlTemplate: `${BASE_URL}/audit?q={search_term_string}`,
           },
           'query-input': 'required name=search_term_string',
         },

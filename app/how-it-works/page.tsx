@@ -90,7 +90,7 @@ export default function HowItWorksPage() {
         {/* CTA */}
         <div className="text-center">
           <Link
-            href="/site-audit"
+            href="/audit?tab=url"
             className="inline-block px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring"
           >
             Run your first audit

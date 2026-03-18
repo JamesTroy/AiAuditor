@@ -92,7 +92,7 @@ export default async function DashboardPage({
 
   // ONB-004: Redirect first-time users to site-audit page.
   if (totalCount === 0 && !cursor && !statusFilter && stayParam !== '1') {
-    redirect('/site-audit?welcome=1');
+    redirect('/audit?welcome=1');
   }
 
   const allScores = allScoredAudits.map((a) => a.score!);
@@ -238,13 +238,13 @@ export default async function DashboardPage({
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
-                href="/site-audit"
+                href="/audit?tab=url"
                 className="inline-block px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring"
               >
                 Run a Site Audit
               </Link>
               <Link
-                href="/site-audit?url=https%3A%2F%2Fexample.com"
+                href="/audit?tab=url&url=https%3A%2F%2Fexample.com"
                 className="inline-block px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-zinc-400 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-600 transition-colors focus-ring"
               >
                 Try with a sample URL

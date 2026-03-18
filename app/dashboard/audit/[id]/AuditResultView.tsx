@@ -78,7 +78,7 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
               The analysis may have timed out or encountered an error. Try running it again.
             </p>
             <Link
-              href="/site-audit"
+              href="/audit"
               className="inline-block px-5 py-2 rounded-xl text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring"
             >
               Run a new audit

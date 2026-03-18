@@ -52,7 +52,7 @@ export default function VerifyEmailPage() {
         <h2 className="text-xl font-semibold text-gray-900 dark:text-zinc-100 mb-2">Email verified</h2>
         <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">Your email has been verified. You&apos;re ready to run your first security, performance, and accessibility audit.</p>
         <Link
-          href="/site-audit"
+          href="/audit"
           className="inline-flex items-center gap-1 text-sm text-violet-600 dark:text-violet-400 hover:text-violet-500 font-medium"
         >
           Run your first audit

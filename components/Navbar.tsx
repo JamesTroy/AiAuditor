@@ -10,8 +10,7 @@ import { useSession } from '@/lib/auth-client';
 
 const PUBLIC_LINKS = [
   { href: '/', label: 'Explore Audits', title: 'Browse all available audit types' },
-  { href: '/code-audit', label: 'Code Audit', title: 'Run a full multi-agent code audit' },
-  { href: '/site-audit', label: 'Site Audit', title: 'Run a comprehensive site audit' },
+  { href: '/audit', label: 'Audit', title: 'Paste code or enter a URL to run an audit' },
   { href: '/pricing', label: 'Pricing', title: 'View pricing and plans' },
 ] as const;
 
@@ -126,9 +125,9 @@ export default function Navbar() {
 
           {/* Right: CTA + separator + Theme + User */}
           <div className="flex items-center gap-2">
-            {pathname !== '/code-audit' && pathname !== '/site-audit' && (
+            {!pathname.startsWith('/audit') && (
               <Link
-                href="/code-audit"
+                href="/audit"
                 className="hidden sm:inline-flex px-4 py-1.5 rounded-full text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 active:scale-[0.98] active:bg-violet-700 transition-colors focus-ring whitespace-nowrap shadow-sm shadow-violet-600/20"
               >
                 {session ? 'New Audit' : 'Get Started Free'}
@@ -233,7 +232,7 @@ export default function Navbar() {
             {/* Drawer footer */}
             <div className="border-t border-gray-200 dark:border-zinc-800 px-6 py-4 space-y-3">
               <Link
-                href="/code-audit"
+                href="/audit"
                 onClick={closeDrawer}
                 className="flex items-center justify-center min-h-[48px] px-4 rounded-full text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring shadow-sm shadow-violet-600/20"
               >

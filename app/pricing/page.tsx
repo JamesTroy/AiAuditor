@@ -63,7 +63,7 @@ export default function PricingPage() {
               Full access to every feature. No limits.
             </p>
             <Link
-              href="/code-audit"
+              href="/audit"
               className="flex items-center justify-center w-full px-6 py-3 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring shadow-sm shadow-violet-600/20"
             >
               Start Auditing

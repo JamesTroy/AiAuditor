@@ -5,8 +5,7 @@ import { usePathname } from 'next/navigation';
 import Logo from '@/components/Logo';
 
 const PRODUCT_LINKS = [
-  { href: '/code-audit', label: 'Code Audit' },
-  { href: '/site-audit', label: 'Site Audit' },
+  { href: '/audit', label: 'Audit' },
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/about', label: 'About' },
@@ -44,7 +43,7 @@ export default function Footer() {
               <Link href="/privacy#data-handling" className="underline underline-offset-2 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">Learn more</Link>.
             </p>
             <Link
-              href="/code-audit"
+              href="/audit"
               className="inline-flex text-sm text-violet-600 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-300 font-medium transition-colors focus-ring"
             >
               Start a free audit <span aria-hidden="true">&rarr;</span>
