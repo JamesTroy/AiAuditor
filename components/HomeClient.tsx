@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { AgentConfig } from '@/lib/types';
 import AgentCard from '@/components/AgentCard';
 import CustomAgentGrid from '@/components/CustomAgentGrid';
@@ -43,12 +43,21 @@ export default function HomeClient({ agents }: HomeClientProps) {
   }, []);
 
   const query = search.toLowerCase();
-  const filteredAgents = agents.filter(
+  const filteredAgents = useMemo(() => agents.filter(
     (a) => a.name.toLowerCase().includes(query) || a.description.toLowerCase().includes(query) || a.category.toLowerCase().includes(query)
-  );
+  ), [agents, query]);
 
   const hasSearch = query.length > 0;
-  const pinnedAgents = agents.filter((a) => favorites.has(a.id));
+  const pinnedAgents = useMemo(() => agents.filter((a) => favorites.has(a.id)), [agents, favorites]);
+
+  // PERF-002: Pre-compute category groups once instead of filtering per category in render.
+  const grouped = useMemo(() => {
+    const map = new Map<string, AgentConfig[]>();
+    for (const cat of CATEGORIES) {
+      map.set(cat, agents.filter((a) => a.category === cat));
+    }
+    return map;
+  }, [agents]);
 
   return (
     <>
@@ -109,7 +118,7 @@ export default function HomeClient({ agents }: HomeClientProps) {
 
           {/* Category sections */}
           {CATEGORIES.map((cat) => {
-            const group = agents.filter((a) => a.category === cat);
+            const group = grouped.get(cat) ?? [];
             if (group.length === 0) return null;
             return (
               <section key={cat} className="mb-10">

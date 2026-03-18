@@ -78,7 +78,8 @@ export default async function DashboardPage({
   );
 
   const statsOwnerId = activeOrgId ?? session.user.id;
-  const [{ totalResult, allScoredAudits }, rawAudits] = await Promise.all([
+  // PERF-005: Parallelize org name fetch with stats + pagination queries.
+  const [{ totalResult, allScoredAudits }, rawAudits, orgNameResult] = await Promise.all([
     getCachedStats(statsOwnerId, !!activeOrgId),
     // PERF-030: Paginated list runs fresh (cursor-dependent).
     db.select()
@@ -86,6 +87,12 @@ export default async function DashboardPage({
       .where(paginationWhere)
       .orderBy(desc(audit.createdAt))
       .limit(PAGE_SIZE + 1),
+    activeOrgId
+      ? db.select({ name: organizationTable.name })
+          .from(organizationTable)
+          .where(eq(organizationTable.id, activeOrgId))
+          .limit(1)
+      : Promise.resolve([]),
   ]);
 
   const totalCount = totalResult[0]?.value ?? 0;
@@ -118,15 +125,7 @@ export default async function DashboardPage({
   // Count completed audits from current page (for display)
   const pageCompleted = audits.filter((a) => a.status === 'completed').length;
 
-  // Fetch active org name for team view indicator
-  let activeOrgName: string | null = null;
-  if (activeOrgId) {
-    const orgRows = await db.select({ name: organizationTable.name })
-      .from(organizationTable)
-      .where(eq(organizationTable.id, activeOrgId))
-      .limit(1);
-    activeOrgName = orgRows[0]?.name ?? null;
-  }
+  const activeOrgName = orgNameResult[0]?.name ?? null;
 
   return (
     <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">

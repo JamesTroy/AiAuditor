@@ -275,7 +275,7 @@ export default function CodeAuditPanel() {
     const CONCURRENCY = 10;
     const agentResults: string[] = new Array(agentsToRun.length).fill('');
 
-    function rebuildResult() {
+    function rebuildResultNow() {
       const parts: string[] = [];
       for (let i = 0; i < agentsToRun.length; i++) {
         if (agentResults[i]) {
@@ -284,6 +284,19 @@ export default function CodeAuditPanel() {
         }
       }
       setResult(parts.join(''));
+    }
+
+    // PERF-003: Debounce result rebuilding during streaming to prevent 100+ renders/sec
+    // with multiple concurrent agents. Flush immediately on agent completion.
+    let rebuildTimer: ReturnType<typeof setTimeout> | null = null;
+    function rebuildResult() {
+      if (rebuildTimer) clearTimeout(rebuildTimer);
+      rebuildTimer = setTimeout(rebuildResultNow, 50);
+    }
+    function rebuildResultImmediate() {
+      if (rebuildTimer) clearTimeout(rebuildTimer);
+      rebuildTimer = null;
+      rebuildResultNow();
     }
 
     let activeCount = 0;
@@ -304,7 +317,7 @@ export default function CodeAuditPanel() {
           },
         );
         agentResults[i] = agentResult;
-        rebuildResult();
+        rebuildResultImmediate();
 
         saveAudit({
           agentId: agent.id,

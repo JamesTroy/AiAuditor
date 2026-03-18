@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut, authClient } from '@/lib/auth-client';
@@ -74,7 +75,7 @@ export default function UserNav() {
         aria-label="User menu"
       >
         {session.user.image ? (
-          <img src={session.user.image} alt="" className="w-10 h-10 rounded-full" />
+          <Image src={session.user.image} alt={`${session.user.name ?? 'User'}'s avatar`} width={40} height={40} className="w-10 h-10 rounded-full" />
         ) : (
           initials
         )}
