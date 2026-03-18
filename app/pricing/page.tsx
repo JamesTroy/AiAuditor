@@ -4,11 +4,11 @@ import { agents } from '@/lib/agents/registry';
 
 export const metadata: Metadata = {
   title: 'Pricing',
-  description: `Run ${agents.length} specialized code audits for free during early access. No credit card required. Teams tier coming soon with CI/CD integration, dashboards, and custom agents.`,
+  description: `Run ${agents.length} specialized code audits for free, or upgrade to Teams for shared dashboards, team management, and priority support.`,
   alternates: { canonical: '/pricing' },
   openGraph: {
     title: 'Pricing — Claudit',
-    description: `Run ${agents.length} specialized code audits for free during early access. Teams tier coming soon.`,
+    description: `Run ${agents.length} specialized code audits for free, or upgrade to Teams for shared dashboards and team management.`,
     url: '/pricing',
   },
 };
@@ -26,13 +26,13 @@ const FREE_FEATURES = [
 
 const TEAMS_FEATURES = [
   'Everything in Free, plus:',
+  'Team workspaces with shared audit history',
+  'Invite members & assign roles (owner, admin, member)',
+  'Team dashboard with org-wide audit scores',
   'CI/CD integration (GitHub Actions, GitLab CI)',
-  'Team dashboards & shared audit history',
-  'Custom audit agents',
   'Priority support',
   'SSO / SAML authentication',
   'Audit API access',
-  'SLA guarantees',
 ];
 
 export default function PricingPage() {
@@ -44,7 +44,7 @@ export default function PricingPage() {
             Simple, transparent pricing
           </h1>
           <p className="text-lg text-gray-600 dark:text-zinc-400 max-w-2xl mx-auto">
-            Claudit is free during early access. Run every audit, as many times as you want — no credit card, no catch.
+            Start free and upgrade when your team needs shared dashboards and collaboration.
           </p>
         </div>
 
@@ -84,17 +84,18 @@ export default function PricingPage() {
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm">
             <h2 className="text-xl font-bold mb-1">Teams</h2>
             <div className="flex items-baseline gap-1 mb-1">
-              <span className="text-4xl font-bold tracking-tight">TBD</span>
+              <span className="text-4xl font-bold tracking-tight">$0</span>
+              <span className="text-sm text-gray-500 dark:text-zinc-400">/ free during early access</span>
             </div>
             <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">
-              For engineering teams. Coming soon.
+              For engineering teams who audit together.
             </p>
-            <button
-              disabled
-              className="flex items-center justify-center w-full px-6 py-3 rounded-xl font-semibold text-base text-gray-400 dark:text-zinc-500 bg-gray-100 dark:bg-zinc-800 cursor-not-allowed"
+            <Link
+              href="/settings/team"
+              className="flex items-center justify-center w-full px-6 py-3 rounded-xl font-semibold text-base text-gray-900 dark:text-zinc-100 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors focus-ring"
             >
-              Coming Soon
-            </button>
+              Create a Team
+            </Link>
             <ul className="mt-6 space-y-3">
               {TEAMS_FEATURES.map((feature, i) => (
                 <li key={feature} className={`flex items-start gap-2 text-sm ${i === 0 ? 'text-gray-500 dark:text-zinc-400 font-medium' : 'text-gray-700 dark:text-zinc-300'}`}>
