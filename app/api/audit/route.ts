@@ -202,11 +202,14 @@ function makeStream(
             : `\n\n[Audit interrupted — please try again. Ref: ${logMeta.requestId}]`;
           controller.enqueue(streamEncoder.encode(userMsg));
         } catch { /* controller may already be closed */ }
-        controller.error(err);
+        // Don't call controller.error() — it prevents the client from reading
+        // the enqueued error message above. Instead, close gracefully so the
+        // error text actually reaches the user.
+        controller.close();
+        return;
       } finally {
         if (chunkTimer) clearTimeout(chunkTimer);
         reader.releaseLock();
-        controller.close();
       }
     },
   });

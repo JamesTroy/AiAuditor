@@ -7,7 +7,7 @@ import CustomAgentGrid from '@/components/CustomAgentGrid';
 import KeyboardShortcutsModal from '@/components/KeyboardShortcutsModal';
 import { getFavorites, toggleFavorite } from '@/lib/favorites';
 
-const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure', 'Design'] as const;
+const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure', 'Design', 'SEO', 'Marketing', 'Monetization', 'AI / LLM', 'Testing', 'Data Engineering', 'Developer Experience'] as const;
 
 interface HomeClientProps {
   agents: AgentConfig[];

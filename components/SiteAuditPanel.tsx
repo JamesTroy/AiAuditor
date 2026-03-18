@@ -66,7 +66,7 @@ const PRESETS: { label: string; description: string; ids: string[] }[] = [
   },
 ];
 
-const CATEGORIES = ['Security & Privacy', 'Code Quality', 'Performance', 'Infrastructure', 'Design', 'SEO', 'Marketing'] as const;
+const CATEGORIES = ['Security & Privacy', 'Code Quality', 'Performance', 'Infrastructure', 'Design', 'SEO', 'Marketing', 'Monetization', 'AI / LLM', 'Testing', 'Data Engineering', 'Developer Experience'] as const;
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Security & Privacy': 'border-red-500/40',
@@ -76,6 +76,11 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Design': 'border-violet-500/40',
   'SEO': 'border-emerald-500/40',
   'Marketing': 'border-pink-500/40',
+  'Monetization': 'border-yellow-500/40',
+  'AI / LLM': 'border-purple-500/40',
+  'Testing': 'border-lime-500/40',
+  'Data Engineering': 'border-orange-500/40',
+  'Developer Experience': 'border-teal-500/40',
 };
 
 /** Map accent text color to a bg dot color. Uses a static map so Tailwind can tree-shake safely. */
