@@ -150,6 +150,8 @@ export default function SiteAuditPage() {
   // SAFE-002: Token budget tracking.
   const [estimatedTokensUsed, setEstimatedTokensUsed] = useState(0);
   const [budgetExhausted, setBudgetExhausted] = useState(false);
+  // UI: Collapse agent badges after audit completes so they don't cover the synthesis prompt.
+  const [badgesCollapsed, setBadgesCollapsed] = useState(false);
 
   // Derive ordered list of selected agents for progress tracking
   const selectedAgents = useMemo(
@@ -530,6 +532,8 @@ export default function SiteAuditPage() {
       // ONB-030: Clear persisted URL after successful audit
       sessionStorage.removeItem('claudit-audit-url');
       setRunningIndices(new Set());
+      // Auto-collapse badges so they don't cover the synthesis prompt.
+      setBadgesCollapsed(true);
     }
   }, [url, loading, selected, cooldownUntil]);
 
@@ -807,9 +811,9 @@ export default function SiteAuditPage() {
           </div>
         )}
 
-        {/* Audit progress tracker — live during loading, navigation when done */}
+        {/* Audit progress tracker — sticky while loading, static when done */}
         {(loading || (!loading && result)) && (
-          <div className="mb-6 sticky top-0 z-10 bg-gray-50/95 dark:bg-zinc-950/95 backdrop-blur-sm py-3 -mx-6 px-6">
+          <div className={`mb-6 py-3 -mx-6 px-6 ${loading ? 'sticky top-0 z-10 bg-gray-50/95 dark:bg-zinc-950/95 backdrop-blur-sm' : ''}`}>
             {/* Progress summary bar */}
             {loading && selectedAgents.length > 0 && (
               <div className="mb-3" role="status" aria-live="polite">
@@ -862,7 +866,23 @@ export default function SiteAuditPage() {
               </p>
             )}
 
-            {/* Agent badges */}
+            {/* Agent badges — collapsible after audit completes */}
+            {!loading && result && (
+              <button
+                onClick={() => setBadgesCollapsed(!badgesCollapsed)}
+                className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors mb-1.5"
+                aria-expanded={!badgesCollapsed}
+              >
+                <svg
+                  className={`w-3.5 h-3.5 transition-transform ${badgesCollapsed ? '' : 'rotate-90'}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+                {badgesCollapsed ? `Show ${selectedAgents.length} audit badges` : 'Hide audit badges'}
+              </button>
+            )}
+            {(!badgesCollapsed || loading) && (
             <div className="flex flex-wrap gap-1.5">
               {selectedAgents.map((agent, i) => {
                 const isActive = loading && runningIndices.has(i);
@@ -917,6 +937,7 @@ export default function SiteAuditPage() {
                 );
               })}
             </div>
+            )}
           </div>
         )}
 
