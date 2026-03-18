@@ -39,8 +39,9 @@ export default function Footer() {
               <Logo size={20} />
               <span className="text-sm font-semibold">Claudit</span>
             </Link>
-            <p className="text-sm text-gray-500 dark:text-zinc-500 leading-relaxed max-w-xs">
-              Your code is never stored, never shared, never used for training.
+            <p className="text-sm text-gray-500 dark:text-zinc-400 leading-relaxed max-w-xs">
+              Your code is never stored, never shared, never used for training.{' '}
+              <Link href="/privacy#data-handling" className="underline underline-offset-2 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">Learn more</Link>.
             </p>
             <Link
               href="/code-audit"
@@ -52,7 +53,7 @@ export default function Footer() {
 
           {/* Product column */}
           <nav className="flex flex-col gap-2" aria-label="Product">
-            <span className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-500 mb-1">Product</span>
+            <span className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-400 mb-1">Product</span>
             {PRODUCT_LINKS.map(({ href, label }) => (
               <Link key={href} href={href} className={linkClass(href)}>{label}</Link>
             ))}
@@ -60,7 +61,7 @@ export default function Footer() {
 
           {/* Legal column */}
           <nav className="flex flex-col gap-2" aria-label="Legal">
-            <span className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-500 mb-1">Legal</span>
+            <span className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-zinc-400 mb-1">Legal</span>
             {LEGAL_LINKS.map(({ href, label }) => (
               <Link key={href} href={href} className={linkClass(href)}>{label}</Link>
             ))}
@@ -70,7 +71,7 @@ export default function Footer() {
 
       {/* Copyright */}
       <div className="border-t border-gray-200/50 dark:border-zinc-800/50 py-4">
-        <p className="text-center text-xs text-gray-500 dark:text-zinc-500">
+        <p className="text-center text-xs text-gray-500 dark:text-zinc-400">
           &copy; {new Date().getFullYear()} Claudit. All rights reserved.
         </p>
       </div>

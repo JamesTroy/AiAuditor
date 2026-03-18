@@ -73,8 +73,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Preconnect to avatar CDNs used by OAuth profile images (GitHub, Google).
             These only benefit authenticated users, but the cost of an unused preconnect
             is negligible (single DNS+TCP+TLS handshake that expires idle). */}
-        <link rel="preconnect" href="https://avatars.githubusercontent.com" />
-        <link rel="preconnect" href="https://lh3.googleusercontent.com" />
+        <link rel="preconnect" href="https://avatars.githubusercontent.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://avatars.githubusercontent.com" />
+        <link rel="preconnect" href="https://lh3.googleusercontent.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
         <GlobalJsonLd />
         <Analytics />
       </head>

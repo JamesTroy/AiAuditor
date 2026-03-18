@@ -42,14 +42,13 @@ const CSP_TAIL = [
   "; base-uri 'self'",
   "; form-action 'self'",
   '; upgrade-insecure-requests',
-  '; report-uri /api/csp-report',
   '; report-to csp-endpoint',
 ].join('');
 
 // PERF-021: Pre-serialize Report-To header at module scope.
 const REPORT_TO_HEADER = JSON.stringify({
   group: 'csp-endpoint',
-  max_age: 86400,
+  max_age: 3600,
   endpoints: [{ url: '/api/csp-report' }],
 });
 

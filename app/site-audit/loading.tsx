@@ -1,6 +1,6 @@
 export default function SiteAuditLoading() {
   return (
-    <div className="text-gray-900 dark:text-zinc-100 px-6 py-12 animate-pulse">
+    <div className="text-gray-900 dark:text-zinc-100 px-6 py-12 motion-safe:animate-pulse">
       <div className="max-w-4xl mx-auto">
         {/* Header skeleton */}
         <div className="text-center mb-10">

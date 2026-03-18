@@ -157,7 +157,7 @@ export default function Navbar() {
       </header>
 
       {/* Mobile drawer overlay + panel — always rendered so aria-controls="mobile-nav" references a valid element */}
-      <div id="mobile-nav" className={`fixed inset-0 z-50 sm:hidden ${drawerOpen ? '' : 'hidden'}`}>
+      <div id="mobile-nav" aria-hidden={!drawerOpen} className={`fixed inset-0 z-50 sm:hidden ${drawerOpen ? '' : 'hidden'}`}>
           {/* Backdrop with fade */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"

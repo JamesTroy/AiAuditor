@@ -49,7 +49,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What does a finding look like?',
-    a: 'Every finding includes a severity rating (Critical, High, Medium, Low), the exact file and line number, an explanation of the issue, and a copy-paste fix suggestion. Scroll up to see example findings.',
+    a: 'Every finding includes a severity rating (Critical, High, Medium, Low), the exact file and line number, an explanation of the issue, and a copy-paste fix suggestion.',
   },
   {
     q: 'How long does an audit take?',
