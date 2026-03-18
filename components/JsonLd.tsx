@@ -74,11 +74,11 @@ export function GlobalJsonLd() {
       },
       {
         '@type': 'HowTo',
-        name: 'How to run a code audit with Claudit',
+        name: 'How to audit your code with Claudit',
         totalTime: 'PT1M',
         estimatedCost: { '@type': 'MonetaryAmount', currency: 'USD', value: '0' },
         step: [
-          { '@type': 'HowToStep', position: 1, name: 'Enter a URL or paste code', text: 'Point us at any website, or paste files directly.' },
+          { '@type': 'HowToStep', position: 1, name: 'Enter a URL or paste code', text: 'Enter a website URL for a site audit, or paste code for a code audit.' },
           { '@type': 'HowToStep', position: 2, name: 'Pick your audits', text: `Choose from ${agents.length} specialized audits — or run them all.` },
           { '@type': 'HowToStep', position: 3, name: 'Get your report', text: 'Severity-rated findings with remediation steps — export as MD or JSON.' },
         ],

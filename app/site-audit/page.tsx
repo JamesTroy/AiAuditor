@@ -633,7 +633,9 @@ export default function SiteAuditPage() {
 
         {/* URL Input */}
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <label htmlFor="site-url-input" className="sr-only">Website URL</label>
           <input
+            id="site-url-input"
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
@@ -641,11 +643,12 @@ export default function SiteAuditPage() {
             placeholder="https://example.com"
             required
             aria-required="true"
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? 'site-audit-error' : undefined}
             pattern="https?://.+"
             autoComplete="url"
             disabled={loading}
             className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-5 py-3.5 text-base text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 disabled-muted-light"
-            aria-label="Website URL"
           />
           <button
             onClick={runSiteAudit}
@@ -697,8 +700,7 @@ export default function SiteAuditPage() {
               </span>
             </button>
 
-            {pickerOpen && (
-              <div id="audit-picker" className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4">
+              <div id="audit-picker" className={`bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 ${pickerOpen ? '' : 'hidden'}`}>
                 {/* SAFE-005: Curated presets */}
                 <div className="flex flex-wrap gap-2 mb-4 pb-3 border-b border-gray-200 dark:border-zinc-800">
                   {PRESETS.map((preset) => {
@@ -807,7 +809,6 @@ export default function SiteAuditPage() {
                   })}
                 </div>
               </div>
-            )}
           </div>
         )}
 
@@ -941,12 +942,14 @@ export default function SiteAuditPage() {
           </div>
         )}
 
-        {/* Error */}
-        {error && (
-          <div role="alert" className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-600 dark:text-red-300 text-sm mb-6 motion-safe:animate-fade-up">
-            {error}
-          </div>
-        )}
+        {/* Error — always-rendered container so screen readers announce dynamically */}
+        <div id="site-audit-error" role="alert" aria-live="assertive" aria-atomic="true">
+          {error && (
+            <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-600 dark:text-red-300 text-sm mb-6 motion-safe:animate-fade-up">
+              {error}
+            </div>
+          )}
+        </div>
 
         {/* Streaming indicator */}
         {loading && !result && (

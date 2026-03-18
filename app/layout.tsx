@@ -70,6 +70,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
         <meta name="theme-color" content="#f9fafb" media="(prefers-color-scheme: light)" />
+        {/* Preconnect to avatar CDNs used by OAuth profile images (GitHub, Google).
+            These only benefit authenticated users, but the cost of an unused preconnect
+            is negligible (single DNS+TCP+TLS handshake that expires idle). */}
         <link rel="preconnect" href="https://avatars.githubusercontent.com" />
         <link rel="preconnect" href="https://lh3.googleusercontent.com" />
         <GlobalJsonLd />
@@ -81,7 +84,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <ActivationBanner />
-            <main id="main-content" tabIndex={-1} className="flex-1">{children}</main>
+            <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">{children}</main>
             <noscript>
               <div role="alertdialog" aria-modal="true" aria-label="JavaScript required" aria-describedby="noscript-desc" className="fixed inset-0 z-[200] bg-white dark:bg-zinc-950 flex items-center justify-center p-8">
                 <div className="text-center max-w-md">
