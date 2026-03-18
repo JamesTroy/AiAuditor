@@ -7413,6 +7413,752 @@ Keep total under 30,000 characters.`,
 
 Keep total under 30,000 characters.`,
   }),
+
+  // ── AI / LLM (batch 2) ────────────────────────────────────────────────
+
+  builtin({
+    id: 'agent-patterns',
+    name: 'Agent Patterns',
+    description: 'Audits multi-agent orchestration, tool use design, memory management, planning loops, and error recovery.',
+    category: 'AI / LLM',
+    accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
+    placeholder: 'Paste your agent orchestration code, tool definitions, or planning logic...',
+    systemPrompt: SYSTEM_PROMPTS['agent-patterns'],
+    prepPrompt: `I'm preparing code for an **Agent Patterns** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Agent framework: [e.g. LangGraph, CrewAI, AutoGen, custom]
+- Number of agents: [e.g. single agent, 3 specialized agents, dynamic spawning]
+- Tool use approach: [e.g. function calling, ReAct loop, custom tool executor]
+- Memory/state management: [e.g. in-memory, Redis, database-backed]
+- Known concerns: [e.g. "agents loop forever", "no error recovery", "tool calls fail silently"]
+
+## Files to gather
+- Agent definition and orchestration code
+- Tool registration and execution logic
+- Memory and state management implementation
+- Planning loop and decision-making logic
+- Error recovery and retry mechanisms
+- Inter-agent communication or delegation code
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'llm-evaluation',
+    name: 'LLM Evaluation',
+    description: 'Reviews eval frameworks, prompt regression testing, benchmark design, golden datasets, and continuous evaluation.',
+    category: 'AI / LLM',
+    accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
+    placeholder: 'Paste your eval scripts, test cases, scoring rubrics, or benchmark configs...',
+    systemPrompt: SYSTEM_PROMPTS['llm-evaluation'],
+    prepPrompt: `I'm preparing code for an **LLM Evaluation** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Eval framework: [e.g. custom scripts, promptfoo, Braintrust, LangSmith]
+- Model(s) under evaluation: [e.g. GPT-4o, Claude Sonnet, fine-tuned model]
+- Eval types: [e.g. accuracy, safety, latency, cost, hallucination detection]
+- Golden dataset size: [e.g. 50 cases, 500 cases, none yet]
+- Known concerns: [e.g. "no regression tests", "evals not in CI", "subjective scoring"]
+
+## Files to gather
+- Eval scripts and test runners
+- Golden dataset or test case definitions
+- Scoring rubrics and grading logic
+- Benchmark configuration files
+- CI integration for eval pipelines
+- Prompt versioning and regression detection code
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'ai-ethics',
+    name: 'AI Ethics',
+    description: 'Audits AI fairness, transparency, explainability, bias testing, consent mechanisms, and harm mitigation.',
+    category: 'AI / LLM',
+    accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
+    placeholder: 'Paste your AI feature code, model integration, or content filtering logic...',
+    systemPrompt: SYSTEM_PROMPTS['ai-ethics'],
+    prepPrompt: `I'm preparing code for an **AI Ethics** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- AI use case: [e.g. content moderation, hiring decisions, recommendations, medical triage]
+- User population: [e.g. general public, enterprise, children, vulnerable groups]
+- Transparency measures: [e.g. "AI-generated" labels, explainability features, none]
+- Bias testing: [e.g. fairness benchmarks, demographic parity checks, none]
+- Known concerns: [e.g. "no consent mechanism", "opaque decisions", "potential demographic bias"]
+
+## Files to gather
+- AI feature integration and decision-making code
+- Content filtering and safety guardrails
+- Bias testing and fairness evaluation scripts
+- User consent and disclosure mechanisms
+- Explainability or transparency feature code
+- Harm mitigation and appeal/override logic
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'vector-search',
+    name: 'Vector Search',
+    description: 'Reviews vector DB usage, embedding strategies, hybrid search, reranking pipelines, and index optimization.',
+    category: 'AI / LLM',
+    accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
+    placeholder: 'Paste your vector DB queries, embedding code, or search pipeline...',
+    systemPrompt: SYSTEM_PROMPTS['vector-search'],
+    prepPrompt: `I'm preparing code for a **Vector Search** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Vector database: [e.g. Pinecone, Weaviate, Qdrant, pgvector, Milvus]
+- Embedding model: [e.g. OpenAI text-embedding-3-small, Cohere embed-v3, custom]
+- Search type: [e.g. pure vector, hybrid with keyword, filtered vector search]
+- Index size: [e.g. 10K vectors, 1M vectors, 100M+]
+- Known concerns: [e.g. "slow queries", "poor relevance", "no reranking", "index not optimized"]
+
+## Files to gather
+- Embedding generation and storage code
+- Vector DB client configuration and index setup
+- Search query construction and execution logic
+- Reranking or relevance scoring pipeline
+- Hybrid search (keyword + vector) integration
+- Index management and optimization scripts
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'ai-streaming',
+    name: 'AI Streaming',
+    description: 'Audits LLM streaming implementation, token rendering, abort handling, retry logic, and streaming error UX.',
+    category: 'AI / LLM',
+    accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
+    placeholder: 'Paste your streaming API routes, SSE handlers, or token rendering components...',
+    systemPrompt: SYSTEM_PROMPTS['ai-streaming'],
+    prepPrompt: `I'm preparing code for an **AI Streaming** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Streaming protocol: [e.g. SSE, WebSocket, fetch streaming, Vercel AI SDK]
+- LLM provider: [e.g. OpenAI, Anthropic, self-hosted]
+- Frontend framework: [e.g. React, Next.js, Vue, vanilla JS]
+- Abort support: [e.g. AbortController, manual cancel, none]
+- Known concerns: [e.g. "tokens flicker", "no abort button", "errors swallowed during stream", "memory leak on long streams"]
+
+## Files to gather
+- Streaming API route or server handler
+- SSE or WebSocket connection management
+- Client-side stream consumption and token rendering
+- Abort and cancellation handling
+- Retry and reconnection logic
+- Error handling during active streams
+
+Keep total under 30,000 characters.`,
+  }),
+
+  // ── Testing ────────────────────────────────────────────────────────────
+
+  builtin({
+    id: 'e2e-testing',
+    name: 'E2E Testing',
+    description: 'Reviews Playwright/Cypress test patterns, page objects, test stability, CI integration, and flake detection.',
+    category: 'Testing',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste your e2e test files, page objects, or test configuration...',
+    systemPrompt: SYSTEM_PROMPTS['e2e-testing'],
+    prepPrompt: `I'm preparing code for an **E2E Testing** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- E2E framework: [e.g. Playwright, Cypress, Selenium, Puppeteer]
+- Application type: [e.g. SPA, SSR, mobile web, desktop app]
+- CI runner: [e.g. GitHub Actions, CircleCI, Jenkins]
+- Test count: [e.g. 20 tests, 200 tests, 1000+]
+- Known concerns: [e.g. "flaky tests", "slow CI", "no page objects", "tests break on UI changes"]
+
+## Files to gather
+- E2E test files (representative sample of different patterns)
+- Page object or component abstraction files
+- Test configuration (playwright.config.ts, cypress.config.js)
+- CI workflow files for E2E test execution
+- Test fixture and data setup utilities
+- Any flake detection or retry configuration
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'load-testing',
+    name: 'Load Testing',
+    description: 'Audits load test scripts, scenario design, ramp-up patterns, SLA validation, and bottleneck identification.',
+    category: 'Testing',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste your k6, Artillery, or JMeter test scripts and configs...',
+    systemPrompt: SYSTEM_PROMPTS['load-testing'],
+    prepPrompt: `I'm preparing code for a **Load Testing** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Load testing tool: [e.g. k6, Artillery, JMeter, Locust, Gatling]
+- Target system: [e.g. REST API, GraphQL, WebSocket, full web app]
+- Current SLAs: [e.g. p99 < 200ms, 1000 RPS, 99.9% uptime]
+- Test environment: [e.g. staging, dedicated perf env, production shadow]
+- Known concerns: [e.g. "never load tested", "no SLAs defined", "tests don't match real traffic", "results not tracked over time"]
+
+## Files to gather
+- Load test scripts and scenario definitions
+- Test configuration and environment setup
+- Ramp-up and traffic pattern definitions
+- SLA threshold and assertion configs
+- CI integration for performance testing
+- Results analysis or reporting scripts
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'contract-testing',
+    name: 'Contract Testing',
+    description: 'Reviews consumer-driven contracts, API compatibility checks, schema evolution, and breaking change detection.',
+    category: 'Testing',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste your Pact contracts, API schemas, or provider verification tests...',
+    systemPrompt: SYSTEM_PROMPTS['contract-testing'],
+    prepPrompt: `I'm preparing code for a **Contract Testing** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Contract testing tool: [e.g. Pact, Spring Cloud Contract, Specmatic, custom]
+- API style: [e.g. REST, GraphQL, gRPC, event-driven]
+- Number of services: [e.g. 2 services, microservices (10+), monolith with external APIs]
+- Schema format: [e.g. OpenAPI, Protobuf, JSON Schema, Avro]
+- Known concerns: [e.g. "no contract tests", "breaking changes reach prod", "schema drift between services"]
+
+## Files to gather
+- Contract definition files (Pact JSON, OpenAPI specs, Protobuf)
+- Consumer test files generating contracts
+- Provider verification test files
+- Schema evolution and versioning configuration
+- CI pipeline for contract verification
+- Breaking change detection setup
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'visual-regression',
+    name: 'Visual Regression',
+    description: 'Audits screenshot testing setup, component snapshots, cross-browser visual QA, and baseline management.',
+    category: 'Testing',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste your visual regression test config, snapshot tests, or Percy/Chromatic setup...',
+    systemPrompt: SYSTEM_PROMPTS['visual-regression'],
+    prepPrompt: `I'm preparing code for a **Visual Regression** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Visual testing tool: [e.g. Percy, Chromatic, BackstopJS, Playwright screenshots, reg-suit]
+- Component library: [e.g. Storybook, custom, none]
+- Browser targets: [e.g. Chrome only, Chrome + Firefox + Safari, mobile browsers]
+- Baseline management: [e.g. auto-approve on main, manual review, cloud-managed]
+- Known concerns: [e.g. "too many false positives", "no visual tests", "flaky screenshots", "slow pipeline"]
+
+## Files to gather
+- Visual regression test configuration
+- Screenshot capture test files
+- Baseline image management setup
+- Storybook or component showcase configuration
+- CI integration for visual testing
+- Threshold and diff sensitivity settings
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'test-architecture',
+    name: 'Test Architecture',
+    description: 'Reviews test pyramid balance, fixture management, test data factories, mock strategy, and coverage approach.',
+    category: 'Testing',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste your test directory structure, shared fixtures, factories, or test utilities...',
+    systemPrompt: SYSTEM_PROMPTS['test-architecture'],
+    prepPrompt: `I'm preparing code for a **Test Architecture** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Test frameworks: [e.g. Jest, Vitest, pytest, Go testing, JUnit]
+- Test types in use: [e.g. unit, integration, e2e, contract, visual]
+- Coverage target: [e.g. 80%, no target, per-module targets]
+- Mock approach: [e.g. jest.mock, MSW, dependency injection, test doubles]
+- Known concerns: [e.g. "too many mocks", "slow test suite", "no test data factories", "coverage gaps in critical paths"]
+
+## Files to gather
+- Test configuration files (jest.config, vitest.config, pytest.ini)
+- Shared test utilities and helper functions
+- Test data factories and fixture definitions
+- Mock setup and shared test doubles
+- Coverage configuration and reports
+- Representative test files from each test layer (unit, integration, e2e)
+
+Keep total under 30,000 characters.`,
+  }),
+
+  // ── Data Engineering ───────────────────────────────────────────────────
+
+  builtin({
+    id: 'data-modeling',
+    name: 'Data Modeling',
+    description: 'Audits schema design, normalization decisions, entity relationships, index strategy, and migration planning.',
+    category: 'Data Engineering',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-700 hover:bg-orange-600',
+    placeholder: 'Paste your database schema, migration files, or entity relationship definitions...',
+    systemPrompt: SYSTEM_PROMPTS['data-modeling'],
+    prepPrompt: `I'm preparing code for a **Data Modeling** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Database type: [e.g. PostgreSQL, MySQL, MongoDB, DynamoDB, multi-database]
+- ORM/query builder: [e.g. Prisma, Drizzle, SQLAlchemy, TypeORM, raw SQL]
+- Schema size: [e.g. 10 tables, 50 tables, 200+ tables]
+- Data volume: [e.g. thousands of rows, millions, billions]
+- Known concerns: [e.g. "over-normalized", "missing indexes", "no migration strategy", "schema drift between environments"]
+
+## Files to gather
+- Database schema definitions (SQL DDL, Prisma schema, etc.)
+- Migration files (recent and any problematic ones)
+- Entity relationship or model definitions
+- Index definitions and query patterns
+- Seed data or fixture scripts
+- Any schema documentation or ERD definitions
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'etl-pipelines',
+    name: 'ETL Pipelines',
+    description: 'Reviews data pipeline quality, transformation correctness, scheduling, error handling, and idempotency.',
+    category: 'Data Engineering',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-700 hover:bg-orange-600',
+    placeholder: 'Paste your ETL scripts, Airflow DAGs, dbt models, or pipeline configs...',
+    systemPrompt: SYSTEM_PROMPTS['etl-pipelines'],
+    prepPrompt: `I'm preparing code for an **ETL Pipelines** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Pipeline framework: [e.g. Airflow, dbt, Prefect, Dagster, custom scripts]
+- Data sources: [e.g. PostgreSQL, S3, APIs, Kafka, flat files]
+- Data destinations: [e.g. data warehouse, analytics DB, S3, Elasticsearch]
+- Schedule frequency: [e.g. hourly, daily, real-time, event-driven]
+- Known concerns: [e.g. "pipelines not idempotent", "silent failures", "no data validation", "slow transformations"]
+
+## Files to gather
+- Pipeline definitions (DAGs, workflow files, dbt models)
+- Extraction and data source connection code
+- Transformation logic and business rules
+- Loading and destination write code
+- Error handling and retry configuration
+- Scheduling and orchestration configuration
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'data-quality',
+    name: 'Data Quality',
+    description: 'Audits validation rules, data profiling, anomaly detection, freshness monitoring, and schema drift detection.',
+    category: 'Data Engineering',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-700 hover:bg-orange-600',
+    placeholder: 'Paste your data validation logic, quality checks, or monitoring configs...',
+    systemPrompt: SYSTEM_PROMPTS['data-quality'],
+    prepPrompt: `I'm preparing code for a **Data Quality** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Data quality tool: [e.g. Great Expectations, dbt tests, Soda, custom checks]
+- Data platform: [e.g. Snowflake, BigQuery, PostgreSQL, Databricks]
+- Validation approach: [e.g. schema validation, statistical checks, rule-based, none]
+- Monitoring: [e.g. freshness alerts, anomaly detection, dashboard, none]
+- Known concerns: [e.g. "no data validation", "stale data not detected", "schema changes break downstream", "duplicate records"]
+
+## Files to gather
+- Data validation rules and check definitions
+- Data profiling and statistical analysis scripts
+- Freshness and staleness monitoring configuration
+- Schema drift detection setup
+- Anomaly detection and alerting configuration
+- Data quality dashboard or reporting code
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'data-governance',
+    name: 'Data Governance',
+    description: 'Reviews data lineage, catalog practices, ownership, retention policies, PII classification, and access controls.',
+    category: 'Data Engineering',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-700 hover:bg-orange-600',
+    placeholder: 'Paste your data catalog config, access policies, or retention rule definitions...',
+    systemPrompt: SYSTEM_PROMPTS['data-governance'],
+    prepPrompt: `I'm preparing code for a **Data Governance** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Data catalog tool: [e.g. DataHub, Amundsen, Atlan, custom metadata store]
+- Compliance requirements: [e.g. GDPR, CCPA, HIPAA, SOC 2, none specific]
+- PII handling: [e.g. encryption, masking, tokenization, classification tags]
+- Data ownership model: [e.g. domain-based, team-based, none defined]
+- Known concerns: [e.g. "no data lineage", "PII not classified", "no retention policies", "access controls too broad"]
+
+## Files to gather
+- Data catalog or metadata configuration
+- Access control policies and role definitions
+- PII classification and tagging logic
+- Data retention and deletion policies
+- Data lineage tracking setup
+- Ownership and stewardship documentation or config
+
+Keep total under 30,000 characters.`,
+  }),
+
+  // ── Infrastructure (batch 2) ───────────────────────────────────────────
+
+  builtin({
+    id: 'api-gateway',
+    name: 'API Gateway',
+    description: 'Audits gateway configuration, request routing, edge rate limiting, request transformation, and authentication.',
+    category: 'Infrastructure',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-700 hover:bg-emerald-600',
+    placeholder: 'Paste your API gateway config (Kong, AWS API Gateway, Traefik, nginx)...',
+    systemPrompt: SYSTEM_PROMPTS['api-gateway'],
+    prepPrompt: `I'm preparing code for an **API Gateway** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Gateway solution: [e.g. Kong, AWS API Gateway, Traefik, nginx, Envoy, custom]
+- Architecture: [e.g. single gateway, multi-gateway, BFF pattern]
+- Auth at gateway: [e.g. JWT validation, API key, OAuth2, mTLS, none]
+- Rate limiting: [e.g. per-user, per-IP, per-API-key, none]
+- Known concerns: [e.g. "no rate limiting", "auth bypassed at gateway", "routing too complex", "no request validation"]
+
+## Files to gather
+- Gateway configuration files (kong.yml, nginx.conf, traefik.yml)
+- Route definitions and upstream mappings
+- Authentication and authorization middleware
+- Rate limiting and throttling configuration
+- Request/response transformation rules
+- Health check and circuit breaker setup
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'secrets-management',
+    name: 'Secrets Management',
+    description: 'Reviews Vault/KMS usage, rotation policies, access patterns, least privilege, and secret lifecycle management.',
+    category: 'Infrastructure',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-700 hover:bg-emerald-600',
+    placeholder: 'Paste your secrets management config, Vault policies, or KMS setup (never paste actual secrets)...',
+    systemPrompt: SYSTEM_PROMPTS['secrets-management'],
+    prepPrompt: `I'm preparing code for a **Secrets Management** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Secrets solution: [e.g. HashiCorp Vault, AWS Secrets Manager, GCP Secret Manager, Azure Key Vault, doppler]
+- Secret types: [e.g. API keys, database credentials, TLS certs, signing keys]
+- Rotation policy: [e.g. 90-day rotation, auto-rotation, manual, none]
+- Access model: [e.g. per-service identity, shared secrets, environment variables]
+- Known concerns: [e.g. "secrets in env vars", "no rotation", "shared credentials", "secrets in git history"]
+
+## Files to gather
+- Secrets management configuration (Vault policies, IAM roles)
+- Secret access patterns in application code (never paste actual secret values)
+- Rotation automation scripts or configuration
+- CI/CD secret injection setup
+- .gitignore and secret scanning configuration
+- Access audit logging setup
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'backup-recovery',
+    name: 'Backup & Recovery',
+    description: 'Audits backup strategy, disaster recovery plans, RTO/RPO targets, restore testing, and geo-redundancy.',
+    category: 'Infrastructure',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-700 hover:bg-emerald-600',
+    placeholder: 'Paste your backup configs, DR runbooks, or recovery procedure documentation...',
+    systemPrompt: SYSTEM_PROMPTS['backup-recovery'],
+    prepPrompt: `I'm preparing code for a **Backup & Recovery** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Data stores: [e.g. PostgreSQL, MongoDB, S3, Redis, Elasticsearch]
+- Backup method: [e.g. automated snapshots, pg_dump, WAL archiving, manual]
+- RTO/RPO targets: [e.g. RTO 1hr / RPO 15min, not defined]
+- Recovery testing: [e.g. quarterly DR drills, never tested, automated restore tests]
+- Known concerns: [e.g. "never tested restore", "no offsite backups", "RPO undefined", "no DR plan"]
+
+## Files to gather
+- Backup automation scripts and schedules
+- Disaster recovery runbooks or procedures
+- Infrastructure-as-code for backup resources (Terraform, CloudFormation)
+- Restore verification and testing scripts
+- Monitoring and alerting for backup health
+- Geo-redundancy and replication configuration
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'service-mesh',
+    name: 'Service Mesh',
+    description: 'Reviews Istio/Linkerd configuration, mTLS, traffic management, distributed tracing, and circuit breaking.',
+    category: 'Infrastructure',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-700 hover:bg-emerald-600',
+    placeholder: 'Paste your service mesh configs, VirtualService definitions, or DestinationRules...',
+    systemPrompt: SYSTEM_PROMPTS['service-mesh'],
+    prepPrompt: `I'm preparing code for a **Service Mesh** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Service mesh: [e.g. Istio, Linkerd, Consul Connect, AWS App Mesh, custom]
+- Cluster setup: [e.g. single cluster, multi-cluster, multi-cloud]
+- mTLS status: [e.g. strict mode, permissive, not enabled]
+- Traffic management: [e.g. canary deployments, traffic splitting, fault injection]
+- Known concerns: [e.g. "mTLS not enforced", "no circuit breaking", "sidecar overhead too high", "tracing gaps"]
+
+## Files to gather
+- Service mesh installation and configuration
+- VirtualService, DestinationRule, and Gateway definitions
+- mTLS and PeerAuthentication policies
+- Traffic management and routing rules
+- Distributed tracing configuration
+- Circuit breaker and retry policy definitions
+
+Keep total under 30,000 characters.`,
+  }),
+
+  // ── Monetization (batch 2) ─────────────────────────────────────────────
+
+  builtin({
+    id: 'payment-integration',
+    name: 'Payment Integration',
+    description: 'Audits Stripe/payment gateway implementation, webhook idempotency, PCI scope, and SCA/3DS compliance.',
+    category: 'Monetization',
+    accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
+    buttonClass: 'bg-yellow-700 hover:bg-yellow-600',
+    placeholder: 'Paste your payment integration code, webhook handlers, or checkout flow...',
+    systemPrompt: SYSTEM_PROMPTS['payment-integration'],
+    prepPrompt: `I'm preparing code for a **Payment Integration** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Payment provider: [e.g. Stripe, Braintree, Adyen, PayPal, Square]
+- Payment types: [e.g. one-time charges, subscriptions, metered billing, marketplace payouts]
+- PCI scope: [e.g. SAQ-A (hosted checkout), SAQ-A-EP (client-side tokenization), SAQ-D]
+- SCA/3DS: [e.g. enabled, not implemented, EU customers only]
+- Known concerns: [e.g. "webhook failures", "no idempotency", "PCI scope unclear", "double charges reported"]
+
+## Files to gather
+- Payment gateway integration and client setup
+- Checkout flow and payment intent creation
+- Webhook handler and event processing code
+- Idempotency key generation and dedup logic
+- Refund and dispute handling code
+- Payment-related database models and state machines
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'usage-tracking',
+    name: 'Usage Tracking',
+    description: 'Reviews metering accuracy, usage event ingestion, quota enforcement, overage handling, and billing reconciliation.',
+    category: 'Monetization',
+    accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
+    buttonClass: 'bg-yellow-700 hover:bg-yellow-600',
+    placeholder: 'Paste your usage metering code, event tracking, or quota enforcement logic...',
+    systemPrompt: SYSTEM_PROMPTS['usage-tracking'],
+    prepPrompt: `I'm preparing code for a **Usage Tracking** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Metering approach: [e.g. real-time counters, event log aggregation, periodic batch]
+- Usage dimensions: [e.g. API calls, storage, compute time, tokens, seats]
+- Billing integration: [e.g. Stripe metered billing, custom invoicing, usage-based pricing]
+- Quota enforcement: [e.g. hard limits, soft limits with overage, no enforcement]
+- Known concerns: [e.g. "metering inaccurate", "no quota enforcement", "billing reconciliation gaps", "events lost under load"]
+
+## Files to gather
+- Usage event emission and ingestion code
+- Metering aggregation and counting logic
+- Quota enforcement and limit checking code
+- Overage detection and handling
+- Billing reconciliation and invoice generation
+- Usage dashboard and reporting queries
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'invoice-receipts',
+    name: 'Invoice & Receipts',
+    description: 'Audits invoice generation, tax calculation, receipt emails, credit notes, and compliance with VAT/GST rules.',
+    category: 'Monetization',
+    accentClass: 'text-yellow-400 hover:bg-yellow-500/10',
+    buttonClass: 'bg-yellow-700 hover:bg-yellow-600',
+    placeholder: 'Paste your invoice generation code, receipt templates, or tax calculation logic...',
+    systemPrompt: SYSTEM_PROMPTS['invoice-receipts'],
+    prepPrompt: `I'm preparing code for an **Invoice & Receipts** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Invoice generation: [e.g. Stripe Invoicing, custom PDF generation, third-party service]
+- Tax calculation: [e.g. Stripe Tax, TaxJar, Avalara, manual rates, none]
+- Jurisdictions: [e.g. US only, EU (VAT), global, B2B reverse charge]
+- Receipt delivery: [e.g. email, in-app download, both]
+- Known concerns: [e.g. "tax not calculated", "no credit notes", "invoices missing required fields", "VAT compliance gaps"]
+
+## Files to gather
+- Invoice generation and PDF rendering code
+- Tax calculation and rate determination logic
+- Receipt email templates and delivery code
+- Credit note and refund documentation logic
+- Invoice numbering and sequential ID generation
+- Tax reporting and compliance export code
+
+Keep total under 30,000 characters.`,
+  }),
+
+  // ── Developer Experience ───────────────────────────────────────────────
+
+  builtin({
+    id: 'readme-quality',
+    name: 'README Quality',
+    description: 'Audits README completeness, getting-started instructions, examples, badges, and contribution guidelines.',
+    category: 'Developer Experience',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-700 hover:bg-pink-600',
+    placeholder: 'Paste your README.md, CONTRIBUTING.md, or project documentation...',
+    systemPrompt: SYSTEM_PROMPTS['readme-quality'],
+    prepPrompt: `I'm preparing content for a **README Quality** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Project type: [e.g. open-source library, internal tool, SaaS product, CLI tool]
+- Target audience: [e.g. external developers, internal team, open-source community]
+- Current README status: [e.g. minimal, outdated, comprehensive but messy]
+- Documentation elsewhere: [e.g. docs site, wiki, none]
+- Known concerns: [e.g. "no getting started guide", "examples outdated", "missing contribution guidelines", "no badges"]
+
+## Files to gather
+- README.md (full contents)
+- CONTRIBUTING.md (if it exists)
+- CHANGELOG.md or release notes
+- package.json / pyproject.toml (for project metadata)
+- Any docs/ folder index or table of contents
+- LICENSE file
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'sdk-design',
+    name: 'SDK Design',
+    description: 'Reviews SDK ergonomics, method naming, error messages, type exports, versioning, and tree-shaking support.',
+    category: 'Developer Experience',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-700 hover:bg-pink-600',
+    placeholder: 'Paste your SDK source code, public API surface, or package.json...',
+    systemPrompt: SYSTEM_PROMPTS['sdk-design'],
+    prepPrompt: `I'm preparing code for an **SDK Design** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- SDK language: [e.g. TypeScript, Python, Go, Java, multi-language]
+- Distribution: [e.g. npm, PyPI, Maven, private registry]
+- API style: [e.g. REST wrapper, GraphQL client, WebSocket, RPC]
+- Versioning: [e.g. semver, calver, no formal versioning]
+- Known concerns: [e.g. "poor error messages", "no tree-shaking", "types not exported", "breaking changes without major bump"]
+
+## Files to gather
+- Public API surface (main entry point, exported functions/classes)
+- Type definitions and exported interfaces
+- Error handling and custom error classes
+- Package configuration (package.json, tsconfig, build config)
+- Example usage code or quickstart
+- Changelog or versioning policy
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'api-docs',
+    name: 'API Documentation',
+    description: 'Audits API documentation quality, endpoint descriptions, examples, error catalog, and interactive playground setup.',
+    category: 'Developer Experience',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-700 hover:bg-pink-600',
+    placeholder: 'Paste your API documentation, OpenAPI spec, or doc generation config...',
+    systemPrompt: SYSTEM_PROMPTS['api-docs'],
+    prepPrompt: `I'm preparing content for an **API Documentation** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- API type: [e.g. REST, GraphQL, gRPC, WebSocket]
+- Doc generation: [e.g. OpenAPI/Swagger, Redoc, Stoplight, custom, manual]
+- Interactive playground: [e.g. Swagger UI, GraphiQL, Postman collection, none]
+- Auth documentation: [e.g. documented, partially documented, not documented]
+- Known concerns: [e.g. "docs out of date", "no examples", "error responses undocumented", "no playground"]
+
+## Files to gather
+- OpenAPI / Swagger specification file
+- API documentation pages or markdown files
+- Doc generation configuration
+- Example request/response snippets
+- Error catalog or error code documentation
+- Authentication and authorization documentation
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'pwa',
+    name: 'Progressive Web App',
+    description: 'Reviews service worker implementation, web app manifest, offline support, cache strategies, and install prompts.',
+    category: 'Developer Experience',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-700 hover:bg-pink-600',
+    placeholder: 'Paste your service worker, manifest.json, or offline caching code...',
+    systemPrompt: SYSTEM_PROMPTS['pwa'],
+    prepPrompt: `I'm preparing code for a **Progressive Web App** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- PWA framework: [e.g. Workbox, next-pwa, vite-plugin-pwa, custom service worker]
+- Offline strategy: [e.g. cache-first, network-first, stale-while-revalidate, no offline support]
+- Install prompt: [e.g. custom prompt, browser default, not implemented]
+- Push notifications: [e.g. implemented, planned, not needed]
+- Known concerns: [e.g. "service worker caching stale content", "no offline page", "manifest incomplete", "install prompt not showing"]
+
+## Files to gather
+- Service worker file (sw.js, service-worker.ts)
+- Web app manifest (manifest.json, manifest.webmanifest)
+- Service worker registration code
+- Cache strategy configuration (Workbox config)
+- Offline fallback page or component
+- Install prompt and app update notification code
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'browser-compat',
+    name: 'Browser Compatibility',
+    description: 'Audits polyfills, feature detection, CSS vendor prefixes, browserslist config, and progressive enhancement patterns.',
+    category: 'Developer Experience',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-700 hover:bg-pink-600',
+    placeholder: 'Paste your browserslist config, polyfill setup, or feature detection code...',
+    systemPrompt: SYSTEM_PROMPTS['browser-compat'],
+    prepPrompt: `I'm preparing code for a **Browser Compatibility** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Target browsers: [e.g. last 2 versions, IE 11+, modern only, specific mobile browsers]
+- Build tools: [e.g. Babel, SWC, PostCSS, esbuild, Vite]
+- Polyfill strategy: [e.g. core-js, polyfill.io, manual polyfills, none]
+- CSS approach: [e.g. Tailwind, CSS modules, styled-components, vanilla CSS]
+- Known concerns: [e.g. "broken on Safari", "no polyfills", "CSS not prefixed", "browserslist not configured"]
+
+## Files to gather
+- Browserslist configuration (.browserslistrc, package.json browserslist field)
+- Babel or SWC configuration with preset-env settings
+- PostCSS configuration with Autoprefixer setup
+- Polyfill imports and feature detection code
+- Any browser-specific CSS or JS workarounds
+- Build configuration relevant to transpilation targets
+
+Keep total under 30,000 characters.`,
+  }),
 ];
 
 export function getAgent(id: string): AgentConfig {

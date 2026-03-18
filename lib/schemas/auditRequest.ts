@@ -174,6 +174,37 @@ export const VALID_AGENT_TYPES = [
   'rag-patterns',
   'ai-ux',
   'llm-cost',
+  'agent-patterns',
+  'llm-evaluation',
+  'ai-ethics',
+  'vector-search',
+  'ai-streaming',
+  // Testing
+  'e2e-testing',
+  'load-testing',
+  'contract-testing',
+  'visual-regression',
+  'test-architecture',
+  // Data Engineering
+  'data-modeling',
+  'etl-pipelines',
+  'data-quality',
+  'data-governance',
+  // Infrastructure
+  'api-gateway',
+  'secrets-management',
+  'backup-recovery',
+  'service-mesh',
+  // Monetization
+  'payment-integration',
+  'usage-tracking',
+  'invoice-receipts',
+  // Developer Experience
+  'readme-quality',
+  'sdk-design',
+  'api-docs',
+  'pwa',
+  'browser-compat',
 ] as const;
 
 export type AgentTypeValue = (typeof VALID_AGENT_TYPES)[number];
