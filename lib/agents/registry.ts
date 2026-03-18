@@ -6500,6 +6500,290 @@ Keep total under 30,000 characters.`,
 
 Keep total under 30,000 characters.`,
   }),
+  builtin({
+    id: 'loading-states',
+    name: 'Loading & Skeleton States',
+    description: 'Audits loading patterns, skeleton screens, spinners, shimmer effects, and perceived performance optimization.',
+    category: 'Design',
+    accentClass: 'text-violet-400 hover:bg-violet-500/10',
+    buttonClass: 'bg-violet-700 hover:bg-violet-600',
+    placeholder: 'Paste your loading components, skeleton screens, spinner code, or suspense boundaries...',
+    systemPrompt: SYSTEM_PROMPTS['loading-states'],
+    prepPrompt: `I'm preparing code for a **Loading & Skeleton States** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. React, Vue, Svelte, Next.js]
+- Data fetching: [e.g. React Query, SWR, Apollo, fetch, Suspense]
+- Current loading approach: [e.g. "full-page spinner", "skeleton screens", "none", "mixed"]
+- Known concerns: [e.g. "layout shift on load", "no feedback during fetch", "inconsistent spinners"]
+
+## Files to gather
+- Loading/spinner/skeleton components
+- Suspense boundaries or lazy-loaded routes
+- Data fetching hooks or utilities
+- Pages or views with significant async data
+- Any loading state context providers or global indicators
+- CSS/animations for shimmer or pulse effects
+
+## Don't forget
+- [ ] Include ALL loading component variants (spinner, skeleton, progress bar)
+- [ ] Show how error and empty states transition from loading
+- [ ] Include any Suspense or streaming SSR boundaries
+- [ ] Note any pages that lack loading feedback entirely
+- [ ] Show how nested loading states are handled (avoid "spinner waterfalls")
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'empty-states',
+    name: 'Empty States',
+    description: 'Reviews zero-data views, first-use experiences, no-results screens, and actionable placeholder content.',
+    category: 'Design',
+    accentClass: 'text-fuchsia-400 hover:bg-fuchsia-500/10',
+    buttonClass: 'bg-fuchsia-700 hover:bg-fuchsia-600',
+    placeholder: 'Paste your empty state components, zero-data views, or no-results screens...',
+    systemPrompt: SYSTEM_PROMPTS['empty-states'],
+    prepPrompt: `I'm preparing code for an **Empty States** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. React, Vue, Svelte, Next.js]
+- App type: [e.g. dashboard, e-commerce, SaaS, social]
+- Current empty state approach: [e.g. "plain text", "illustrations", "none", "mixed"]
+- Known concerns: [e.g. "blank pages confuse users", "no onboarding guidance", "search returns nothing with no help"]
+
+## Files to gather
+- Dedicated empty state or placeholder components
+- List/table/grid views that can be empty
+- Search results pages and filter views
+- First-use or onboarding screens
+- Dashboard or analytics pages with potential zero-data
+- Illustration or icon assets used in empty states
+
+## Don't forget
+- [ ] Include ALL views that can display zero items
+- [ ] Show first-time user experience for new accounts
+- [ ] Include search and filter no-results states
+- [ ] Note which empty states have a call-to-action vs. plain text
+- [ ] Show how empty states differ between authenticated and guest users
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'modal-dialog',
+    name: 'Modal & Dialog',
+    description: 'Audits overlay patterns, focus trapping, scroll locking, z-index management, and accessible dialog implementation.',
+    category: 'Design',
+    accentClass: 'text-purple-400 hover:bg-purple-500/10',
+    buttonClass: 'bg-purple-700 hover:bg-purple-600',
+    placeholder: 'Paste your modal, dialog, drawer, or overlay components and their trigger logic...',
+    systemPrompt: SYSTEM_PROMPTS['modal-dialog'],
+    prepPrompt: `I'm preparing code for a **Modal & Dialog** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. React, Vue, Svelte, Next.js]
+- Modal library: [e.g. Headless UI, Radix, custom, native dialog element]
+- Portal strategy: [e.g. React Portal, Teleport, inline rendering]
+- Known concerns: [e.g. "focus not trapped", "scroll bleeds through", "z-index wars", "no close on Escape"]
+
+## Files to gather
+- Modal/dialog/drawer/sheet base components
+- Overlay/backdrop components
+- Focus trap or focus management utilities
+- Scroll lock hooks or utilities
+- z-index scale definitions (CSS variables, Tailwind config, constants)
+- Pages or flows that trigger modals (confirmation, forms, alerts)
+
+## Don't forget
+- [ ] Include ALL modal/dialog variants (alert, confirm, form, drawer, sheet)
+- [ ] Show how focus is trapped and restored on close
+- [ ] Include scroll-locking behavior and body overflow handling
+- [ ] Note z-index values and stacking context management
+- [ ] Show keyboard interaction (Escape to close, Tab trapping)
+- [ ] Include nested or stacked modal scenarios if they exist
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'icon-consistency',
+    name: 'Icon Consistency',
+    description: 'Reviews icon set coherence, sizing scales, stroke width uniformity, and icon accessibility patterns.',
+    category: 'Design',
+    accentClass: 'text-rose-400 hover:bg-rose-500/10',
+    buttonClass: 'bg-rose-700 hover:bg-rose-600',
+    placeholder: 'Paste your icon components, SVG files, icon utility wrappers, or icon import patterns...',
+    systemPrompt: SYSTEM_PROMPTS['icon-consistency'],
+    prepPrompt: `I'm preparing code for an **Icon Consistency** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Icon source: [e.g. Heroicons, Lucide, FontAwesome, custom SVGs, mixed]
+- Icon format: [e.g. inline SVG, icon font, sprite sheet, React components]
+- Size scale: [e.g. "sm/md/lg", "16/20/24px", "ad-hoc sizes"]
+- Known concerns: [e.g. "mixed icon sets", "inconsistent sizes", "no alt text", "blurry at small sizes"]
+
+## Files to gather
+- Icon wrapper or utility components
+- SVG icon files or icon component library
+- Places where icons are used inline (buttons, nav, lists, alerts)
+- Tailwind config or CSS with icon sizing tokens
+- Any icon sprite sheet or icon font setup
+- Accessibility wrappers for decorative vs. semantic icons
+
+## Don't forget
+- [ ] Include icons from ALL sources used in the project
+- [ ] Show icon sizing across different contexts (nav, buttons, inline text)
+- [ ] Note stroke width differences between icon sets
+- [ ] Include aria-hidden, role="img", and alt text patterns
+- [ ] Show how decorative vs. informational icons are distinguished
+- [ ] Include any icon color/theming patterns
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'print-styles',
+    name: 'Print Styles',
+    description: 'Audits print stylesheets, page-break rules, print-friendly colors, and cross-browser print rendering.',
+    category: 'Design',
+    accentClass: 'text-sky-400 hover:bg-sky-500/10',
+    buttonClass: 'bg-sky-700 hover:bg-sky-600',
+    placeholder: 'Paste your print stylesheets, @media print rules, or printable page components...',
+    systemPrompt: SYSTEM_PROMPTS['print-styles'],
+    prepPrompt: `I'm preparing code for a **Print Styles** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. React, Vue, Svelte, Next.js]
+- Print use cases: [e.g. invoices, reports, receipts, articles, tickets]
+- Current print support: [e.g. "dedicated print CSS", "none", "basic @media print", "react-to-print"]
+- Known concerns: [e.g. "pages break mid-table", "colors waste ink", "nav prints on every page", "images missing"]
+
+## Files to gather
+- Print-specific stylesheets or @media print blocks
+- Global CSS with any print rules
+- Components for printable content (invoices, reports, receipts)
+- Print trigger buttons or print utility functions
+- Tailwind config print variant setup if applicable
+- Any PDF generation or server-side print rendering code
+
+## Don't forget
+- [ ] Include ALL @media print rules across the codebase
+- [ ] Show pages that users are most likely to print
+- [ ] Include header/footer/nav components (to verify they hide in print)
+- [ ] Note any background colors or images that need print-color-adjust
+- [ ] Show table or long-content components for page-break behavior
+- [ ] Include any print-specific JavaScript (window.print triggers, beforeprint events)
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'drag-drop',
+    name: 'Drag & Drop',
+    description: 'Reviews drag interactions, drop zone feedback, keyboard alternatives, reorder accessibility, and touch drag support.',
+    category: 'Design',
+    accentClass: 'text-lime-400 hover:bg-lime-500/10',
+    buttonClass: 'bg-lime-700 hover:bg-lime-600',
+    placeholder: 'Paste your drag-and-drop components, sortable lists, or file upload drop zones...',
+    systemPrompt: SYSTEM_PROMPTS['drag-drop'],
+    prepPrompt: `I'm preparing code for a **Drag & Drop** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. React, Vue, Svelte, Next.js]
+- DnD library: [e.g. dnd-kit, react-beautiful-dnd, native HTML5 DnD, Sortable.js, custom]
+- Use cases: [e.g. "kanban board", "file upload", "list reorder", "image gallery sort"]
+- Known concerns: [e.g. "no keyboard alternative", "broken on touch devices", "janky animations", "no drop zone feedback"]
+
+## Files to gather
+- Drag-and-drop provider/context setup
+- Draggable item components
+- Drop zone / droppable area components
+- Sortable list or grid components
+- File upload drop zone components
+- Keyboard reorder alternatives (move up/down buttons)
+- Touch gesture handling code
+- Animation or transition logic for drag operations
+
+## Don't forget
+- [ ] Include ALL drag-and-drop interactions in the app
+- [ ] Show drop zone visual feedback (hover, valid/invalid drop)
+- [ ] Include keyboard alternatives for every drag interaction
+- [ ] Note how drag state is announced to screen readers
+- [ ] Show touch device handling and scroll-vs-drag disambiguation
+- [ ] Include any drag handle or grip affordance components
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'multi-step-flows',
+    name: 'Multi-step Flows',
+    description: 'Audits wizard and stepper patterns, step validation, progress indicators, state persistence, and branching logic.',
+    category: 'Design',
+    accentClass: 'text-indigo-400 hover:bg-indigo-500/10',
+    buttonClass: 'bg-indigo-700 hover:bg-indigo-600',
+    placeholder: 'Paste your wizard, stepper, or multi-step form components and their state management...',
+    systemPrompt: SYSTEM_PROMPTS['multi-step-flows'],
+    prepPrompt: `I'm preparing code for a **Multi-step Flows** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. React, Vue, Svelte, Next.js]
+- Form library: [e.g. React Hook Form, Formik, Zod, native]
+- Multi-step use cases: [e.g. "onboarding wizard", "checkout flow", "registration", "setup guide"]
+- Known concerns: [e.g. "users lose progress on refresh", "no back button", "unclear which step they're on", "validation only at end"]
+
+## Files to gather
+- Stepper/wizard wrapper components
+- Individual step components or pages
+- Step validation schemas or logic
+- Progress indicator or step tracker components
+- State management for multi-step data (context, store, URL params)
+- Navigation guards or unsaved-changes warnings
+- Any branching or conditional step logic
+
+## Don't forget
+- [ ] Include ALL multi-step flows in the application
+- [ ] Show the progress indicator / step tracker component
+- [ ] Include per-step validation logic
+- [ ] Note how state persists across steps (and on page refresh)
+- [ ] Show back/forward navigation and step skipping rules
+- [ ] Include any branching logic (conditional steps based on input)
+- [ ] Show the final submission and error recovery flow
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'settings-preferences',
+    name: 'Settings & Preferences',
+    description: 'Reviews settings page organization, toggle patterns, instant-apply vs save, dangerous action confirmations, and reset flows.',
+    category: 'Design',
+    accentClass: 'text-teal-400 hover:bg-teal-500/10',
+    buttonClass: 'bg-teal-700 hover:bg-teal-600',
+    placeholder: 'Paste your settings pages, preference components, or configuration management code...',
+    systemPrompt: SYSTEM_PROMPTS['settings-preferences'],
+    prepPrompt: `I'm preparing code for a **Settings & Preferences** audit. Please help me collect the relevant files.
+
+## Project context (fill in)
+- Framework: [e.g. React, Vue, Svelte, Next.js]
+- Settings scope: [e.g. user preferences, account settings, app config, team/org settings]
+- Save behavior: [e.g. "instant apply on toggle", "save button", "mixed", "auto-save"]
+- Known concerns: [e.g. "unclear what's saved", "no confirmation for dangerous actions", "settings are disorganized", "no reset to defaults"]
+
+## Files to gather
+- Settings page layout and navigation (tabs, sidebar, sections)
+- Individual settings section components (profile, notifications, security, billing)
+- Toggle, switch, and radio group components used in settings
+- Save/cancel/reset button logic and feedback
+- Dangerous action flows (delete account, revoke access, reset data)
+- Settings persistence layer (API calls, local storage, context)
+- Any settings search or filter functionality
+
+## Don't forget
+- [ ] Include ALL settings pages and sections
+- [ ] Show how save/apply feedback is communicated to users
+- [ ] Include dangerous action confirmation dialogs (delete, reset, revoke)
+- [ ] Note which settings apply instantly vs. require explicit save
+- [ ] Show form validation and error handling in settings
+- [ ] Include any "reset to defaults" functionality
+- [ ] Show how settings are organized and categorized
+
+Keep total under 30,000 characters.`,
+  }),
 
   // ── Subscription & Monetization ─────────────────────────────────
   builtin({

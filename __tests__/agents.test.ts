@@ -3,8 +3,8 @@ import { agents, getAgent } from '@/lib/agents/registry';
 import { VALID_AGENT_TYPES } from '@/lib/schemas/auditRequest';
 
 describe('Agent registry', () => {
-  it('has 132 agents', () => {
-    expect(agents.length).toBe(132);
+  it('has 140 agents', () => {
+    expect(agents.length).toBe(140);
   });
 
   it('every agent has required fields', () => {
