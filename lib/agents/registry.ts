@@ -6819,6 +6819,43 @@ Keep total under 30,000 characters.`,
 // e.g. webhook handlers, subscription creation,
 // entitlement checks, plan change logic`,
     systemPrompt: SYSTEM_PROMPTS['subscription-billing'],
+    prepPrompt: `I'm preparing code for a **Subscription Billing** audit. Please help me collect and format the relevant files.
+
+## Project context (fill in)
+- Billing provider: [e.g. Stripe, Paddle, Chargebee, Recurly]
+- Subscription model: [e.g. monthly/annual plans, seat-based, usage-based]
+- Stack: [e.g. Node.js + Next.js, Rails, Django]
+
+## Files to gather
+
+### 1. Webhook handlers
+- Payment succeeded / failed handlers
+- Subscription created / updated / cancelled handlers
+- Invoice and customer event handlers
+
+### 2. Subscription lifecycle
+- Plan creation and upgrade/downgrade logic
+- Proration handling
+- Trial start and conversion logic
+- Cancellation and reactivation flows
+
+### 3. Entitlement checks
+- Code that gates features by subscription status or plan tier
+- Any middleware that validates active subscriptions
+
+### 4. Configuration
+- Plan/price ID definitions (Stripe price IDs, plan slugs, etc.)
+- Billing-related environment variable references (no actual secrets)
+
+## Formatting rules
+
+Format each file like this:
+\`\`\`
+--- path/to/filename.ext ---
+[full file contents]
+\`\`\`
+
+Separate files with a blank line. If total exceeds 30,000 characters, prioritise webhook handlers and entitlement logic, truncate long files to their first 100 lines, and note what was omitted.`,
   }),
   builtin({
     id: 'feature-entitlements',
@@ -6831,6 +6868,43 @@ Keep total under 30,000 characters.`,
 // e.g. plan checks, feature flags, role guards,
 // trial restriction logic`,
     systemPrompt: SYSTEM_PROMPTS['feature-entitlements'],
+    prepPrompt: `I'm preparing code for a **Feature Entitlements** audit. Please help me collect and format the relevant files.
+
+## Project context (fill in)
+- Billing provider / plan source: [e.g. Stripe, custom DB table, LaunchDarkly]
+- Plan tiers: [e.g. Free / Pro / Team / Enterprise]
+- Stack: [e.g. Next.js, Rails, Django + DRF]
+
+## Files to gather
+
+### 1. Entitlement / plan-gate logic
+- Functions or middleware that check if a user has access to a feature
+- Any \`canAccess\`, \`hasFeature\`, \`checkPlan\`, or similar helpers
+- Role-based access control (RBAC) guards tied to subscription tier
+
+### 2. Feature flag system
+- Feature flag definitions and their plan mappings
+- Flag evaluation logic (especially server-side checks)
+- Any client-side flag reads (important for finding client-only gates)
+
+### 3. Trial enforcement
+- Trial expiry checks
+- Seat or usage limit enforcement code
+- Upgrade prompt triggers
+
+### 4. API / route middleware
+- Auth middleware that attaches subscription/plan info to requests
+- Route-level plan guards
+
+## Formatting rules
+
+Format each file like this:
+\`\`\`
+--- path/to/filename.ext ---
+[full file contents]
+\`\`\`
+
+Separate files with a blank line. If total exceeds 30,000 characters, prioritise entitlement check functions and any client-side gate code, truncate long files to their first 100 lines, and note what was omitted.`,
   }),
   builtin({
     id: 'trial-conversion',
@@ -6843,6 +6917,43 @@ Keep total under 30,000 characters.`,
 // e.g. trial banner components, upgrade CTAs,
 // plan selection page, trial expiry handling`,
     systemPrompt: SYSTEM_PROMPTS['trial-conversion'],
+    prepPrompt: `I'm preparing code for a **Trial Conversion** audit. Please help me collect and format the relevant files.
+
+## Project context (fill in)
+- Trial model: [e.g. 14-day free trial, freemium with usage limits, opt-in credit card trial]
+- Billing provider: [e.g. Stripe, Paddle]
+- Stack: [e.g. Next.js + React, Rails + Hotwire]
+
+## Files to gather
+
+### 1. Trial onboarding UI
+- Trial banner or status bar component
+- First-run / welcome screen
+- Empty state components that appear during trial
+
+### 2. Upgrade prompts
+- Upgrade CTA components (inline, modal, paywall)
+- Plan selection / pricing page
+- Upsell trigger logic (where and when upgrades are surfaced)
+
+### 3. Trial expiry handling
+- Trial expiry check logic
+- Expired trial UI (locked state, downgrade notice)
+- Any email triggers tied to trial events (day 7 nudge, expiry warning, etc.)
+
+### 4. Activation tracking (if available)
+- Analytics events fired during onboarding (identify, track calls)
+- Any time-to-value instrumentation
+
+## Formatting rules
+
+Format each file like this:
+\`\`\`
+--- path/to/filename.ext ---
+[full file contents]
+\`\`\`
+
+Separate files with a blank line. If total exceeds 30,000 characters, prioritise upgrade prompt components and trial expiry handling, truncate long files to their first 100 lines, and note what was omitted.`,
   }),
   builtin({
     id: 'dunning-flow',
@@ -6855,6 +6966,42 @@ Keep total under 30,000 characters.`,
 // e.g. failed payment webhooks, dunning email templates,
 // in-app payment update UI, access restriction logic`,
     systemPrompt: SYSTEM_PROMPTS['dunning-flow'],
+    prepPrompt: `I'm preparing code for a **Dunning Flow** audit. Please help me collect and format the relevant files.
+
+## Project context (fill in)
+- Billing provider: [e.g. Stripe, Paddle, Chargebee]
+- Retry schedule: [e.g. Stripe Smart Retries, custom schedule at day 1 / 3 / 7 / 14]
+- Access policy on failure: [e.g. grace period, immediate downgrade, soft lock]
+
+## Files to gather
+
+### 1. Payment failure webhook handler
+- The handler for \`invoice.payment_failed\` (Stripe) or equivalent
+- Any retry scheduling logic triggered on failure
+
+### 2. In-app payment update flow
+- "Update payment method" UI component
+- Hosted billing portal integration or custom card update form
+
+### 3. Dunning email templates
+- Payment failed email (initial)
+- Follow-up retry emails
+- Final notice before cancellation / access loss
+
+### 4. Access restriction logic
+- Code that locks or downgrades access after failed payment
+- Grace period handling
+- Reactivation flow after successful payment recovery
+
+## Formatting rules
+
+Format each file like this:
+\`\`\`
+--- path/to/filename.ext ---
+[full file contents]
+\`\`\`
+
+Separate files with a blank line. If total exceeds 30,000 characters, prioritise webhook handlers and access restriction logic, truncate long files to their first 100 lines, and note what was omitted.`,
   }),
   builtin({
     id: 'pricing-architecture',
@@ -6867,6 +7014,43 @@ Keep total under 30,000 characters.`,
 // e.g. plan definitions, pricing page component,
 // price IDs, feature comparison table`,
     systemPrompt: SYSTEM_PROMPTS['pricing-architecture'],
+    prepPrompt: `I'm preparing code for a **Pricing Architecture** audit. Please help me collect and format the relevant files.
+
+## Project context (fill in)
+- Billing provider: [e.g. Stripe, Paddle]
+- Current plan tiers and names: [e.g. Starter $9/mo, Pro $29/mo, Team $79/mo]
+- Value metric: [e.g. seats, API calls, projects, MAU]
+- Known concern: [e.g. "low upgrade rate from Free → Pro", "pricing page bounce rate is high"]
+
+## Files to gather
+
+### 1. Pricing page
+- Pricing page component (the full page or section)
+- Feature comparison table component
+- Plan selection / CTA buttons
+
+### 2. Plan definitions
+- Plan/price ID constants or config (Stripe price IDs, plan slugs)
+- Feature-to-plan mapping (what features belong to which tier)
+- Any pricing config file or database seed
+
+### 3. Upgrade flow entry points
+- Components that prompt users to upgrade (paywalls, upsell banners)
+- Checkout or plan selection modal
+
+### 4. Billing settings page (if applicable)
+- Current plan display
+- Plan change UI
+
+## Formatting rules
+
+Format each file like this:
+\`\`\`
+--- path/to/filename.ext ---
+[full file contents]
+\`\`\`
+
+Separate files with a blank line. If total exceeds 30,000 characters, prioritise the pricing page and plan definitions, truncate long files to their first 100 lines, and note what was omitted.`,
   }),
   builtin({
     id: 'metered-billing',
@@ -6879,6 +7063,47 @@ Keep total under 30,000 characters.`,
 // e.g. usage event emission, aggregation logic,
 // billing period cutover, limit enforcement`,
     systemPrompt: SYSTEM_PROMPTS['metered-billing'],
+    prepPrompt: `I'm preparing code for a **Metered Billing** audit. Please help me collect and format the relevant files.
+
+## Project context (fill in)
+- Billing provider: [e.g. Stripe Metered, Lago, Amberflo, custom]
+- Usage metric: [e.g. API calls, compute minutes, seats, storage GB]
+- Billing period: [e.g. monthly reset, real-time, prepaid credits]
+- Stack: [e.g. Node.js workers, Python Celery, Go services]
+
+## Files to gather
+
+### 1. Usage event emission
+- Code that records usage events (API calls, \`stripe.subscriptionItems.createUsageRecord\`, etc.)
+- Queue producers or event emitters tied to billable actions
+
+### 2. Aggregation logic
+- Code that sums, groups, or rolls up usage events per billing period
+- Any deduplication logic for events
+
+### 3. Limit enforcement
+- Code that checks current usage against plan limits
+- Hard stop vs. soft warning handling
+- Overage logic
+
+### 4. Billing period cutover
+- Code that handles month rollover / period reset
+- Carryover or credits logic
+- Any scheduled jobs for billing period close
+
+### 5. Customer-facing usage display (if applicable)
+- Usage meter or dashboard component shown to users
+- API endpoint that returns current usage
+
+## Formatting rules
+
+Format each file like this:
+\`\`\`
+--- path/to/filename.ext ---
+[full file contents]
+\`\`\`
+
+Separate files with a blank line. If total exceeds 30,000 characters, prioritise event emission and aggregation code, truncate long files to their first 100 lines, and note what was omitted.`,
   }),
   builtin({
     id: 'churn-prevention',
@@ -6891,6 +7116,48 @@ Keep total under 30,000 characters.`,
 // e.g. cancellation modal, health scoring logic,
 // re-engagement emails, winback flow`,
     systemPrompt: SYSTEM_PROMPTS['churn-prevention'],
+    prepPrompt: `I'm preparing code for a **Churn Prevention** audit. Please help me collect and format the relevant files.
+
+## Project context (fill in)
+- Billing provider: [e.g. Stripe, Paddle, Chargebee]
+- Current churn rate: [e.g. ~4% monthly, unknown]
+- Primary churn signal sources: [e.g. Stripe cancellations, in-app surveys, support tickets]
+- Stack: [e.g. Next.js, Rails, Django]
+
+## Files to gather
+
+### 1. Cancellation flow
+- Cancellation modal or page component
+- Cancellation reason survey / offboarding form
+- Logic that actually cancels or downgrades the subscription
+
+### 2. Retention interventions
+- Pause subscription option (if exists)
+- Downgrade offer or plan switch prompt
+- Discount / offer presentation on cancellation intent
+
+### 3. Health scoring (if applicable)
+- User health score calculation logic
+- Engagement or activity tracking queries
+- At-risk user identification logic
+
+### 4. Re-engagement / winback sequences
+- Churn email templates (at-risk nudge, winback after cancellation)
+- Any scheduled jobs that trigger re-engagement
+
+### 5. Analytics hooks (if available)
+- Events fired on cancellation intent, cancel confirm, save
+- Dashboard queries for churn metrics
+
+## Formatting rules
+
+Format each file like this:
+\`\`\`
+--- path/to/filename.ext ---
+[full file contents]
+\`\`\`
+
+Separate files with a blank line. If total exceeds 30,000 characters, prioritise the cancellation flow and retention intervention components, truncate long files to their first 100 lines, and note what was omitted.`,
   }),
 
   // ── Code Quality (new) ─────────────────────────────────────────
