@@ -158,7 +158,6 @@ export default function CodeAuditPanel() {
   const abortRef = useRef<AbortController | null>(null);
   const synthAbortRef = useRef<AbortController | null>(null);
   const resultEndRef = useRef<HTMLDivElement>(null);
-  const userScrolledUp = useRef(false);
 
   // Ordered list of currently-selected agents (stable across a run)
   const selectedAgents = useMemo(
@@ -253,26 +252,9 @@ export default function CodeAuditPanel() {
     return () => clearInterval(id);
   }, [loading]);
 
-  // ---------- Auto-scroll ----------
-  // Mark userScrolledUp the moment the user touches the scroll wheel so
-  // auto-follow stops immediately and never fights manual scrolling.
-  useEffect(() => {
-    if (!loading) { userScrolledUp.current = false; return; }
-    userScrolledUp.current = false;
-    function onScroll() { userScrolledUp.current = true; }
-    window.addEventListener('scroll', onScroll, { passive: true, once: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [loading]);
-
-  useEffect(() => {
-    if (!loading || !result || userScrolledUp.current) return;
-    const el = resultEndRef.current;
-    if (!el) return;
-    // Only scroll DOWN — never pull the user upward after a layout shift.
-    if (el.getBoundingClientRect().bottom > window.innerHeight) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
-  }, [loading, result]);
+  // Auto-scroll removed — the sticky progress bar shows run status without
+  // fighting manual scrolling. scrollIntoView on every result chunk caused
+  // scroll jumps and lock-up during full audits.
 
   // Abort on unmount
   useEffect(() => {
