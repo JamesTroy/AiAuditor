@@ -18,8 +18,9 @@ import { auth } from '@/lib/auth';
 import { extractScore, sanityCheckScore } from '@/lib/extractScore';
 import { detectAgents } from '@/lib/detectAgents';
 import { db } from '@/lib/db';
-import { audit as auditTable, member as memberTable } from '@/lib/auth-schema';
+import { audit as auditTable, member as memberTable, user as userTable } from '@/lib/auth-schema';
 import { eq, and, lt } from 'drizzle-orm';
+import { extractSkeleton } from '@/lib/chunking/skeletonExtract';
 import { revalidateTag } from 'next/cache';
 import { escapeXml } from '@/lib/escapeXml';
 
@@ -340,10 +341,20 @@ export async function POST(req: NextRequest) {
 
   // VULN-004: Escape XML tags in user input before wrapping so </user_content>
   // cannot break out of the delimiter and inject prompt-level instructions.
-  // VULN-004: XML-escape user input so </user_content> cannot break out of
-  // the delimiter wrapper and inject prompt-level instructions.
   const escapedInput = escapeXml(data.input);
-  const safeInput = `<user_content>\n${escapedInput}\n</user_content>`;
+
+  // For large inputs, prepend a structural skeleton so auditors can navigate
+  // the codebase without losing context on deeply nested functions.
+  const skeleton = extractSkeleton(data.input);
+  const skeletonPrefix = skeleton ? `<code_structure>\n${skeleton}\n</code_structure>\n\n` : '';
+
+  let safeInput = `${skeletonPrefix}<user_content>\n${escapedInput}\n</user_content>`;
+
+  // Inject runtime context (stack traces, error logs, env info) if provided.
+  const runtimeContext = 'runtimeContext' in data ? data.runtimeContext : undefined;
+  if (runtimeContext) {
+    safeInput += `\n\n<runtime_context>\n${escapeXml(runtimeContext)}\n</runtime_context>`;
+  }
 
   // Detect logged-in user (optional — audits work without auth)
   let userId: string | null = null;
@@ -353,6 +364,23 @@ export async function POST(req: NextRequest) {
     userId = session?.user?.id ?? null;
     organizationId = (session?.session as Record<string, unknown>)?.activeOrganizationId as string | null ?? null;
   } catch { /* no session — anonymous audit */ }
+
+  // Fetch workspace context for the logged-in user (best-effort — never blocks audit).
+  let workspaceContextBlock = '';
+  if (userId) {
+    try {
+      const userRows = await db
+        .select({ workspaceContext: userTable.workspaceContext })
+        .from(userTable)
+        .where(eq(userTable.id, userId))
+        .limit(1);
+      const ctx = userRows[0]?.workspaceContext;
+      if (ctx) {
+        workspaceContextBlock = `\n\n<workspace_context>\n${escapeXml(ctx)}\n</workspace_context>\n` +
+          `Use this workspace context to tailor findings — flag violations of stated standards, skip suggestions that conflict with stated conventions.`;
+      }
+    } catch { /* best-effort */ }
+  }
 
   // Validate org membership before associating audit with org
   if (organizationId && userId) {
@@ -413,6 +441,9 @@ export async function POST(req: NextRequest) {
         `Tailor your analysis to this language/framework. Do not flag idiomatic patterns as issues.\n=== End Context ===`;
     }
 
+    // Inject workspace context if available.
+    if (workspaceContextBlock) guardedPrompt += workspaceContextBlock;
+
     const auditRecord = await createAuditRecord('custom', 'Custom Agent');
     log('info', 'custom_audit_start', {
       requestId,
@@ -452,6 +483,9 @@ export async function POST(req: NextRequest) {
       `=== End Context ===`;
     contextPrompt = agent.systemPrompt + contextBlock;
   }
+
+  // Inject workspace context if available.
+  if (workspaceContextBlock) contextPrompt += workspaceContextBlock;
 
   const auditRecord = await createAuditRecord(data.agentType, agent.name);
   log('info', 'audit_start', {

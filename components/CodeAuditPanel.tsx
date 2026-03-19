@@ -119,6 +119,8 @@ export default function CodeAuditPanel() {
 
   // --- Input ---
   const [code, setCode] = useState('');
+  const [runtimeContext, setRuntimeContext] = useState('');
+  const [runtimeContextOpen, setRuntimeContextOpen] = useState(false);
 
   // --- Auto-detection result ---
   const [autoDetectInfo, setAutoDetectInfo] = useState<{
@@ -302,11 +304,14 @@ export default function CodeAuditPanel() {
     input: string,
     signal: AbortSignal,
     onChunk: (text: string) => void,
+    extraContext?: string,
   ): Promise<string> {
+    const body: Record<string, unknown> = { agentType: agentId, input, siteAudit: true };
+    if (extraContext) body.runtimeContext = extraContext;
     const res = await fetch('/api/audit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ agentType: agentId, input, siteAudit: true }),
+      body: JSON.stringify(body),
       signal,
     });
 
@@ -399,6 +404,7 @@ export default function CodeAuditPanel() {
             agentResults[i] += chunk;
             rebuildResult();
           },
+          runtimeContext.trim() || undefined,
         );
         agentResults[i] = agentResult;
         rebuildResultImmediate();
@@ -441,7 +447,7 @@ export default function CodeAuditPanel() {
       setLoading(false);
       setRunningIndices(new Set());
     }
-  }, [code, loading, selected]);
+  }, [code, loading, selected, runtimeContext]);
 
   function handleStop() {
     abortRef.current?.abort();
@@ -563,6 +569,47 @@ export default function CodeAuditPanel() {
             </span>
           </div>
         )}
+
+        {/* Runtime context — collapsible */}
+        <div className="mb-3">
+          <button
+            type="button"
+            onClick={() => setRuntimeContextOpen((o) => !o)}
+            className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors"
+            aria-expanded={runtimeContextOpen}
+          >
+            <svg
+              className={`w-3.5 h-3.5 transition-transform ${runtimeContextOpen ? 'rotate-90' : ''}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+            Add runtime context
+            {runtimeContext.trim() && !runtimeContextOpen && (
+              <span className="ml-1 px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-[10px] font-medium">
+                active
+              </span>
+            )}
+          </button>
+          {runtimeContextOpen && (
+            <div className="mt-2">
+              <textarea
+                value={runtimeContext}
+                onChange={(e) => setRuntimeContext(e.target.value)}
+                disabled={loading}
+                rows={4}
+                maxLength={15000}
+                placeholder={`Optional: paste a stack trace, error log, or runtime env info.\n\nExamples:\n  - A TypeError with line numbers\n  - Relevant environment variables (redact secrets)\n  - A curl request / response pair that's misbehaving`}
+                className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-xs font-mono text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500 focus-visible:ring-2 focus-visible:ring-violet-500 resize-y disabled:opacity-50"
+                aria-label="Runtime context (optional)"
+              />
+              <p className="mt-1 text-[11px] text-gray-400 dark:text-zinc-600 flex justify-between">
+                <span>Stack traces and logs help auditors distinguish theoretical issues from confirmed runtime failures.</span>
+                <span>{runtimeContext.length}/15000</span>
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* Privacy note */}
         <p className="text-xs text-gray-400 dark:text-zinc-500 mb-4 flex items-center gap-1.5">

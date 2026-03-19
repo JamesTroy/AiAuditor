@@ -23,6 +23,10 @@ export default function SettingsPage() {
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+  // Workspace context state
+  const [workspaceContext, setWorkspaceContext] = useState('');
+  const [workspaceStatus, setWorkspaceStatus] = useState<FormStatus>('idle');
+  const workspaceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // SM-019: Cleanup timer refs for saved-state reset.
   const profileTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const passwordTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -34,11 +38,20 @@ export default function SettingsPage() {
     }
   }, [session, name, profileStatus]);
 
+  // Load workspace context on mount
+  useEffect(() => {
+    fetch('/api/settings/workspace')
+      .then((r) => r.json())
+      .then((d) => { if (typeof d.workspaceContext === 'string') setWorkspaceContext(d.workspaceContext); })
+      .catch(() => { /* ignore */ });
+  }, []);
+
   // Cleanup timers on unmount.
   useEffect(() => {
     return () => {
       if (profileTimerRef.current) clearTimeout(profileTimerRef.current);
       if (passwordTimerRef.current) clearTimeout(passwordTimerRef.current);
+      if (workspaceTimerRef.current) clearTimeout(workspaceTimerRef.current);
     };
   }, []);
 
@@ -106,6 +119,28 @@ export default function SettingsPage() {
       setNewPassword('');
       if (passwordTimerRef.current) clearTimeout(passwordTimerRef.current);
       passwordTimerRef.current = setTimeout(() => setPasswordStatus('idle'), 3000);
+    }
+  }
+
+  async function handleSaveWorkspace(e: React.FormEvent) {
+    e.preventDefault();
+    setWorkspaceStatus('saving');
+    try {
+      const res = await fetch('/api/settings/workspace', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceContext }),
+      });
+      if (!res.ok) {
+        const { error } = await res.json();
+        throw new Error(error ?? 'Failed to save');
+      }
+      setWorkspaceStatus('saved');
+      if (workspaceTimerRef.current) clearTimeout(workspaceTimerRef.current);
+      workspaceTimerRef.current = setTimeout(() => setWorkspaceStatus('idle'), 3000);
+    } catch (err) {
+      setWorkspaceStatus('error');
+      console.error(err);
     }
   }
 
@@ -228,6 +263,45 @@ export default function SettingsPage() {
 
         {/* Active sessions */}
         <ActiveSessions />
+
+        {/* Workspace Context */}
+        <section className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-1">Workspace context</h2>
+          <p className="text-sm text-gray-500 dark:text-zinc-500 mb-4">
+            Describe your stack, compliance requirements, or coding conventions. This is injected into every audit so findings are relevant to your specific environment.
+          </p>
+          <form onSubmit={handleSaveWorkspace} className="space-y-3">
+            <textarea
+              value={workspaceContext}
+              onChange={(e) => setWorkspaceContext(e.target.value)}
+              maxLength={2000}
+              rows={5}
+              placeholder={`Examples:\n- Stack: Next.js 15, Drizzle ORM, PostgreSQL, deployed on Railway\n- Standards: OWASP Top 10, GDPR — no PII in logs\n- Conventions: functional React components only, no class components`}
+              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm font-mono text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 resize-y transition-colors"
+            />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={workspaceStatus === 'saving'}
+                  className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 disabled-muted text-white font-medium rounded-xl px-4 py-2 min-h-[44px] text-sm transition-colors focus-ring"
+                >
+                  {workspaceStatus === 'saving' && (
+                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  )}
+                  {workspaceStatus === 'saving' ? 'Saving...' : 'Save context'}
+                </button>
+                {workspaceStatus === 'saved' && (
+                  <span className="text-sm text-green-600 dark:text-green-400 motion-safe:animate-fade-up">Saved!</span>
+                )}
+                {workspaceStatus === 'error' && (
+                  <span className="text-sm text-red-600 dark:text-red-400">Failed to save — try again</span>
+                )}
+              </div>
+              <span className="text-xs text-gray-400 dark:text-zinc-600">{workspaceContext.length}/2000</span>
+            </div>
+          </form>
+        </section>
 
         {/* Danger zone — CRED-002: Requires password re-entry */}
         <section className="bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900/50 rounded-xl p-6">

@@ -19,6 +19,9 @@ export const user = pgTable('user', {
   banExpires: timestamp('banExpires', { withTimezone: true }),
   // 2FA plugin
   twoFactorEnabled: boolean('twoFactorEnabled').default(false),
+  // Workspace context — injected as <workspace_context> into every audit system prompt.
+  // Stores compliance standards, domain info, coding conventions (max ~2000 chars).
+  workspaceContext: text('workspaceContext'),
 });
 
 export const session = pgTable('session', {

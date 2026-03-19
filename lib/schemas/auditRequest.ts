@@ -5,8 +5,9 @@
 // Constraints here must match the server-side ceilings in app/api/audit/route.ts.
 import { z } from 'zod';
 
-export const MAX_INPUT_CHARS = 60_000;
+export const MAX_INPUT_CHARS = 120_000;
 export const MAX_SYSTEM_PROMPT_CHARS = 10_000;
+export const MAX_RUNTIME_CONTEXT_CHARS = 15_000;
 
 export const VALID_AGENT_TYPES = [
   'code-quality',
@@ -215,11 +216,18 @@ const inputField = z
   .min(1, 'Input cannot be empty')
   .max(MAX_INPUT_CHARS, `Input too long (max ${MAX_INPUT_CHARS.toLocaleString()} characters)`);
 
+/** Optional stack trace, error log, or runtime context to help the auditor understand runtime behaviour. */
+const runtimeContextField = z
+  .string()
+  .max(MAX_RUNTIME_CONTEXT_CHARS, `Runtime context too long (max ${MAX_RUNTIME_CONTEXT_CHARS.toLocaleString()} characters)`)
+  .optional();
+
 export const builtInAuditRequestSchema = z.object({
   agentType: z.enum(VALID_AGENT_TYPES).describe('Built-in agent type'),
   input: inputField,
   /** When true, uses a higher rate limit for sequential site audit batches. */
   siteAudit: z.boolean().optional(),
+  runtimeContext: runtimeContextField,
 });
 
 export const customAuditRequestSchema = z.object({
@@ -232,6 +240,7 @@ export const customAuditRequestSchema = z.object({
       `System prompt too long (max ${MAX_SYSTEM_PROMPT_CHARS.toLocaleString()} characters)`,
     ),
   input: inputField,
+  runtimeContext: runtimeContextField,
 });
 
 /** Discriminated union covering both built-in and custom audit requests. */
