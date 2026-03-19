@@ -779,35 +779,34 @@ export default function CodeAuditPanel() {
           </div>
         )}
 
-        {/* Progress tracker — sticky during run (progress bar only), nav links when done */}
-        {(loading || (!loading && result)) && (
-          <div className="mb-6 sticky top-0 z-10 bg-gray-50/95 dark:bg-zinc-950/95 backdrop-blur-sm py-3 -mx-6 px-6">
-            {loading && selectedAgents.length > 0 && (
-              <div className="mb-3">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-medium text-gray-600 dark:text-zinc-400">
-                    {completedIndices.size === selectedAgents.length
-                      ? 'All audits complete'
-                      : runningIndices.size > 0
-                        ? `Running ${runningIndices.size} audits in parallel…`
-                        : 'Preparing…'}
-                  </span>
-                  <span className="text-xs font-mono text-gray-500 dark:text-zinc-500">
-                    {completedIndices.size}/{selectedAgents.length} complete · {elapsed}s
-                  </span>
-                </div>
-                <div className="w-full h-2 bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-500 ease-out"
-                    style={{ width: `${(completedIndices.size / selectedAgents.length) * 100}%` }}
-                  />
-                </div>
-              </div>
-            )}
+        {/* Progress bar — sticky during run, always compact (progress bar only, no badge list) */}
+        {loading && selectedAgents.length > 0 && (
+          <div className="mb-3 sticky top-0 z-10 bg-gray-50/95 dark:bg-zinc-950/95 backdrop-blur-sm py-3 -mx-6 px-6">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-medium text-gray-600 dark:text-zinc-400">
+                {completedIndices.size === selectedAgents.length
+                  ? 'All audits complete'
+                  : runningIndices.size > 0
+                    ? `Running ${runningIndices.size} audits in parallel…`
+                    : 'Preparing…'}
+              </span>
+              <span className="text-xs font-mono text-gray-500 dark:text-zinc-500">
+                {completedIndices.size}/{selectedAgents.length} complete · {elapsed}s
+              </span>
+            </div>
+            <div className="w-full h-2 bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${(completedIndices.size / selectedAgents.length) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
 
-            {/* Agent badge strip — max-height capped so sticky bar never fills the viewport */}
-            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-              {selectedAgents.map((agent, i) => {
+        {/* Agent badge strip — in normal page flow so it never traps scroll events */}
+        {(loading || (!loading && result)) && (
+          <div className="flex flex-wrap gap-1.5 mb-6">
+            {selectedAgents.map((agent, i) => {
                 const isActive = loading && runningIndices.has(i);
                 const isDone = completedIndices.has(i);
                 const isPending = loading && !isActive && !isDone;
@@ -850,7 +849,6 @@ export default function CodeAuditPanel() {
                   </span>
                 );
               })}
-            </div>
           </div>
         )}
 
