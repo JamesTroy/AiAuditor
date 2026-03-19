@@ -12,8 +12,10 @@ const PRODUCT_LINKS = [
 ] as const;
 
 const LEGAL_LINKS = [
+  { href: '/trust', label: 'Trust & Security' },
   { href: '/privacy', label: 'Privacy' },
   { href: '/terms', label: 'Terms' },
+  { href: '/security', label: 'Disclosure' },
   { href: '/about#contact', label: 'Contact' },
 ] as const;
 
@@ -40,8 +42,8 @@ export default function Footer() {
               <span className="text-sm font-semibold">Claudit</span>
             </Link>
             <p className="text-sm text-gray-500 dark:text-zinc-400 leading-relaxed max-w-xs">
-              Your code is sent to Anthropic&apos;s Claude API for analysis and never stored or used for training.{' '}
-              <Link href="/privacy#data-handling" className="underline underline-offset-2 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">Learn more</Link>.
+              Neither Claudit nor Anthropic trains on your code. Never stored.{' '}
+              <Link href="/trust" className="underline underline-offset-2 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">Trust & Security</Link>.
             </p>
             <Link
               href="/audit"

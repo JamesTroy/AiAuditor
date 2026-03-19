@@ -147,7 +147,7 @@ export default function Home() {
           {/* Privacy badge */}
           <p className="text-xs text-gray-500 dark:text-zinc-400 mb-12 flex items-center justify-center gap-1.5 motion-safe:animate-fade-up [animation-delay:0.2s]">
             <svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-            Processed via Anthropic&apos;s Claude API — never stored, never used for training.
+            Processed via Anthropic&apos;s Claude API — neither Claudit nor Anthropic trains on your code.
           </p>
 
           {/* Trust stats */}
