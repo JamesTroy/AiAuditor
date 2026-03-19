@@ -19,6 +19,33 @@ export default function PrivacyPage() {
         <h1 className="text-3xl font-bold tracking-tight mb-2">Privacy Policy</h1>
         <p className="text-sm text-gray-500 dark:text-zinc-500 mb-10">Last updated: March 2026</p>
 
+        {/* Plain-language data flow — for developers who want specifics before reading the full policy */}
+        <div className="mb-10 p-5 rounded-2xl bg-gray-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800">
+          <p className="text-xs font-bold uppercase tracking-widest text-violet-500 dark:text-violet-400 mb-4">What happens to your code, step by step</p>
+          <ol className="space-y-3 text-sm text-gray-700 dark:text-zinc-300">
+            <li className="flex gap-3">
+              <span className="w-5 h-5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+              <span>You paste code or enter a URL in your browser. Nothing leaves your device until you click <strong>Run audit</strong>.</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="w-5 h-5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+              <span>Your code is wrapped in structured prompts on our server and sent to <strong>Anthropic&apos;s Claude API</strong> over HTTPS (TLS 1.3). No other third party sees your code.</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="w-5 h-5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+              <span>Claude analyzes the code and streams findings back. <strong>Anthropic does not retain API inputs for model training</strong> — confirmed in their <a href="https://www.anthropic.com/legal/privacy" className="text-violet-600 dark:text-violet-400 underline" target="_blank" rel="noopener noreferrer">privacy policy</a> and <a href="https://www.anthropic.com/model-card" className="text-violet-600 dark:text-violet-400 underline" target="_blank" rel="noopener noreferrer">model card</a>.</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="w-5 h-5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">4</span>
+              <span>Results stream to your browser. If you&apos;re signed in, the report is saved to your dashboard. <strong>Your submitted code is not stored on our servers</strong> — only the audit report output.</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="w-5 h-5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">5</span>
+              <span>You can delete any audit from your history at any time. Account deletion removes all associated data within 30 days.</span>
+            </li>
+          </ol>
+        </div>
+
         <div className="space-y-10 text-sm leading-relaxed text-gray-700 dark:text-zinc-300">
           {/* 1. Controller */}
           <Section title="1. Who we are">

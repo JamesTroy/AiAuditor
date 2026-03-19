@@ -40,8 +40,12 @@ const FAQ_ITEMS = [
     a: `No — and it's a fair question. Claudit uses Claude (Anthropic's model), but the work is in the prompts, not the model. Each of the ${agents.length}+ auditors is a carefully engineered prompt that encodes a specific domain — OWASP Top 10, WCAG 2.2 AA, Core Web Vitals, SQL injection patterns, etc. The model supplies language understanding; the auditor supplies the expertise. Think of it like the difference between hiring a generalist and hiring someone who has read every OWASP advisory twice.`,
   },
   {
+    q: 'What does Claudit miss or get wrong?',
+    a: 'A few known limitations worth knowing upfront: (1) We analyze code statically — runtime behavior, production load patterns, and environment-specific bugs are outside scope. (2) Findings marked POSSIBLE or LIKELY require human judgment; not everything flagged is a real issue. (3) Codebases over ~30,000 characters are sampled, not analyzed in full. (4) Claudit is not a replacement for a specialist security audit in regulated industries (PCI-DSS, HIPAA, SOC 2 certification). Treat every finding as a candidate for your review — not a final verdict.',
+  },
+  {
     q: 'How is Claudit different from SonarQube, Snyk, or a linter?',
-    a: `Traditional tools cover one domain — SonarQube for code quality, Snyk for dependency security, axe for accessibility. Claudit runs ${agents.length}+ specialized auditors across security, performance, accessibility, SEO, infrastructure, design, and marketing in a single pass. One tool instead of five.`,
+    a: `Traditional tools each cover one domain — SonarQube for code quality, Snyk for dependency security, axe for accessibility. Claudit runs ${agents.length}+ specialized auditors across all of those domains in a single pass, without the setup. It complements your existing tools rather than replacing them — think of it as a fast first-pass review before you invest in deeper tooling.`,
   },
   {
     q: 'Why is Claudit free?',
@@ -292,6 +296,39 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ─── Honest limitations ─── */}
+      <section className="px-4 sm:px-6 pb-24">
+        <div className="max-w-3xl mx-auto">
+          <p className="text-xs font-semibold uppercase tracking-widest text-violet-500 dark:text-violet-400 mb-3 text-center">Honest assessment</p>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center text-gray-900 dark:text-zinc-100 mb-4">
+            Where Claudit helps — and where it doesn&apos;t
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-zinc-400 text-center mb-10 max-w-xl mx-auto">
+            Every finding is a suggestion. You decide what to act on.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50">
+              <p className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-3">Works well for</p>
+              <ul className="space-y-2 text-sm text-gray-700 dark:text-zinc-300">
+                <li className="flex gap-2"><span className="text-emerald-500 shrink-0 mt-0.5">✓</span>Patterns static analysis misses — auth logic, cross-file data flow, insecure defaults</li>
+                <li className="flex gap-2"><span className="text-emerald-500 shrink-0 mt-0.5">✓</span>Fast second opinion before a code review or security engagement</li>
+                <li className="flex gap-2"><span className="text-emerald-500 shrink-0 mt-0.5">✓</span>Coverage across domains you don&apos;t specialize in — accessibility, SEO, infrastructure</li>
+                <li className="flex gap-2"><span className="text-emerald-500 shrink-0 mt-0.5">✓</span>Common OWASP Top 10, WCAG 2.2 AA, and GDPR Article 25 patterns</li>
+              </ul>
+            </div>
+            <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50">
+              <p className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-3">Less reliable for</p>
+              <ul className="space-y-2 text-sm text-gray-700 dark:text-zinc-300">
+                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Runtime behavior — production load, environment bugs, and race conditions</li>
+                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Issues requiring deep business context or proprietary domain knowledge</li>
+                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Codebases over ~30,000 characters — we analyze a sample, not the full codebase</li>
+                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Replacing a specialist audit for regulated industries (PCI-DSS, HIPAA, SOC 2)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ─── Mid-page CTA ─── */}
       <section className="px-4 sm:px-6 pb-24">
         <div className="max-w-2xl mx-auto text-center">
@@ -389,7 +426,7 @@ export default function Home() {
                 Your next deploy could be safer
               </h2>
               <p className="text-violet-200 text-sm sm:text-base mb-8 max-w-md mx-auto">
-                Paste code or enter a URL — results stream in under 60 seconds. No account, no credit card.
+                Paste code or enter a URL — most audits stream in under 60 seconds. No account, no credit card.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
