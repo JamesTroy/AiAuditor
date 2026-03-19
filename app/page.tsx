@@ -129,15 +129,9 @@ export default function Home() {
               >
                 Audit Your Code Free
               </Link>
-              <Link
-                href="/audit?tab=url"
-                className="px-8 py-3.5 rounded-xl font-semibold text-base text-gray-700 dark:text-zinc-200 bg-white/80 dark:bg-zinc-800/80 hover:bg-white dark:hover:bg-zinc-700 active:scale-[0.98] transition-all focus-ring whitespace-nowrap border border-gray-200 dark:border-zinc-700 shadow-sm backdrop-blur-sm"
-              >
-                Audit a Live Site
-              </Link>
             </div>
             <p className="text-xs text-gray-400 dark:text-zinc-500">
-              No account required · paste code or enter a URL · results stream live
+              No account required · paste code · results stream live
             </p>
             <p className="text-xs text-gray-400 dark:text-zinc-500">
               Results are AI-generated — always verify critical findings before acting.
@@ -350,12 +344,6 @@ export default function Home() {
             >
               Try It on Your Code
             </Link>
-            <Link
-              href="/audit?tab=url"
-              className="text-sm text-gray-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors focus-ring underline underline-offset-4"
-            >
-              or audit a live site <span aria-hidden="true">&rarr;</span>
-            </Link>
           </div>
         </div>
       </section>
@@ -437,7 +425,7 @@ export default function Home() {
                 Your next deploy could be safer
               </h2>
               <p className="text-violet-200 text-sm sm:text-base mb-8 max-w-md mx-auto">
-                Paste code or enter a URL — most audits stream in under 60 seconds. No account, no credit card.
+                Paste code — most audits stream in under 60 seconds. No account, no credit card.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
@@ -445,12 +433,6 @@ export default function Home() {
                   className="inline-block px-8 py-3.5 rounded-xl font-semibold text-base text-violet-700 bg-white hover:bg-violet-50 active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-violet-600 shadow-lg whitespace-nowrap"
                 >
                   Audit Your Code
-                </Link>
-                <Link
-                  href="/audit?tab=url"
-                  className="inline-block px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-white/15 hover:bg-white/25 active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white border border-white/25 whitespace-nowrap backdrop-blur-sm"
-                >
-                  Audit a Live Site
                 </Link>
               </div>
             </div>

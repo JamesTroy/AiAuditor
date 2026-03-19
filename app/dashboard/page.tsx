@@ -232,21 +232,15 @@ export default async function DashboardPage({
                 const daysSinceSignup = Math.floor((Date.now() - new Date(session.user.createdAt).getTime()) / 86400000);
                 if (daysSinceSignup === 0) return 'Run your first audit to see severity-rated findings, scores, and trends here.';
                 if (daysSinceSignup <= 3) return 'You signed up a few days ago \u2014 your first audit takes under 60 seconds.';
-                return 'You haven\u2019t run an audit yet. Enter any public URL to get started \u2014 it takes under 60 seconds.';
+                return 'You haven\u2019t run an audit yet. Paste any code to get started \u2014 it takes under 60 seconds.';
               })()}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
-                href="/audit?tab=url"
+                href="/audit"
                 className="inline-block px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-ring"
               >
-                Run a Site Audit
-              </Link>
-              <Link
-                href="/audit?tab=url&url=https%3A%2F%2Fexample.com"
-                className="inline-block px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-zinc-400 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-600 transition-colors focus-ring"
-              >
-                Try with a sample URL
+                Run an Audit
               </Link>
             </div>
           </div>
