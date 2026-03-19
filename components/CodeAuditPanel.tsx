@@ -10,6 +10,38 @@ import { useSession } from '@/lib/auth-client';
 
 // ---------- Constants ----------
 
+// A realistic snippet with several intentional issues across multiple categories.
+// Used by the "Try a sample" button to give first-time users an immediate demo.
+const SAMPLE_CODE = `// pages/api/users.js — Next.js API route
+import db from '../lib/db';
+
+const ADMIN_SECRET = 'sk-prod-8f72jd92kl0p3mn';  // ← hardcoded secret
+
+export default async function handler(req, res) {
+  const { id } = req.query;
+
+  // Fetch user — SQL built by string concat
+  const user = await db.query('SELECT * FROM users WHERE id = ' + id);
+
+  if (req.method === 'POST') {
+    const { name, email, password } = req.body;
+
+    // Password stored in plain text, no validation
+    await db.query(
+      \`INSERT INTO users (name, email, password, role)
+       VALUES ('\${name}', '\${email}', '\${password}', 'admin')\`
+    );
+
+    console.log('Created user:', req.body);   // leaks PII to logs
+    res.status(200).json({ success: true, secret: ADMIN_SECRET });
+
+  } else {
+    // No auth check — anyone can read any user by ID
+    res.status(200).json(user.rows[0]);
+  }
+}
+`.trim();
+
 /**
  * Default agent IDs — the most universally useful set for any code.
  * detectAgents() may add more based on what's in the paste.
@@ -98,6 +130,8 @@ export default function CodeAuditPanel() {
   // --- Agent Selection ---
   const [selected, setSelected] = useState<Set<string>>(() => new Set(SEED_IDS));
   const [pickerOpen, setPickerOpen] = useState(false);
+  // Tracks which category to highlight when the picker opens based on detection
+  const [suggestedCategory, setSuggestedCategory] = useState<string | null>(null);
 
   // --- Run state ---
   const [result, setResult] = useState('');
@@ -161,8 +195,22 @@ export default function CodeAuditPanel() {
           framework: detection.framework,
           addedIds: newIds,
         });
+        // Pick the most relevant category to highlight in the picker
+        const tag = detection.framework ?? detection.language;
+        const cat =
+          tag && ['react', 'nextjs', 'vue', 'angular', 'svelte', 'solidjs', 'astro', 'tailwind', 'remix'].includes(tag)
+            ? 'Design'
+            : tag && ['express', 'nestjs', 'fastify', 'hono', 'trpc', 'graphql', 'websocket'].includes(tag)
+              ? 'Infrastructure'
+              : detection.patterns.includes('auth') || detection.patterns.includes('sql')
+                ? 'Security & Privacy'
+                : detection.patterns.includes('testing')
+                  ? 'Testing'
+                  : 'Code Quality';
+        setSuggestedCategory(cat);
       } else {
         setAutoDetectInfo(null);
+        setSuggestedCategory(null);
       }
     },
     [loading, selected],
@@ -458,6 +506,22 @@ export default function CodeAuditPanel() {
           />
         </div>
 
+        {/* Sample code button — only shown when textarea is empty */}
+        {!code && !loading && !result && (
+          <div className="mb-3 flex items-center gap-2">
+            <button
+              onClick={() => handleCodeChange(SAMPLE_CODE)}
+              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-dashed border-gray-300 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:border-violet-400 dark:hover:border-violet-500 hover:text-violet-600 dark:hover:text-violet-300 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />
+              </svg>
+              Try a sample
+            </button>
+            <span className="text-xs text-gray-400 dark:text-zinc-600">— see what a real audit looks like</span>
+          </div>
+        )}
+
         {/* Auto-detect badge */}
         {autoDetectInfo && !loading && !result && (
           <div className="mb-3 flex items-center gap-2 flex-wrap">
@@ -514,18 +578,31 @@ export default function CodeAuditPanel() {
               className="flex items-center justify-between w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 transition-colors mb-3 group"
               aria-expanded={pickerOpen}
             >
-              <span className="flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-300">
+              <span className="flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-300 min-w-0">
                 <svg
-                  className={`w-4 h-4 transition-transform text-gray-400 dark:text-zinc-500 ${pickerOpen ? 'rotate-90' : ''}`}
+                  className={`w-4 h-4 shrink-0 transition-transform text-gray-400 dark:text-zinc-500 ${pickerOpen ? 'rotate-90' : ''}`}
                   fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
-                <span className="font-medium">
-                  {selected.size} of {allAgents.length} auditors selected
+                <span className="font-medium shrink-0">
+                  {selected.size} auditor{selected.size !== 1 ? 's' : ''} selected
                 </span>
+                {!pickerOpen && selectedAgents.length > 0 && (
+                  <span className="hidden sm:flex items-center gap-1 min-w-0 overflow-hidden">
+                    {selectedAgents.slice(0, 4).map((a) => (
+                      <span key={a.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-200 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 shrink-0">
+                        <span className={`w-1.5 h-1.5 rounded-full ${dotColor(a.accentClass)}`} />
+                        {a.name}
+                      </span>
+                    ))}
+                    {selectedAgents.length > 4 && (
+                      <span className="text-xs text-gray-400 dark:text-zinc-500 shrink-0">+{selectedAgents.length - 4} more</span>
+                    )}
+                  </span>
+                )}
               </span>
-              <span className="text-xs text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-300 transition-colors">
+              <span className="text-xs text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-300 transition-colors shrink-0 ml-2">
                 {pickerOpen ? 'Close' : 'Customize'}
               </span>
             </button>
@@ -557,14 +634,25 @@ export default function CodeAuditPanel() {
                   </span>
                 </div>
 
+                {/* Smart suggestion tip */}
+                {suggestedCategory && (
+                  <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/60 text-xs text-violet-700 dark:text-violet-300">
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                    </svg>
+                    Based on your code, <strong className="font-semibold">{suggestedCategory}</strong> auditors are highlighted below.
+                  </div>
+                )}
+
                 {/* Category sections */}
                 <div className="space-y-4">
                   {Array.from(grouped.entries()).map(([cat, catAgents]) => {
                     if (catAgents.length === 0) return null;
                     const allSelected = catAgents.every((a) => selected.has(a.id));
                     const someSelected = catAgents.some((a) => selected.has(a.id));
+                    const isHighlighted = suggestedCategory === cat;
                     return (
-                      <div key={cat}>
+                      <div key={cat} className={isHighlighted ? 'rounded-lg ring-1 ring-violet-400/40 dark:ring-violet-600/40 bg-violet-50/40 dark:bg-violet-950/20 p-2 -mx-2' : ''}>
                         <div className="flex items-center justify-between mb-2">
                           <button
                             onClick={() => selectCategory(cat, !allSelected)}
