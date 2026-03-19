@@ -33,7 +33,7 @@ const featuredAgents = FEATURED_IDS.map((id) => agents.find((a) => a.id === id)!
 const FAQ_ITEMS = [
   {
     q: 'What happens to my code?',
-    a: 'Your code is analyzed in memory and immediately discarded — it is never stored on our servers, never used for model training, and never shared with third parties. We use no advertising and no third-party tracking scripts.',
+    a: 'Your code is sent to Anthropic\'s Claude API for analysis, then immediately discarded — it is never stored on our servers and never used for model training. Anthropic does not retain API inputs for training. We use no advertising and no third-party tracking scripts.',
   },
   {
     q: 'How is Claudit different from SonarQube, Snyk, or a linter?',
@@ -108,7 +108,7 @@ export default function Home() {
           {/* Sub-headline */}
           <p className="text-gray-600 dark:text-zinc-300 text-base sm:text-lg max-w-2xl mx-auto mb-9 leading-relaxed motion-safe:animate-fade-up [animation-delay:0.1s]">
             Stop juggling SonarQube, Snyk, axe, and Lighthouse. Claudit runs{' '}
-            <strong className="text-gray-900 dark:text-white font-semibold">{agents.length} specialized auditors</strong>{' '}
+            <strong className="text-gray-900 dark:text-white font-semibold">{agents.length} AI-powered auditors</strong>{' '}
             in parallel — covering security, performance, accessibility, SEO, and compliance in a single pass.
           </p>
 
@@ -136,14 +136,14 @@ export default function Home() {
           {/* Privacy badge */}
           <p className="text-xs text-gray-500 dark:text-zinc-400 mb-12 flex items-center justify-center gap-1.5 motion-safe:animate-fade-up [animation-delay:0.2s]">
             <svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-            Your code is never stored, never used for training, and never shared with third parties.
+            Your code is sent to Anthropic&apos;s Claude API for analysis, never stored, and never used for training.
           </p>
 
           {/* Trust stats */}
           <div className="inline-flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-gray-500 dark:text-zinc-400 px-8 py-4 rounded-2xl bg-white/60 dark:bg-zinc-900/60 border border-gray-200/60 dark:border-zinc-800/60 backdrop-blur-sm shadow-sm motion-safe:animate-fade-up [animation-delay:0.25s]">
             <div className="flex items-center gap-2">
               <span className="text-violet-600 dark:text-violet-400 font-bold text-xl tabular-nums">{agents.length}</span>
-              <span>specialized auditors</span>
+              <span>AI-powered auditors</span>
             </div>
             <span className="hidden sm:block w-px h-5 bg-gray-200 dark:bg-zinc-700" aria-hidden="true" />
             <div className="flex items-center gap-2">

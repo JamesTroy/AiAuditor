@@ -172,6 +172,8 @@ export default function SiteAuditPanel() {
   const [budgetExhausted, setBudgetExhausted] = useState(false);
   // UI: Collapse agent badges after audit completes so they don't cover the synthesis prompt.
   const [badgesCollapsed, setBadgesCollapsed] = useState(false);
+  // AU-015: Session persistence for anonymous users
+  const [restoredFromSession, setRestoredFromSession] = useState(false);
 
   // Derive ordered list of selected agents for progress tracking
   const selectedAgents = useMemo(
@@ -265,6 +267,27 @@ export default function SiteAuditPanel() {
     };
   }, []);
 
+  // AU-015: Restore last site audit from sessionStorage for anonymous users
+  useEffect(() => {
+    if (session) return;
+    try {
+      const saved = sessionStorage.getItem('aiaudit:last-site-audit');
+      if (saved) {
+        const { result: r } = JSON.parse(saved) as { result: string };
+        if (r) { setResult(r); setRestoredFromSession(true); }
+      }
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // AU-015: Persist completed site audit to sessionStorage for anonymous users
+  useEffect(() => {
+    if (loading || !result) return;
+    try {
+      sessionStorage.setItem('aiaudit:last-site-audit', JSON.stringify({ result }));
+    } catch { /* ignore */ }
+  }, [loading, result]);
+
   // SAFE-007: Cooldown countdown timer.
   useEffect(() => {
     if (cooldownUntil <= Date.now()) { setCooldownRemaining(0); return; }
@@ -346,6 +369,8 @@ export default function SiteAuditPanel() {
     setLoading(true);
     setResult('');
     setError('');
+    setRestoredFromSession(false);
+    try { sessionStorage.removeItem('aiaudit:last-site-audit'); } catch { /* ignore */ }
     setRunningIndices(new Set());
     setCompletedIndices(new Set());
     setErrorCount(0);
@@ -959,7 +984,23 @@ export default function SiteAuditPanel() {
         {loading && !result && (
           <div className="flex items-center gap-2 text-gray-500 dark:text-zinc-500 text-sm mb-6">
             <span className="w-2 h-2 rounded-full bg-violet-500 motion-safe:animate-pulse" aria-hidden="true" />
-            <span>Fetching and analyzing website…</span>
+            <span>Fetching and analyzing website… <span className="text-xs text-gray-400 dark:text-zinc-600">(usually under 60s)</span></span>
+          </div>
+        )}
+
+        {/* AU-015: Restore banner for anonymous users */}
+        {restoredFromSession && !session && (
+          <div className="mb-4 flex items-start gap-3 px-4 py-3 rounded-xl bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 text-sm">
+            <svg className="w-4 h-4 mt-0.5 shrink-0 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-violet-800 dark:text-violet-300">
+              Last audit restored from this browser session.{' '}
+              <a href="/signup?callbackUrl=/audit" className="font-semibold underline underline-offset-2 hover:text-violet-600 dark:hover:text-violet-200 transition-colors">
+                Create a free account
+              </a>
+              {' '}to save history permanently.
+            </span>
           </div>
         )}
 
@@ -1016,6 +1057,14 @@ export default function SiteAuditPanel() {
               )}
               <div ref={resultEndRef} />
             </div>
+            {!loading && result && (
+              <div className="px-4 py-2 border-t border-gray-100 dark:border-zinc-800 flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-zinc-500">
+                <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                </svg>
+                AI-generated — findings may contain errors. Verify critical issues before acting.
+              </div>
+            )}
           </div>
         )}
 

@@ -345,9 +345,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // PROMPT-INJ-001: Strip HTML comments from fetched content before LLM ingestion.
-    // Attackers embed adversarial instructions in HTML comments to manipulate audit output.
-    const sanitizedData = data.replace(/<!--[\s\S]*?-->/g, '');
+    // PROMPT-INJ-001: Strip HTML comments and script/style content before LLM ingestion.
+    // HTML comments and JS/CSS block comments are the two primary vectors for embedding
+    // adversarial instructions in attacker-controlled pages. Strip both.
+    const sanitizedData = data
+      // Remove HTML comments
+      .replace(/<!--[\s\S]*?-->/g, '')
+      // Replace <script> block content with a placeholder (keeps tag for context)
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '<script>[removed]</script>')
+      // Replace <style> block content with a placeholder
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '<style>[removed]</style>');
 
     // FP-004: Warn agents when HTML was truncated so they don't flag
     // "missing" elements that exist beyond the truncation boundary.

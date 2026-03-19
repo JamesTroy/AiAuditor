@@ -48,7 +48,7 @@ const CSP_TAIL = [
 // PERF-021: Pre-serialize Report-To header at module scope.
 const REPORT_TO_HEADER = JSON.stringify({
   group: 'csp-endpoint',
-  max_age: 3600,
+  max_age: 86400,
   endpoints: [{ url: '/api/csp-report' }],
 });
 

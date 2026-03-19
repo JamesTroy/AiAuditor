@@ -148,6 +148,9 @@ export default function CodeAuditPanel() {
   const [synthStatus, setSynthStatus] = useState<SynthStatus>('idle');
   const [synthError, setSynthError] = useState('');
 
+  // AU-015: Session persistence for anonymous users
+  const [restoredFromSession, setRestoredFromSession] = useState(false);
+
   const abortRef = useRef<AbortController | null>(null);
   const synthAbortRef = useRef<AbortController | null>(null);
   const resultEndRef = useRef<HTMLDivElement>(null);
@@ -272,6 +275,27 @@ export default function CodeAuditPanel() {
     };
   }, []);
 
+  // AU-015: Restore last audit from sessionStorage for anonymous users
+  useEffect(() => {
+    if (session) return; // logged-in users have real history
+    try {
+      const saved = sessionStorage.getItem('aiaudit:last-code-audit');
+      if (saved) {
+        const { result: r } = JSON.parse(saved) as { result: string };
+        if (r) { setResult(r); setRestoredFromSession(true); }
+      }
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // AU-015: Persist completed audit to sessionStorage for anonymous users
+  useEffect(() => {
+    if (loading || !result) return;
+    try {
+      sessionStorage.setItem('aiaudit:last-code-audit', JSON.stringify({ result }));
+    } catch { /* ignore */ }
+  }, [loading, result]);
+
   // ---------- Single-agent streaming ----------
   async function streamSingleAudit(
     agentId: string,
@@ -328,6 +352,8 @@ export default function CodeAuditPanel() {
     setSynthStatus('idle');
     setSynthesis('');
     setPickerOpen(false);
+    setRestoredFromSession(false);
+    try { sessionStorage.removeItem('aiaudit:last-code-audit'); } catch { /* ignore */ }
 
     const agentsToRun = allAgents.filter((a) => selected.has(a.id));
     const CONCURRENCY = 10;
@@ -792,7 +818,19 @@ export default function CodeAuditPanel() {
         {loading && !result && (
           <div className="flex items-center gap-2 text-gray-500 dark:text-zinc-500 text-sm mb-6">
             <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
-            <span>Dispatching auditors…</span>
+            <span>Dispatching auditors… <span className="text-xs text-gray-400 dark:text-zinc-600">(usually under 30s)</span></span>
+          </div>
+        )}
+
+        {/* AU-015: Session restore banner for anonymous users */}
+        {restoredFromSession && !session && (
+          <div className="mb-4 flex items-start gap-3 px-4 py-3 rounded-xl bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 text-sm">
+            <svg className="w-4 h-4 text-violet-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z" /></svg>
+            <span className="text-violet-800 dark:text-violet-300">
+              Last audit restored from this browser session.{' '}
+              <a href="/signup?callbackUrl=/audit" className="font-semibold underline underline-offset-2 hover:text-violet-600 dark:hover:text-violet-200 transition-colors">Create a free account</a>
+              {' '}to save history permanently.
+            </span>
           </div>
         )}
 
@@ -846,6 +884,14 @@ export default function CodeAuditPanel() {
               )}
               <div ref={resultEndRef} />
             </div>
+            {!loading && result && (
+              <div className="px-4 py-2 border-t border-gray-100 dark:border-zinc-800 flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-zinc-500">
+                <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                </svg>
+                AI-generated — findings may contain errors. Verify critical issues before acting.
+              </div>
+            )}
           </div>
         )}
 
