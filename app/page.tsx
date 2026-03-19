@@ -306,7 +306,7 @@ export default function Home() {
           <p className="text-sm text-gray-500 dark:text-zinc-400 text-center mb-10 max-w-xl mx-auto">
             Every finding is a suggestion. You decide what to act on.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50">
               <p className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-3">Works well for</p>
               <ul className="space-y-2 text-sm text-gray-700 dark:text-zinc-300">
@@ -317,13 +317,24 @@ export default function Home() {
               </ul>
             </div>
             <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50">
-              <p className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-3">Less reliable for</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-3">Hard limits</p>
               <ul className="space-y-2 text-sm text-gray-700 dark:text-zinc-300">
-                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Runtime behavior — paste a stack trace in the runtime context field to narrow this gap</li>
-                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Proprietary domain rules — add your standards and conventions in workspace context</li>
-                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Very large monorepos — up to 120k characters, structure-aware; split by module for more</li>
+                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Very large monorepos — analyses up to 120k characters; split by module for full coverage</li>
                 <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Replacing a specialist audit for regulated industries (PCI-DSS, HIPAA, SOC 2)</li>
               </ul>
+            </div>
+          </div>
+          <div className="p-5 rounded-2xl bg-violet-50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-900/50">
+            <p className="text-xs font-bold uppercase tracking-widest text-violet-600 dark:text-violet-400 mb-3">Works better with context</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700 dark:text-zinc-300">
+              <div className="flex gap-2">
+                <span className="text-violet-500 shrink-0 mt-0.5">↑</span>
+                <span><strong>Runtime failures</strong> — paste a stack trace or error log into the runtime context field and auditors treat confirmed failures as evidence, not speculation</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-violet-500 shrink-0 mt-0.5">↑</span>
+                <span><strong>Domain-specific rules</strong> — describe your stack, compliance standards, and conventions in <a href="/settings" className="underline text-violet-600 dark:text-violet-400">workspace context</a> and every audit is tailored to your environment</span>
+              </div>
             </div>
           </div>
         </div>
