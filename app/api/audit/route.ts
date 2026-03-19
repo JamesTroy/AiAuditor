@@ -155,6 +155,9 @@ function makeStream(
           const fullResult = resultBuffer;
           const rawScore = extractScore(fullResult);
           const score = sanityCheckScore(rawScore, fullResult);
+          if (score === null && fullResult.length > 200) {
+            log('warn', 'score_extraction_null', { requestId: logMeta.requestId, auditId: auditRecord.id, agentType: logMeta.agentType, resultTail: fullResult.slice(-200) });
+          }
           try {
             // FP-011: Only update if still 'running' to prevent a stale
             // stream from overwriting a newer completed audit on re-run.
@@ -179,6 +182,7 @@ function makeStream(
             log('error', 'audit_save_failed', { requestId: logMeta.requestId, auditId: auditRecord.id, error: String(err) });
           }
         }
+        controller.close();
       } catch (err) {
         const isTimeout = err instanceof Error && err.name === 'TimeoutError';
         log('error', isTimeout ? 'stream_timeout' : 'anthropic_stream_error', {
@@ -427,7 +431,7 @@ export async function POST(req: NextRequest) {
   const agent = getAgent(data.agentType);
   if (!agent) {
     log('error', 'agent_not_found_after_allowlist', { requestId, ip: anonIp, agentType: data.agentType });
-    return new Response('Unknown agent type', {
+    return new Response(`Unknown agent type "${data.agentType}". Check /audit for available agents.`, {
       status: 400,
       headers: { 'X-Request-Id': requestId },
     });

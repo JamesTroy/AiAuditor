@@ -404,7 +404,7 @@ export default function CodeAuditPanel() {
       const res = await fetch('/api/synthesize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ results: result }),
+        body: JSON.stringify({ results: result, expectedAgentCount: selected.size }),
         signal: synthAbortRef.current.signal,
       });
 

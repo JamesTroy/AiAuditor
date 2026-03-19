@@ -60,6 +60,21 @@ const PRESETS: { label: string; description: string; ids: string[] }[] = [
     ids: allAgents.filter(a => a.category === 'Design').map(a => a.id),
   },
   {
+    label: 'AI / ML Audit',
+    description: 'LLM safety, prompts, RAG, and cost',
+    ids: allAgents.filter(a => a.category === 'AI / LLM').map(a => a.id),
+  },
+  {
+    label: 'Testing & Quality',
+    description: 'Test architecture, e2e, load, and contracts',
+    ids: allAgents.filter(a => a.category === 'Testing').map(a => a.id),
+  },
+  {
+    label: 'Developer Experience',
+    description: 'Docs, SDKs, and DX improvements',
+    ids: allAgents.filter(a => a.category === 'Developer Experience').map(a => a.id),
+  },
+  {
     label: 'Full Audit',
     description: `All ${allAgents.length} auditors — takes longer`,
     ids: allAgents.map(a => a.id),
@@ -579,7 +594,7 @@ export default function SiteAuditPanel() {
       const res = await fetch('/api/synthesize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ results: result }),
+        body: JSON.stringify({ results: result, expectedAgentCount: selected.size }),
         signal: synthAbortRef.current.signal,
       });
 

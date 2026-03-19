@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { auditLimiter } from '@/lib/rateLimit';
+import { synthesisLimiter } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { STREAM_RESPONSE_HEADERS, ALLOWED_ORIGINS } from '@/lib/config/apiHeaders';
 import { escapeXml } from '@/lib/escapeXml';
@@ -58,9 +58,11 @@ const STREAM_TIMEOUT_MS = 120_000;
 
 
 export async function POST(req: NextRequest) {
+  const requestId = crypto.randomUUID();
+
   const origin = req.headers.get('origin');
   if (origin && !ALLOWED_ORIGINS.has(origin)) {
-    return new Response('Forbidden', { status: 403 });
+    return new Response('Forbidden', { status: 403, headers: { 'X-Request-Id': requestId } });
   }
 
   const ip =
@@ -68,24 +70,32 @@ export async function POST(req: NextRequest) {
     req.headers.get('x-real-ip') ??
     '127.0.0.1';
 
-  const rl = await auditLimiter.check(ip);
+  const rl = await synthesisLimiter.check(ip);
   if (!rl.allowed) {
-    return new Response('Too many requests.', { status: 429, headers: rl.headers });
+    return new Response('Too many requests.', { status: 429, headers: { ...rl.headers, 'X-Request-Id': requestId } });
   }
 
-  let body: { results?: unknown };
+  let body: { results?: unknown; expectedAgentCount?: unknown };
   try {
     body = await req.json();
   } catch {
-    return new Response('Invalid JSON', { status: 400 });
+    return new Response('Invalid JSON', { status: 400, headers: { 'X-Request-Id': requestId } });
   }
 
   const results = typeof body.results === 'string' ? body.results : '';
   if (!results || results.length < 100) {
-    return new Response('Missing or too short audit results', { status: 400 });
+    return new Response('Missing or too short audit results', { status: 400, headers: { 'X-Request-Id': requestId } });
   }
 
   const truncated = results.slice(0, MAX_INPUT_CHARS);
+
+  // Track partial coverage: count agent sections in the combined results
+  const expectedCount = typeof body.expectedAgentCount === 'number' ? body.expectedAgentCount : null;
+  const sectionCount = (truncated.match(/^={10,}$/gm) || []).length / 2; // Each agent has a top+bottom separator
+  let coverageWarning = '';
+  if (expectedCount && sectionCount > 0 && sectionCount < expectedCount * 0.9) {
+    coverageWarning = `> **Note:** Only ${Math.round(sectionCount)} of ${expectedCount} expected agent reports were received. Some audit coverage may be incomplete.\n\n`;
+  }
 
   try {
     const stream = anthropicProvider.streamAudit(
@@ -94,11 +104,37 @@ export async function POST(req: NextRequest) {
       { signal: AbortSignal.timeout(STREAM_TIMEOUT_MS) },
     );
 
+    // If there's a coverage warning, prepend it before the stream
+    if (coverageWarning) {
+      const encoder = new TextEncoder();
+      const warningBytes = encoder.encode(coverageWarning);
+      const combined = new ReadableStream({
+        async start(controller) {
+          controller.enqueue(warningBytes);
+          const reader = stream.getReader();
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              controller.enqueue(value);
+            }
+          } finally {
+            reader.releaseLock();
+            controller.close();
+          }
+        },
+      });
+      return new Response(combined, {
+        headers: { ...STREAM_RESPONSE_HEADERS, 'X-Request-Id': requestId },
+      });
+    }
+
     return new Response(stream, {
-      headers: STREAM_RESPONSE_HEADERS,
+      headers: { ...STREAM_RESPONSE_HEADERS, 'X-Request-Id': requestId },
     });
   } catch (err) {
-    console.error('[synthesize] stream error', err instanceof Error ? err.message : err);
-    return new Response('Failed to generate synthesis. Please try again.', { status: 500 });
+    // eslint-disable-next-line no-console
+    console.error(JSON.stringify({ ts: new Date().toISOString(), level: 'error', event: 'synthesis_error', requestId, error: err instanceof Error ? err.message : String(err) }));
+    return new Response(`Failed to generate synthesis. Please try again. Ref: ${requestId}`, { status: 500, headers: { 'X-Request-Id': requestId } });
   }
 }

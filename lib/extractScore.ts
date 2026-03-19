@@ -8,7 +8,9 @@
  * 2. Heading-style score: "## Overall Score: N/100"
  * 3. Bold/emphasized score: "**Overall Score: 72/100**"
  * 4. Explicit "N/100" — last match (overall appears at end)
+ * 4b. Explicit "N/10" — last match
  * 5. Free-text "Overall Score: N" or "Overall: N/10"
+ * 6. Fallback: scan for Composite/Overall row in any table
  */
 export function extractScore(text: string): number | null {
   // 1. Table row: | **Overall** | 72 | or | **Composite** | 8.5/10 |
@@ -17,7 +19,7 @@ export function extractScore(text: string): number | null {
     /\|\s*\*{0,2}(?:Overall|Composite|Total|Final|Net Risk Posture)(?:\s+Score)?\*{0,2}\s*\|\s*(\d{1,3}(?:\.\d+)?)\s*(?:\/\s*(\d+))?\s*\|/i,
   );
   if (tableOverall) {
-    // Most agents use 1-10 scale in tables; if no denominator and value ≤ 10,
+    // All agent prompts use 1-10 scale in tables; if no denominator and value ≤ 10,
     // assume it's on a 1-10 scale and multiply by 10.
     return normalizeScore(tableOverall[1], tableOverall[2] ?? (parseFloat(tableOverall[1]) <= 10 ? '10' : undefined));
   }
@@ -68,6 +70,22 @@ export function extractScore(text: string): number | null {
   if (overallLine) {
     return normalizeScore(overallLine[1], overallLine[2]);
   }
+
+  // 6. Fallback: scan for any table row with a bold label containing score-like number
+  const fallbackTable = text.match(
+    /\|\s*\*{1,2}[^|]+\*{1,2}\s*\|\s*(\d{1,3}(?:\.\d+)?)\s*(?:\/\s*(\d+))?\s*\|[^|]*\|\s*$/im,
+  );
+  if (fallbackTable) {
+    return normalizeScore(fallbackTable[1], fallbackTable[2] ?? (parseFloat(fallbackTable[1]) <= 10 ? '10' : undefined));
+  }
+
+  // eslint-disable-next-line no-console
+  console.warn(JSON.stringify({
+    ts: new Date().toISOString(),
+    level: 'warn',
+    event: 'score_extraction_failed',
+    textPreview: text.slice(-300),
+  }));
 
   return null;
 }

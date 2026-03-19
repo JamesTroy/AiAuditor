@@ -28,6 +28,24 @@ const LANGUAGE_RULES: Rule[] = [
   { pattern: /<\?php\b/, tags: ['php'] },
   { pattern: /\bclass\s+\w+\s*<\s*ActiveRecord::Base\b/, tags: ['ruby'] },
   { pattern: /\bdo\s+\|.*\|\s*$/, tags: ['ruby'] },
+  // Kotlin
+  { pattern: /\bfun\s+\w+\s*\(.*\)\s*[:{]/, tags: ['kotlin'] },
+  { pattern: /\b(val|var)\s+\w+\s*[:=]/, tags: ['kotlin'] },
+  { pattern: /\bdata\s+class\b/, tags: ['kotlin'] },
+  // Swift
+  { pattern: /\bimport\s+(Foundation|UIKit|SwiftUI)\b/, tags: ['swift'] },
+  { pattern: /\bfunc\s+\w+\s*\(.*\)\s*->\s*\w+/, tags: ['swift'] },
+  { pattern: /\bguard\s+let\b/, tags: ['swift'] },
+  // C#
+  { pattern: /\busing\s+System\b/, tags: ['csharp'] },
+  { pattern: /\bnamespace\s+\w+/, tags: ['csharp'] },
+  { pattern: /\basync\s+Task</, tags: ['csharp'] },
+  // Scala
+  { pattern: /\b(object|trait)\s+\w+/, tags: ['scala'] },
+  { pattern: /\bcase\s+class\s+\w+/, tags: ['scala'] },
+  // Elixir
+  { pattern: /\bdefmodule\s+\w+/, tags: ['elixir'] },
+  { pattern: /\|>\s*\w+/, tags: ['elixir'] },
 ];
 
 const FRAMEWORK_RULES: Rule[] = [
@@ -44,6 +62,22 @@ const FRAMEWORK_RULES: Rule[] = [
   { pattern: /\b(WebSocket|socket\.io|ws\.on)\b/i, tags: ['websocket'] },
   { pattern: /\b(Dockerfile|FROM\s+\w+:)/m, tags: ['docker'] },
   { pattern: /\b(github\.com\/|go\.mod)\b/, tags: ['go'] },
+  // Additional frameworks
+  { pattern: /\bfrom\s+['"]svelte\b/, tags: ['svelte'] },
+  { pattern: /\b\$:\s+\w+/, tags: ['svelte'] },
+  { pattern: /\bfrom\s+['"]@remix-run\//, tags: ['remix'] },
+  { pattern: /\b(createSignal|createEffect)\b/, tags: ['solidjs'] },
+  { pattern: /\bfrom\s+['"]solid-js['"]/, tags: ['solidjs'] },
+  { pattern: /\b(@Controller|@Injectable|@Module)\b/, tags: ['nestjs'] },
+  { pattern: /\bfrom\s+['"]@nestjs\//, tags: ['nestjs'] },
+  { pattern: /\bfrom\s+['"]fastify['"]/, tags: ['fastify'] },
+  { pattern: /\bfrom\s+['"]hono['"]/, tags: ['hono'] },
+  { pattern: /\bfrom\s+['"]@trpc\//, tags: ['trpc'] },
+  { pattern: /\bpublicProcedure\b/, tags: ['trpc'] },
+  { pattern: /\bAstro\.(props|url|request)\b/, tags: ['astro'] },
+  { pattern: /\bfrom\s+['"]astro:/, tags: ['astro'] },
+  // Tailwind detection (className with utility patterns)
+  { pattern: /className=["'][^"']*\b(flex|grid|bg-|text-|p-|m-|w-|h-)\b/, tags: ['tailwind'] },
 ];
 
 const PATTERN_RULES: Rule[] = [
@@ -100,6 +134,11 @@ const TAG_TO_AGENTS: Record<string, string[]> = {
   'java': ['code-quality', 'architecture', 'performance'],
   'php': ['code-quality', 'security'],
   'ruby': ['code-quality', 'security'],
+  'kotlin': ['code-quality', 'performance', 'architecture'],
+  'swift': ['code-quality', 'performance', 'architecture'],
+  'csharp': ['code-quality', 'performance', 'architecture', 'security'],
+  'scala': ['code-quality', 'performance', 'architecture', 'concurrency'],
+  'elixir': ['code-quality', 'performance', 'concurrency'],
   'react': ['react-patterns', 'frontend-performance', 'accessibility'],
   'nextjs': ['react-patterns', 'seo-performance', 'frontend-performance', 'seo-technical'],
   'express': ['api-design', 'security', 'rate-limiting', 'error-handling'],
@@ -137,6 +176,15 @@ const TAG_TO_AGENTS: Record<string, string[]> = {
   'observability': ['observability', 'logging'],
   'ci-cd': ['ci-cd', 'devops'],
   'container': ['container-security', 'devops', 'cloud-infra'],
+  'svelte': ['frontend-performance', 'accessibility', 'code-quality'],
+  'remix': ['react-patterns', 'seo-performance', 'frontend-performance'],
+  'solidjs': ['frontend-performance', 'accessibility', 'code-quality'],
+  'nestjs': ['api-design', 'architecture', 'security', 'code-quality'],
+  'fastify': ['api-design', 'performance', 'security'],
+  'hono': ['api-design', 'performance', 'security'],
+  'trpc': ['api-design', 'typescript-strictness', 'code-quality'],
+  'astro': ['seo-performance', 'frontend-performance', 'accessibility'],
+  'tailwind': ['design-system', 'responsive-design', 'css-performance'],
   'bloat': ['code-bloat', 'code-quality'],
   'marketing': ['marketing-pain-points'],
   'dx': ['developer-pain-points'],

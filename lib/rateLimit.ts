@@ -294,6 +294,13 @@ export const perIpConcurrencyLimiter = new RateLimiter({
   prefix: 'ip-concurrent',
 });
 
+/** Synthesis endpoint: 20 requests per minute per IP (lighter than audits). */
+export const synthesisLimiter = new RateLimiter({
+  windowMs: 60_000,
+  maxRequests: 20,
+  prefix: 'synthesis',
+});
+
 // CLOUD-014: Per-email login rate limiter — 10 attempts per hour per email.
 // Mitigates distributed credential stuffing that bypasses IP-based limits.
 export const perEmailLoginLimiter = new RateLimiter({
