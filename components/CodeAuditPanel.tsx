@@ -252,20 +252,23 @@ export default function CodeAuditPanel() {
   }, [loading]);
 
   // ---------- Auto-scroll ----------
+  // Mark userScrolledUp the moment the user touches the scroll wheel so
+  // auto-follow stops immediately and never fights manual scrolling.
   useEffect(() => {
     if (!loading) { userScrolledUp.current = false; return; }
     userScrolledUp.current = false;
-    function onScroll() {
-      const dist = document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
-      userScrolledUp.current = dist > 150;
-    }
-    window.addEventListener('scroll', onScroll, { passive: true });
+    function onScroll() { userScrolledUp.current = true; }
+    window.addEventListener('scroll', onScroll, { passive: true, once: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, [loading]);
 
   useEffect(() => {
-    if (loading && result && !userScrolledUp.current) {
-      resultEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    if (!loading || !result || userScrolledUp.current) return;
+    const el = resultEndRef.current;
+    if (!el) return;
+    // Only scroll DOWN — never pull the user upward after a layout shift.
+    if (el.getBoundingClientRect().bottom > window.innerHeight) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
   }, [loading, result]);
 
