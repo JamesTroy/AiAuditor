@@ -225,8 +225,6 @@ const runtimeContextField = z
 export const builtInAuditRequestSchema = z.object({
   agentType: z.enum(VALID_AGENT_TYPES).describe('Built-in agent type'),
   input: inputField,
-  /** When true, uses a higher rate limit for sequential site audit batches. */
-  siteAudit: z.boolean().optional(),
   runtimeContext: runtimeContextField,
 });
 

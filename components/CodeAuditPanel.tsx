@@ -137,6 +137,9 @@ export default function CodeAuditPanel() {
 
   // --- Run state ---
   const [result, setResult] = useState('');
+  // Per-agent streaming text — rendered in separate divs so content from
+  // early agents never inserts above the current scroll position.
+  const [agentStreamingTexts, setAgentStreamingTexts] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [elapsed, setElapsed] = useState(0);
@@ -293,7 +296,7 @@ export default function CodeAuditPanel() {
     onChunk: (text: string) => void,
     extraContext?: string,
   ): Promise<string> {
-    const body: Record<string, unknown> = { agentType: agentId, input, siteAudit: true };
+    const body: Record<string, unknown> = { agentType: agentId, input };
     if (extraContext) body.runtimeContext = extraContext;
     const res = await fetch('/api/audit', {
       method: 'POST',
@@ -337,6 +340,7 @@ export default function CodeAuditPanel() {
 
     setLoading(true);
     setResult('');
+    setAgentStreamingTexts([]);
     setError('');
     setRunningIndices(new Set());
     setCompletedIndices(new Set());
@@ -353,6 +357,9 @@ export default function CodeAuditPanel() {
     const agentResults: string[] = new Array(agentsToRun.length).fill('');
 
     function rebuildResultNow() {
+      // Update per-agent state for scroll-stable streaming display.
+      setAgentStreamingTexts([...agentResults]);
+      // Also keep the combined string for synthesis/copy/download/session storage.
       const parts: string[] = [];
       for (let i = 0; i < agentsToRun.length; i++) {
         if (agentResults[i]) {

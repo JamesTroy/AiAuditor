@@ -218,14 +218,7 @@ export const auditLimiter = new RateLimiter({
   prefix: 'audit',
 });
 
-/** Site audit batch: 200 requests per 2 minutes per IP (supports 132 agents + retries). */
-export const siteAuditLimiter = new RateLimiter({
-  windowMs: 120_000,
-  maxRequests: 200,
-  prefix: 'site-audit',
-});
-
-/** URL-fetch endpoint: 30 requests per minute per IP (cheaper operation). */
+/** URL-fetch endpoint: 30 requests per minute per IP. */
 export const fetchUrlLimiter = new RateLimiter({
   windowMs: 60_000,
   maxRequests: 30,
