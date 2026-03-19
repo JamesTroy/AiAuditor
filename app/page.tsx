@@ -319,9 +319,9 @@ export default function Home() {
             <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50">
               <p className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-3">Less reliable for</p>
               <ul className="space-y-2 text-sm text-gray-700 dark:text-zinc-300">
-                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Runtime behavior — production load, environment bugs, and race conditions</li>
-                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Issues requiring deep business context or proprietary domain knowledge</li>
-                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Codebases over ~30,000 characters — we analyze a sample, not the full codebase</li>
+                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Runtime behavior — paste a stack trace in the runtime context field to narrow this gap</li>
+                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Proprietary domain rules — add your standards and conventions in workspace context</li>
+                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Very large monorepos — up to 120k characters, structure-aware; split by module for more</li>
                 <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Replacing a specialist audit for regulated industries (PCI-DSS, HIPAA, SOC 2)</li>
               </ul>
             </div>

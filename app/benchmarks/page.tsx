@@ -128,8 +128,17 @@ export default function BenchmarksPage() {
           <section>
             <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100 mb-3">Known limitations that affect accuracy</h2>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Static analysis only.</strong> Runtime behavior, race conditions, and environment-specific issues are outside scope.</li>
-              <li><strong>30,000 character limit.</strong> Large files are sampled. Issues in unsampled sections will be missed.</li>
+              <li>
+                <strong>Runtime behavior.</strong> Race conditions, production load issues, and environment-specific failures can&apos;t be inferred from static code alone.
+                You can narrow this gap by pasting a stack trace or error log into the <strong>runtime context</strong> field — auditors will factor confirmed failures into their findings rather than flagging theoretical risks.
+              </li>
+              <li>
+                <strong>Deep business context.</strong> Auditors don&apos;t know your domain rules, compliance obligations, or internal conventions unless you tell them.
+                Use the <strong>workspace context</strong> field in Settings to describe your stack, standards (OWASP, GDPR, HIPAA), and conventions — it&apos;s injected into every audit automatically.
+              </li>
+              <li>
+                <strong>Input size.</strong> Auditors process up to 120,000 characters per submission. For large files, a structural skeleton (function and class signatures) is extracted first so auditors can navigate the full shape of the code — but very large monorepos still require splitting by module or layer.
+              </li>
               <li><strong>Confidence tiers.</strong> Findings are tagged CERTAIN, LIKELY, or POSSIBLE. POSSIBLE findings have a higher false positive rate by design — they surface candidates for human review, not confirmed bugs.</li>
               <li><strong>Model variability.</strong> Like all LLM-based tools, output can vary between runs on identical input. Critical findings are generally stable; edge cases may not be.</li>
             </ul>
