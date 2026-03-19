@@ -20,20 +20,62 @@ html { scroll-behavior: smooth; }
   50%       { opacity: 0; }
 }
 
+@keyframes aurora {
+  0%, 100% { opacity: 0.6; transform: scale(1) translateY(0); }
+  50%       { opacity: 1;   transform: scale(1.08) translateY(-12px); }
+}
+
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+
 /* ─── Focus utility ──────────────────────────────────────────── */
 @layer utilities {
   .focus-ring {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950;
   }
   .bg-grid-pattern {
-    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
     background-size: 24px 24px;
   }
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-300 to-zinc-500;
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #fff 0%, #c4b5fd 40%, #818cf8 100%);
   }
-  /* WCAG-001: Explicit disabled colors instead of opacity reduction.
-     opacity-50 collapses contrast to ~1.5–2.5:1 on colored buttons. */
+  .text-gradient-light {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #1e1b4b 0%, #4f46e5 50%, #7c3aed 100%);
+  }
+  /* Animated gradient text */
+  .text-gradient-animated {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #c4b5fd, #818cf8, #6d28d9, #7c3aed, #c4b5fd);
+    background-size: 300% 300%;
+    animation: gradient-x 6s ease infinite;
+  }
+  /* Glass card */
+  .glass {
+    @apply bg-white/60 dark:bg-zinc-900/60 backdrop-blur-sm border border-white/40 dark:border-zinc-700/50;
+  }
+  /* Glow shadow variants */
+  .glow-violet {
+    box-shadow: 0 0 0 1px rgba(139,92,246,0.15), 0 8px 32px -8px rgba(139,92,246,0.45), 0 0 60px -20px rgba(139,92,246,0.3);
+  }
+  .glow-violet-sm {
+    box-shadow: 0 4px 20px -4px rgba(139,92,246,0.35);
+  }
+  /* Noise texture overlay (adds depth/texture) */
+  .noise::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    border-radius: inherit;
+    opacity: 0.4;
+  }
+  /* WCAG-001: Explicit disabled colors instead of opacity reduction. */
   .disabled-muted {
     @apply disabled:bg-zinc-700 disabled:text-zinc-400 disabled:border-zinc-600 disabled:cursor-not-allowed;
   }
@@ -67,7 +109,6 @@ html {
 
 /* ─── Touch-device overrides ────────────────────────────────── */
 @media (hover: none) and (pointer: coarse) {
-  /* Make hover-only action buttons visible on touch devices */
   .touch-show {
     opacity: 1 !important;
   }

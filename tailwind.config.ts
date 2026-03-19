@@ -59,6 +59,8 @@ const config: Config = {
         "shimmer": "shimmer 2s linear infinite",
         "slide-in": "slide-in 0.2s ease-out both",
         "drawer-in": "drawer-in 0.25s cubic-bezier(0.32, 0.72, 0, 1) both",
+        "aurora": "aurora 8s ease-in-out infinite",
+        "gradient-x": "gradient-x 6s ease infinite",
       },
       keyframes: {
         "fade-up": {
@@ -88,6 +90,14 @@ const config: Config = {
         "drawer-in": {
           from: { opacity: "0", transform: "translateX(-100%)" },
           to: { opacity: "1", transform: "translateX(0)" },
+        },
+        "aurora": {
+          "0%, 100%": { opacity: "0.6", transform: "scale(1) translateY(0)" },
+          "50%": { opacity: "1", transform: "scale(1.08) translateY(-12px)" },
+        },
+        "gradient-x": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
         },
       },
     },
