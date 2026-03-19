@@ -100,6 +100,7 @@ export const VALID_AGENT_TYPES = [
   'marketing-value-proposition',
   'marketing-user-research',
   'marketing-gtm-strategy',
+  'ai-messaging',
   'developer-pain-points',
   'network-performance',
   'database-performance',

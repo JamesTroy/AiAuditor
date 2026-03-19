@@ -5716,6 +5716,28 @@ Keep total under 30,000 characters.`,
 Keep total under 30,000 characters.`,
   }),
   builtin({
+    id: 'ai-messaging',
+    name: 'AI Messaging Auditor',
+    description: 'Spots AI hype, unsupported claims, and tech-first framing that alienate skeptical developers — with outcome-first rewrites.',
+    category: 'Marketing',
+    accentClass: 'text-pink-400 hover:bg-pink-500/10',
+    buttonClass: 'bg-pink-700 hover:bg-pink-600',
+    placeholder: 'Paste your landing page HTML, hero section copy, FAQ, or any marketing content that references AI...',
+    systemPrompt: SYSTEM_PROMPTS['ai-messaging'],
+    prepPrompt: `I'm preparing my site for an **AI Messaging Audit**.
+
+Paste any of the following:
+- Landing page HTML or raw copy
+- Hero section / value proposition
+- FAQ section
+- Feature descriptions that mention AI
+- Any marketing content referencing AI, LLMs, or automation
+
+The auditor will flag hype language, unsupported claims, missing disclosures, and tech-first framing — and suggest concrete, skeptic-proof rewrites.
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
     id: 'developer-pain-points',
     name: 'Developer Pain Points',
     description: 'Spots DX friction: confusing APIs, unhelpful errors, inconsistent patterns, and onboarding barriers.',
