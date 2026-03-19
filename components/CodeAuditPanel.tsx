@@ -779,7 +779,7 @@ export default function CodeAuditPanel() {
           </div>
         )}
 
-        {/* Progress tracker — sticky during run, nav links when done */}
+        {/* Progress tracker — sticky during run (progress bar only), nav links when done */}
         {(loading || (!loading && result)) && (
           <div className="mb-6 sticky top-0 z-10 bg-gray-50/95 dark:bg-zinc-950/95 backdrop-blur-sm py-3 -mx-6 px-6">
             {loading && selectedAgents.length > 0 && (
@@ -805,8 +805,8 @@ export default function CodeAuditPanel() {
               </div>
             )}
 
-            {/* Agent badge strip */}
-            <div className="flex flex-wrap gap-1.5">
+            {/* Agent badge strip — max-height capped so sticky bar never fills the viewport */}
+            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
               {selectedAgents.map((agent, i) => {
                 const isActive = loading && runningIndices.has(i);
                 const isDone = completedIndices.has(i);
