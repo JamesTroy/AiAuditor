@@ -106,12 +106,12 @@ export default function Home() {
           {/* Headline */}
           <h1 className="text-[clamp(2rem,5vw+0.5rem,4rem)] font-bold tracking-tight max-w-3xl mx-auto mb-5 leading-[1.08] motion-safe:animate-fade-up [animation-delay:0.05s]">
             <span className="text-gray-900 dark:text-gradient-animated">Find what your code review missed</span>
-            <span className="block text-gray-900 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-violet-300 dark:via-indigo-300 dark:to-violet-400">— in under 60 seconds</span>
+            <span className="block text-gray-900 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-violet-300 dark:via-indigo-300 dark:to-violet-400">— most audits under 60 seconds</span>
           </h1>
 
           {/* Sub-headline */}
           <p className="text-gray-600 dark:text-zinc-300 text-base sm:text-lg max-w-2xl mx-auto mb-9 leading-relaxed motion-safe:animate-fade-up [animation-delay:0.1s]">
-            Stop juggling SonarQube, Snyk, axe, and Lighthouse. Claudit runs{' '}
+            Get the findings from SonarQube, Snyk, axe, and Lighthouse — without the setup. Claudit runs{' '}
             <strong className="text-gray-900 dark:text-white font-semibold">{agents.length} specialized auditors</strong>{' '}
             in parallel — covering security, performance, accessibility, SEO, and compliance in a single pass.
           </p>
@@ -135,12 +135,15 @@ export default function Home() {
             <p className="text-xs text-gray-400 dark:text-zinc-500">
               No account required · paste code or enter a URL · results stream live
             </p>
+            <p className="text-xs text-gray-400 dark:text-zinc-500">
+              Results are AI-generated — always verify critical findings before acting.
+            </p>
           </div>
 
           {/* Privacy badge */}
           <p className="text-xs text-gray-500 dark:text-zinc-400 mb-12 flex items-center justify-center gap-1.5 motion-safe:animate-fade-up [animation-delay:0.2s]">
             <svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-            Your code is sent to Anthropic&apos;s Claude API for analysis, never stored, and never used for training.
+            Processed via Anthropic&apos;s Claude API — never stored, never used for training.
           </p>
 
           {/* Trust stats */}
@@ -156,8 +159,8 @@ export default function Home() {
             </div>
             <span className="hidden sm:block w-px h-5 bg-gray-200 dark:bg-zinc-700" aria-hidden="true" />
             <div className="flex items-center gap-2">
-              <span className="text-violet-600 dark:text-violet-400 font-bold text-sm">OWASP · WCAG · SOC 2</span>
-              <span>coverage</span>
+              <span className="text-violet-600 dark:text-violet-400 font-bold text-sm">OWASP · WCAG · GDPR</span>
+              <span>patterns</span>
             </div>
           </div>
         </div>
@@ -185,7 +188,7 @@ export default function Home() {
               {
                 step: '02',
                 title: `${agents.length} auditors run in parallel`,
-                desc: 'Each specializes in one domain — security, performance, accessibility, SEO, infrastructure, and compliance.',
+                desc: 'Each checks for specific failure patterns — SQL injection and exposed secrets for security, render-blocking resources for performance, missing alt text for accessibility.',
                 icon: (
                   <svg className="w-5 h-5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
                 ),
