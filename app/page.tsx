@@ -36,6 +36,10 @@ const FAQ_ITEMS = [
     a: 'Your code is sent to Anthropic\'s Claude API for analysis, then immediately discarded — it is never stored on our servers and never used for model training. Anthropic does not retain API inputs for training. We use no advertising and no third-party tracking scripts.',
   },
   {
+    q: 'Is this just ChatGPT in a trench coat?',
+    a: `No — and it's a fair question. Claudit uses Claude (Anthropic's model), but the work is in the prompts, not the model. Each of the ${agents.length}+ auditors is a carefully engineered prompt that encodes a specific domain — OWASP Top 10, WCAG 2.2 AA, Core Web Vitals, SQL injection patterns, etc. The model supplies language understanding; the auditor supplies the expertise. Think of it like the difference between hiring a generalist and hiring someone who has read every OWASP advisory twice.`,
+  },
+  {
     q: 'How is Claudit different from SonarQube, Snyk, or a linter?',
     a: `Traditional tools cover one domain — SonarQube for code quality, Snyk for dependency security, axe for accessibility. Claudit runs ${agents.length}+ specialized auditors across security, performance, accessibility, SEO, infrastructure, design, and marketing in a single pass. One tool instead of five.`,
   },
@@ -108,7 +112,7 @@ export default function Home() {
           {/* Sub-headline */}
           <p className="text-gray-600 dark:text-zinc-300 text-base sm:text-lg max-w-2xl mx-auto mb-9 leading-relaxed motion-safe:animate-fade-up [animation-delay:0.1s]">
             Stop juggling SonarQube, Snyk, axe, and Lighthouse. Claudit runs{' '}
-            <strong className="text-gray-900 dark:text-white font-semibold">{agents.length} AI-powered auditors</strong>{' '}
+            <strong className="text-gray-900 dark:text-white font-semibold">{agents.length} specialized auditors</strong>{' '}
             in parallel — covering security, performance, accessibility, SEO, and compliance in a single pass.
           </p>
 
@@ -143,7 +147,7 @@ export default function Home() {
           <div className="inline-flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-gray-500 dark:text-zinc-400 px-8 py-4 rounded-2xl bg-white/60 dark:bg-zinc-900/60 border border-gray-200/60 dark:border-zinc-800/60 backdrop-blur-sm shadow-sm motion-safe:animate-fade-up [animation-delay:0.25s]">
             <div className="flex items-center gap-2">
               <span className="text-violet-600 dark:text-violet-400 font-bold text-xl tabular-nums">{agents.length}</span>
-              <span>AI-powered auditors</span>
+              <span>specialized auditors</span>
             </div>
             <span className="hidden sm:block w-px h-5 bg-gray-200 dark:bg-zinc-700" aria-hidden="true" />
             <div className="flex items-center gap-2">
