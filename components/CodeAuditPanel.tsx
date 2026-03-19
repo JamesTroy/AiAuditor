@@ -152,6 +152,8 @@ export default function CodeAuditPanel() {
 
   // AU-015: Session persistence for anonymous users
   const [restoredFromSession, setRestoredFromSession] = useState(false);
+  // Badge list collapsed by default so it never blocks scroll
+  const [badgesOpen, setBadgesOpen] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
   const synthAbortRef = useRef<AbortController | null>(null);
@@ -360,6 +362,7 @@ export default function CodeAuditPanel() {
     setSynthStatus('idle');
     setSynthesis('');
     setPickerOpen(false);
+    setBadgesOpen(false);
     setRestoredFromSession(false);
     try { sessionStorage.removeItem('aiaudit:last-code-audit'); } catch { /* ignore */ }
 
@@ -806,52 +809,83 @@ export default function CodeAuditPanel() {
           </div>
         )}
 
-        {/* Agent badge strip — in normal page flow so it never traps scroll events */}
+        {/* Agent badge list — collapsible so it never blocks scroll */}
         {(loading || (!loading && result)) && (
-          <div className="flex flex-wrap gap-1.5 mb-6">
-            {selectedAgents.map((agent, i) => {
-                const isActive = loading && runningIndices.has(i);
-                const isDone = completedIndices.has(i);
-                const isPending = loading && !isActive && !isDone;
+          <div className="mb-6">
+            {/* Summary toggle row */}
+            <button
+              type="button"
+              onClick={() => setBadgesOpen((o) => !o)}
+              className="flex items-center gap-2 text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors mb-2"
+              aria-expanded={badgesOpen}
+            >
+              <svg
+                className={`w-3.5 h-3.5 transition-transform ${badgesOpen ? 'rotate-90' : ''}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+              {loading ? (
+                <span>
+                  <span className="font-medium text-violet-600 dark:text-violet-400">{runningIndices.size} running</span>
+                  {completedIndices.size > 0 && <span className="text-gray-400 dark:text-zinc-500"> · {completedIndices.size} done</span>}
+                  {selectedAgents.length - runningIndices.size - completedIndices.size > 0 && (
+                    <span className="text-gray-400 dark:text-zinc-500"> · {selectedAgents.length - runningIndices.size - completedIndices.size} queued</span>
+                  )}
+                </span>
+              ) : (
+                <span><span className="font-medium">{selectedAgents.length} auditors complete</span> — click to jump to any section</span>
+              )}
+            </button>
 
-                if (!loading && result) {
-                  const sectionId = `${agent.name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')}-audit`;
+            {/* Expanded badge list */}
+            {badgesOpen && (
+              <div className="flex flex-wrap gap-1.5 p-3 rounded-xl bg-gray-50 dark:bg-zinc-900/60 border border-gray-200 dark:border-zinc-800">
+                {selectedAgents.map((agent, i) => {
+                  const isActive = loading && runningIndices.has(i);
+                  const isDone = completedIndices.has(i);
+                  const isPending = loading && !isActive && !isDone;
+
+                  if (!loading && result) {
+                    const sectionId = `${agent.name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')}-audit`;
+                    return (
+                      <button
+                        key={agent.id}
+                        onClick={() => document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:ring-1 hover:ring-violet-500/40 hover:text-violet-600 dark:hover:text-violet-300"
+                      >
+                        <svg className="w-3 h-3 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {agent.name}
+                      </button>
+                    );
+                  }
+
                   return (
-                    <button
+                    <span
                       key={agent.id}
-                      onClick={() => document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:ring-1 hover:ring-violet-500/40 hover:text-violet-600 dark:hover:text-violet-300"
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
+                        isActive
+                          ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 ring-1 ring-violet-500/30 shadow-sm'
+                          : isDone
+                            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                            : 'bg-gray-100/50 dark:bg-zinc-900 text-gray-400 dark:text-zinc-600'
+                      }`}
                     >
-                      <svg className="w-3 h-3 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
+                      {isActive && <span className={`w-2 h-2 rounded-full ${dotColor(agent.accentClass)} animate-pulse flex-shrink-0`} />}
+                      {isDone && (
+                        <svg className="w-3 h-3 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                      {isPending && <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-zinc-700 flex-shrink-0" />}
                       {agent.name}
-                    </button>
+                    </span>
                   );
-                }
-
-                return (
-                  <span
-                    key={agent.id}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
-                      isActive
-                        ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 ring-1 ring-violet-500/30 shadow-sm'
-                        : isDone
-                          ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                          : 'bg-gray-100/50 dark:bg-zinc-900 text-gray-400 dark:text-zinc-600'
-                    }`}
-                  >
-                    {isActive && <span className={`w-2 h-2 rounded-full ${dotColor(agent.accentClass)} animate-pulse flex-shrink-0`} />}
-                    {isDone && (
-                      <svg className="w-3 h-3 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                    {isPending && <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-zinc-700 flex-shrink-0" />}
-                    {agent.name}
-                  </span>
-                );
-              })}
+                })}
+              </div>
+            )}
           </div>
         )}
 
