@@ -1,4 +1,4 @@
-import { pgTable, text, boolean, timestamp, integer, index, check } from 'drizzle-orm/pg-core';
+import { pgTable, text, boolean, timestamp, integer, index, check, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { encryptedText } from '@/lib/crypto';
 
@@ -165,4 +165,28 @@ export const audit = pgTable('audit', {
   check('audit_status_check', sql`${t.status} IN ('pending', 'running', 'completed', 'failed')`),
   check('audit_score_check', sql`${t.score} IS NULL OR (${t.score} >= 0 AND ${t.score} <= 100)`),
   check('audit_durationMs_check', sql`${t.durationMs} IS NULL OR ${t.durationMs} >= 0`),
+]);
+
+// ─── Dismissal analytics ────────────────────────────────────────
+// Aggregate counters — one row per agent, no PII, no per-user data.
+// Incremented via fire-and-forget POST /api/analytics/dismissal.
+// Used in the admin dashboard to identify which agents produce the most false positives.
+
+export const agentDismissalStats = pgTable('agent_dismissal_stats', {
+  agentId:   text('agent_id').primaryKey(),
+  agentName: text('agent_name').notNull(),
+  // Total dismissals and restorations
+  dismissals: integer('dismissals').notNull().default(0),
+  restorations: integer('restorations').notNull().default(0),
+  // Breakdown by severity — helps identify which severity levels are over-flagged
+  dismissalsCritical: integer('dismissals_critical').notNull().default(0),
+  dismissalsHigh:     integer('dismissals_high').notNull().default(0),
+  dismissalsMedium:   integer('dismissals_medium').notNull().default(0),
+  dismissalsLow:      integer('dismissals_low').notNull().default(0),
+  // Breakdown by confidence — [CERTAIN] dismissals are the most alarming
+  dismissalsCertain:  integer('dismissals_certain').notNull().default(0),
+  dismissalsLikely:   integer('dismissals_likely').notNull().default(0),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('idx_agent_dismissal_stats_agentId').on(t.agentId),
 ]);

@@ -56,6 +56,20 @@ interface Stats {
   successRate: number;
 }
 
+interface DismissalStatRow {
+  agentId: string;
+  agentName: string;
+  dismissals: number;
+  restorations: number;
+  dismissalsCritical: number;
+  dismissalsHigh: number;
+  dismissalsMedium: number;
+  dismissalsLow: number;
+  dismissalsCertain: number;
+  dismissalsLikely: number;
+  updatedAt: Date;
+}
+
 interface Props {
   stats: Stats;
   users: UserRow[];
@@ -63,13 +77,14 @@ interface Props {
   orgs: OrgRow[];
   topUsers: TopUser[];
   currentUserId: string;
+  dismissalStats: DismissalStatRow[];
 }
 
-type Tab = 'overview' | 'users' | 'audits' | 'orgs';
+type Tab = 'overview' | 'users' | 'audits' | 'orgs' | 'agent-health';
 
 // ─── Component ──────────────────────────────────────────────────
 
-export default function AdminDashboard({ stats, users, audits, orgs, topUsers, currentUserId }: Props) {
+export default function AdminDashboard({ stats, users, audits, orgs, topUsers, currentUserId, dismissalStats }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('overview');
   const [search, setSearch] = useState('');
@@ -697,6 +712,108 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
     );
   }
 
+  // ─── Agent Health Tab ─────────────────────────────────────────
+
+  function AgentHealthTab() {
+    const maxDismissals = dismissalStats[0]?.dismissals ?? 1;
+    return (
+      <div>
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold">Agent Dismissal Analytics</h2>
+          <p className="text-sm text-gray-500 dark:text-zinc-500 mt-1">
+            Agents with high dismissal counts are producing false positives. Use this to target prompt improvements.
+            <br />
+            <span className="text-amber-600 dark:text-amber-400 font-medium">
+              [CERTAIN] dismissals are the most critical signal
+            </span>{' '}
+            — the AI was confident but users disagreed.
+          </p>
+        </div>
+
+        {dismissalStats.length === 0 ? (
+          <div className="text-center py-16 text-gray-400 dark:text-zinc-600 text-sm">
+            No dismissal data yet. Dismissals will appear here as users review audit results.
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-zinc-800">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900">
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-zinc-400">Agent</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-zinc-400">Dismissals</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-zinc-400">Restorations</th>
+                  <th className="px-4 py-3 text-right font-medium text-red-500 dark:text-red-400" title="[CERTAIN] findings dismissed — highest-signal false positives">Certain FP</th>
+                  <th className="px-4 py-3 text-right font-medium text-orange-500 dark:text-orange-400">Likely FP</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-zinc-400">By Severity</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-zinc-400 w-40">Volume</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
+                {dismissalStats.map((row) => {
+                  const pct = maxDismissals > 0 ? Math.round((row.dismissals / maxDismissals) * 100) : 0;
+                  const netDismissals = Math.max(0, row.dismissals - row.restorations);
+                  return (
+                    <tr key={row.agentId} className="hover:bg-gray-50 dark:hover:bg-zinc-900/50">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-900 dark:text-zinc-100">{row.agentName}</div>
+                        <div className="text-xs text-gray-400 dark:text-zinc-500 font-mono">{row.agentId}</div>
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        <span className={`font-semibold ${row.dismissals > 20 ? 'text-red-600 dark:text-red-400' : row.dismissals > 5 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-700 dark:text-zinc-300'}`}>
+                          {row.dismissals}
+                        </span>
+                        {netDismissals !== row.dismissals && (
+                          <div className="text-xs text-gray-400 dark:text-zinc-600">net {netDismissals}</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums text-gray-500 dark:text-zinc-400">
+                        {row.restorations || '—'}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {row.dismissalsCertain > 0 ? (
+                          <span className="font-semibold text-red-600 dark:text-red-400">{row.dismissalsCertain}</span>
+                        ) : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {row.dismissalsLikely > 0 ? (
+                          <span className="text-amber-600 dark:text-amber-400">{row.dismissalsLikely}</span>
+                        ) : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1 text-xs text-gray-400 dark:text-zinc-500 tabular-nums">
+                          {row.dismissalsCritical > 0 && <span className="text-red-500">C:{row.dismissalsCritical}</span>}
+                          {row.dismissalsHigh > 0 && <span className="text-orange-500">H:{row.dismissalsHigh}</span>}
+                          {row.dismissalsMedium > 0 && <span className="text-amber-500">M:{row.dismissalsMedium}</span>}
+                          {row.dismissalsLow > 0 && <span className="text-slate-400">L:{row.dismissalsLow}</span>}
+                          {!row.dismissalsCritical && !row.dismissalsHigh && !row.dismissalsMedium && !row.dismissalsLow && '—'}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden min-w-[60px]">
+                            <div
+                              className={`h-full rounded-full transition-all ${row.dismissals > 20 ? 'bg-red-500' : row.dismissals > 5 ? 'bg-amber-500' : 'bg-blue-400'}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-400 dark:text-zinc-500 w-6 text-right">{pct}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <p className="text-xs text-gray-400 dark:text-zinc-600 mt-4">
+          Updated in real-time as users dismiss findings. Restorations indicate a user reconsidered; net dismissals (dismissals − restorations) is the cleaner signal.
+        </p>
+      </div>
+    );
+  }
+
   // ─── Render ───────────────────────────────────────────────────
 
   return (
@@ -721,12 +838,16 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
           <button onClick={() => setTab('orgs')} className={tabClass('orgs')}>
             Teams ({stats.totalOrgs})
           </button>
+          <button onClick={() => setTab('agent-health')} className={tabClass('agent-health')}>
+            Agent Health
+          </button>
         </div>
 
         {tab === 'overview' && <OverviewTab />}
         {tab === 'users' && <UsersTab />}
         {tab === 'audits' && <AuditsTab />}
         {tab === 'orgs' && <OrgsTab />}
+        {tab === 'agent-health' && <AgentHealthTab />}
       </div>
 
       <ConfirmDialog />

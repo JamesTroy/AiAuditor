@@ -106,7 +106,7 @@ const CUSTOM_PROMPT_PREAMBLE =
   'EVIDENCE REQUIREMENT: Every finding MUST include:\n' +
   '  - Location: exact file, line number, function name, or code pattern\n' +
   '  - Evidence: quote or reference the specific code that causes the issue\n' +
-  '  - Remediation: corrected code snippet or precise fix instruction\n' +
+  '  - Remediation: describe what needs to change and why the fix works. Any code shown is illustrative — it is based only on the submitted snippet and cannot account for your full codebase. Prefix any code with "⚠️ Illustrative only — adapt to your codebase:" and explicitly state any assumptions about surrounding context that would affect how this fix should be applied.\n' +
   'Findings without evidence should be omitted rather than reported vaguely.\n\n---\n\n';
 
 // PERF-015: Hoist TextDecoder/TextEncoder to module scope — they're stateless and reusable.

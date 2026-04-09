@@ -7,6 +7,8 @@ import SafeMarkdown from '@/components/markdownComponents';
 import { saveAudit } from '@/lib/history';
 import { friendlyError } from '@/lib/friendlyError';
 import { useSession } from '@/lib/auth-client';
+import { parseAuditResult } from '@/lib/parseAuditResult';
+import { deduplicateFindings, type DeduplicationResult } from '@/lib/deduplicateFindings';
 
 // ---------- Constants ----------
 
@@ -153,6 +155,9 @@ export default function CodeAuditPanel() {
   const [synthStatus, setSynthStatus] = useState<SynthStatus>('idle');
   const [synthError, setSynthError] = useState('');
 
+  // --- Deduplication ---
+  const [dedupExpanded, setDedupExpanded] = useState(false);
+
   // AU-015: Session persistence for anonymous users
   const [restoredFromSession, setRestoredFromSession] = useState(false);
   // Badge list collapsed by default so it never blocks scroll
@@ -167,6 +172,22 @@ export default function CodeAuditPanel() {
     () => allAgents.filter((a) => selected.has(a.id)),
     [selected],
   );
+
+  // Cross-agent deduplication — computed once all agents complete
+  const dedupResult = useMemo<DeduplicationResult | null>(() => {
+    if (loading || agentStreamingTexts.length === 0) return null;
+    const agentSets = agentStreamingTexts
+      .map((text, i) => {
+        if (!text) return null;
+        const agent = selectedAgents[i];
+        if (!agent) return null;
+        const metrics = parseAuditResult(text);
+        return { agentId: agent.id, agentName: agent.name, findings: metrics.findings };
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null);
+    if (agentSets.length < 2) return null;
+    return deduplicateFindings(agentSets);
+  }, [loading, agentStreamingTexts, selectedAgents]);
 
   // Group all agents by category for the picker
   const grouped = useMemo(() => {
@@ -347,6 +368,7 @@ export default function CodeAuditPanel() {
     setSynthError('');
     setSynthStatus('idle');
     setSynthesis('');
+    setDedupExpanded(false);
     setPickerOpen(false);
     setBadgesOpen(false);
     setRestoredFromSession(false);
@@ -961,6 +983,69 @@ export default function CodeAuditPanel() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
                 </svg>
                 AI-generated — findings may contain errors. Verify critical issues before acting.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Cross-agent deduplication summary */}
+        {!loading && dedupResult && dedupResult.duplicateGroups.length > 0 && (
+          <div className="mt-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 overflow-hidden">
+            <button
+              onClick={() => setDedupExpanded((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 text-left focus-ring"
+              aria-expanded={dedupExpanded}
+            >
+              <div className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+                <span>⚠</span>
+                <span>
+                  {dedupResult.duplicateGroups.length === 1
+                    ? '1 issue flagged by multiple auditors'
+                    : `${dedupResult.duplicateGroups.length} issues flagged by multiple auditors`}
+                  {' '}
+                  <span className="font-normal text-amber-700 dark:text-amber-400">
+                    — these are the same underlying problem, not separate issues
+                  </span>
+                </span>
+              </div>
+              <span className="text-amber-600 dark:text-amber-400 text-xs ml-4 shrink-0">
+                {dedupExpanded ? 'Hide' : 'Show'}
+              </span>
+            </button>
+
+            {dedupExpanded && (
+              <div className="border-t border-amber-200 dark:border-amber-800 divide-y divide-amber-100 dark:divide-amber-900">
+                {dedupResult.duplicateGroups.map((group, gi) => (
+                  <div key={gi} className="px-4 py-3">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${
+                        group.highestSeverity === 'critical' ? 'bg-red-500' :
+                        group.highestSeverity === 'high' ? 'bg-orange-500' :
+                        group.highestSeverity === 'medium' ? 'bg-amber-500' :
+                        'bg-slate-400'
+                      }`} />
+                      <span className="text-sm text-amber-900 dark:text-amber-200 font-medium">
+                        {group.title}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pl-4">
+                      {group.entries.map((entry, ei) => (
+                        <span
+                          key={ei}
+                          className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400"
+                        >
+                          {entry.agentName}
+                          {entry.finding.severity !== group.highestSeverity && (
+                            <span className="opacity-60 ml-1">({entry.finding.severity})</span>
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <div className="px-4 py-2.5 text-xs text-amber-600 dark:text-amber-500">
+                  {dedupResult.uniqueCount} unique issue{dedupResult.uniqueCount !== 1 ? 's' : ''} from {dedupResult.totalFindings} total findings across all auditors
+                </div>
               </div>
             )}
           </div>

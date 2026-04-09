@@ -10,6 +10,7 @@ import { setChainInput, consumeChainInput } from '@/lib/session';
 import { ALLOWED_URL_DESCRIPTION } from '@/lib/config/urlAllowlist';
 import { useAuditSession } from '@/lib/hooks/useAuditSession';
 import { detectAgents } from '@/lib/detectAgents';
+import { detectSnippet } from '@/lib/detectSnippet';
 import { parseAuditResult } from '@/lib/parseAuditResult';
 import { friendlyError } from '@/lib/friendlyError';
 
@@ -387,6 +388,8 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
     return detectAgents(debouncedInput);
   }, [debouncedInput]);
 
+  const snippetDetection = useMemo(() => detectSnippet(debouncedInput), [debouncedInput]);
+
   const suggestedAgents = useMemo(() => {
     if (!detection || detection.recommendedAgents.length === 0) return [];
     return detection.recommendedAgents
@@ -512,6 +515,13 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
       {input.length > 0 && input.length < 200 && !loading && !result && (
         <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">
           Tip: Include more code for a more thorough audit. The best results come from complete files or modules.
+        </p>
+      )}
+
+      {/* Snippet detection hint — shown when code looks like a fragment */}
+      {snippetDetection.isSnippet && input.length >= 200 && !loading && !result && (
+        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+          Looks like a snippet ({snippetDetection.reason}). For the most accurate audit, include the full file with imports and surrounding context — findings based on fragments may not apply to your actual codebase.
         </p>
       )}
 

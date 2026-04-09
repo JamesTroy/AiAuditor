@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { redirect, notFound } from 'next/navigation';
 import { db } from '@/lib/db';
-import { user, audit, organizationTable, member, session as sessionTable } from '@/lib/auth-schema';
+import { user, audit, organizationTable, member, session as sessionTable, agentDismissalStats } from '@/lib/auth-schema';
 import { eq, desc, count, gte, sql } from 'drizzle-orm';
 import AdminDashboard from './AdminDashboard';
 
@@ -37,6 +37,7 @@ export default async function AdminPage() {
     allUsers,
     orgsWithMembers,
     topUsers,
+    dismissalStats,
   ] = await Promise.all([
     db.select({ value: count() }).from(user),
     db.select({ value: count() }).from(audit),
@@ -94,6 +95,7 @@ export default async function AdminPage() {
       .groupBy(audit.userId, user.name, user.email)
       .orderBy(desc(count(audit.id)))
       .limit(10),
+    db.select().from(agentDismissalStats).orderBy(desc(agentDismissalStats.dismissals)).limit(50),
   ]);
 
   const totalUsers = usersResult[0]?.value ?? 0;
@@ -123,6 +125,7 @@ export default async function AdminPage() {
       orgs={orgsWithMembers}
       topUsers={topUsers}
       currentUserId={s.user.id}
+      dismissalStats={dismissalStats}
     />
   );
 }

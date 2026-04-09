@@ -6,6 +6,7 @@ import Link from 'next/link';
 import SafeMarkdown from '@/components/markdownComponents';
 import { setChainInput } from '@/lib/session';
 import { parseAuditResult } from '@/lib/parseAuditResult';
+import { detectSnippet } from '@/lib/detectSnippet';
 
 interface Props {
   result: string | null;
@@ -50,6 +51,26 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
     return parseAuditResult(result);
   }, [result]);
 
+  const snippetDetection = useMemo(() => detectSnippet(input), [input]);
+
+  const fireDismissalEvent = useCallback((
+    finding: { severity: string; confidence?: string },
+    action: 'dismiss' | 'restore',
+  ) => {
+    // Fire-and-forget — never await, never block the dismiss action
+    fetch('/api/analytics/dismissal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        agentId,
+        agentName,
+        severity: finding.severity,
+        confidence: finding.confidence ?? null,
+        action,
+      }),
+    }).catch(() => { /* analytics must never affect the dismiss UX */ });
+  }, [agentId, agentName]);
+
   const dismissFinding = useCallback((id: string) => {
     setDismissed((prev) => {
       const next = new Set(prev);
@@ -57,7 +78,9 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
       saveDismissed(auditId, next);
       return next;
     });
-  }, [auditId]);
+    const finding = metrics?.findings.find((f) => f.id === id);
+    if (finding) fireDismissalEvent(finding, 'dismiss');
+  }, [auditId, metrics, fireDismissalEvent]);
 
   const restoreFinding = useCallback((id: string) => {
     setDismissed((prev) => {
@@ -66,7 +89,9 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
       saveDismissed(auditId, next);
       return next;
     });
-  }, [auditId]);
+    const finding = metrics?.findings.find((f) => f.id === id);
+    if (finding) fireDismissalEvent(finding, 'restore');
+  }, [auditId, metrics, fireDismissalEvent]);
 
   if (!result) {
     return (
@@ -158,6 +183,16 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
         </button>
       </div>
 
+      {/* Snippet scope warning — shown when the audited input looks like a fragment */}
+      {snippetDetection.isSnippet && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 px-4 py-3 text-xs text-blue-800 dark:text-blue-300">
+          <span className="mt-0.5 flex-shrink-0">ℹ️</span>
+          <span>
+            <strong>Partial context detected</strong> — this audit was run on a code snippet ({snippetDetection.reason}). Findings that depend on imports, surrounding types, or module-level state may not apply to your actual codebase. Re-run with the full file for higher confidence results.
+          </span>
+        </div>
+      )}
+
       {/* FP-UI: Findings triage panel — dismiss false positives */}
       {metrics && metrics.findings.length > 0 && (
         <div className="mb-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden">
@@ -214,12 +249,19 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
                     {finding.title}
                   </span>
                   {finding.confidence && (
-                    <span className={`flex-shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${
-                      finding.confidence === 'certain' ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400' :
-                      finding.confidence === 'likely' ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400' :
-                      'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400'
-                    }`}>
-                      {finding.confidence}
+                    <span
+                      className={`flex-shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${
+                        finding.confidence === 'certain' ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400' :
+                        finding.confidence === 'likely' ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400' :
+                        'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400'
+                      }`}
+                      title={
+                        finding.confidence === 'certain' ? 'Confirmed in submitted code — still verify before applying any fix' :
+                        finding.confidence === 'likely' ? 'Probable issue — verify this applies to your full codebase before changing anything' :
+                        'Speculative — depends on code or context not in the submission'
+                      }
+                    >
+                      {finding.confidence === 'likely' ? '⚠ likely' : finding.confidence}
                     </span>
                   )}
                   {finding.classification === 'suggestion' && (
@@ -240,6 +282,13 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
           </div>
         </div>
       )}
+
+      <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-xs text-amber-800 dark:text-amber-300">
+        <span className="mt-0.5 flex-shrink-0">⚠️</span>
+        <span>
+          <strong>Review before applying.</strong> Code snippets in this report are illustrative — they are based only on the code you submitted and cannot account for your full codebase. Verify every finding in context before making any changes.
+        </span>
+      </div>
 
       <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 prose prose-sm dark:prose-invert max-w-prose">
         <SafeMarkdown>{result}</SafeMarkdown>
