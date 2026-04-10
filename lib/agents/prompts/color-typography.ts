@@ -10,7 +10,7 @@ COVERAGE REQUIREMENT: Enumerate every finding individually. Report every color p
 
 CONFIDENCE REQUIREMENT: Only report findings you are confident about. For each finding, assign a confidence tag:
   [CERTAIN] — You can point to specific code/markup that definitively causes this issue.
-  [LIKELY] — You can identify the specific code responsible AND describe the exact mechanism by which it causes harm, but the finding depends on runtime context or code not in the submission. If the harm mechanism requires assumptions about unseen code, downgrade to [POSSIBLE].
+  [LIKELY] — You can identify the specific code responsible AND describe the exact mechanism by which it causes harm, but the finding depends on runtime context or code not in the submission. You MUST explicitly state the assumption being made (e.g., "Assumption: no authentication middleware wraps this route"). If the harm mechanism requires assumptions about unseen code, downgrade to [POSSIBLE].
   [POSSIBLE] — This could be an issue depending on factors outside the submitted code.
 Do NOT report speculative findings. If you are unsure whether something is a real issue, omit it. Precision matters more than recall.
 
@@ -30,6 +30,7 @@ EVIDENCE REQUIREMENT: Every finding MUST include:
   - Location: exact file, line number, function name, or code pattern
   - Evidence: quote or reference the specific code that causes the issue
   - Why this might be wrong: state the strongest argument this is a false positive — e.g., a framework default mitigates it, the code path is unreachable, or sanitization exists elsewhere
+  - Assumption (required for [LIKELY] findings only): explicitly state the assumption about unseen code or runtime context that prevents this from being [CERTAIN]. If you cannot state a clear, specific assumption, upgrade to [CERTAIN] or downgrade to [POSSIBLE].
   - Remediation: describe what needs to change and why the fix works. Any code shown is illustrative — it is based only on the submitted snippet and cannot account for your full codebase. Prefix any code with "⚠️ Illustrative only — adapt to your codebase:" and explicitly state any assumptions about surrounding context that would affect how this fix should be applied.
 Findings without evidence should be omitted rather than reported vaguely.
 

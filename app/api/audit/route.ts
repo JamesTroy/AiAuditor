@@ -335,6 +335,22 @@ export async function POST(req: NextRequest) {
 
   let safeInput = `${skeletonPrefix}<user_content>\n${escapedInput}\n</user_content>`;
 
+  // Inject related context files — labeled as supporting context, NOT audit targets.
+  // This lets auditors understand middleware, shared utilities, and config that the
+  // primary code depends on, preventing false positives from "missing" patterns.
+  const contextFiles = 'contextFiles' in data ? data.contextFiles : undefined;
+  if (contextFiles && contextFiles.length > 0) {
+    const filesBlock = contextFiles
+      .map((f) => `--- ${escapeXml(f.name)} ---\n${escapeXml(f.content)}`)
+      .join('\n\n');
+    safeInput +=
+      `\n\n<context_files>\n` +
+      `These files provide supporting context for the audit. They are NOT themselves being audited.\n` +
+      `Use them to understand the architecture, middleware, shared utilities, or configuration that\n` +
+      `the primary code above depends on. Do NOT flag patterns as "missing" if they are present in these files.\n\n` +
+      `${filesBlock}\n</context_files>`;
+  }
+
   // Inject runtime context (stack traces, error logs, env info) if provided.
   const runtimeContext = 'runtimeContext' in data ? data.runtimeContext : undefined;
   if (runtimeContext) {

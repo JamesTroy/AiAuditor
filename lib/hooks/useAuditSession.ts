@@ -14,12 +14,17 @@ import { friendlyError } from '@/lib/friendlyError';
 // SM-009: Explicit status enum distinguishes stopped from completed.
 export type AuditStatus = 'idle' | 'loading' | 'stopped' | 'complete' | 'error';
 
+export interface ContextFile {
+  name: string;
+  content: string;
+}
+
 export interface AuditSessionState {
   result: string;
   status: AuditStatus;
   loading: boolean; // derived convenience: status === 'loading'
   error: string;
-  runAudit: (input: string) => Promise<void>;
+  runAudit: (input: string, contextFiles?: ContextFile[]) => Promise<void>;
   handleStop: () => void;
 }
 
@@ -48,7 +53,7 @@ export function useAuditSession(
     };
   }, []);
 
-  const runAudit = useCallback(async (input: string) => {
+  const runAudit = useCallback(async (input: string, contextFiles?: ContextFile[]) => {
     // SM-012: Use ref guard instead of stale-closure boolean.
     if (!input.trim() || isRunningRef.current) return;
 
@@ -66,9 +71,14 @@ export function useAuditSession(
     setResult('');
     setError('');
 
-    const requestBody = agent.kind === 'builtin'
-      ? JSON.stringify({ agentType: agent.id, input })
-      : JSON.stringify({ agentType: 'custom', systemPrompt: agent.systemPrompt, input });
+    const baseBody = agent.kind === 'builtin'
+      ? { agentType: agent.id, input }
+      : { agentType: 'custom', systemPrompt: agent.systemPrompt, input };
+    const requestBody = JSON.stringify(
+      contextFiles && contextFiles.length > 0
+        ? { ...baseBody, contextFiles }
+        : baseBody,
+    );
 
     try {
       const res = await fetch('/api/audit', {

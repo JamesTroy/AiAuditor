@@ -8,6 +8,8 @@ import { z } from 'zod';
 export const MAX_INPUT_CHARS = 120_000;
 export const MAX_SYSTEM_PROMPT_CHARS = 10_000;
 export const MAX_RUNTIME_CONTEXT_CHARS = 15_000;
+export const MAX_CONTEXT_FILE_CHARS = 20_000;
+export const MAX_CONTEXT_FILES = 5;
 
 export const VALID_AGENT_TYPES = [
   'code-quality',
@@ -222,10 +224,25 @@ const runtimeContextField = z
   .max(MAX_RUNTIME_CONTEXT_CHARS, `Runtime context too long (max ${MAX_RUNTIME_CONTEXT_CHARS.toLocaleString()} characters)`)
   .optional();
 
+/**
+ * Related files that provide context for the audit but are NOT themselves being audited.
+ * Examples: auth middleware, shared utilities, config files.
+ */
+const contextFilesField = z
+  .array(
+    z.object({
+      name: z.string().max(255),
+      content: z.string().max(MAX_CONTEXT_FILE_CHARS, `Context file too long (max ${MAX_CONTEXT_FILE_CHARS.toLocaleString()} characters per file)`),
+    }),
+  )
+  .max(MAX_CONTEXT_FILES, `Too many context files (max ${MAX_CONTEXT_FILES})`)
+  .optional();
+
 export const builtInAuditRequestSchema = z.object({
   agentType: z.enum(VALID_AGENT_TYPES).describe('Built-in agent type'),
   input: inputField,
   runtimeContext: runtimeContextField,
+  contextFiles: contextFilesField,
 });
 
 export const customAuditRequestSchema = z.object({
@@ -239,6 +256,7 @@ export const customAuditRequestSchema = z.object({
     ),
   input: inputField,
   runtimeContext: runtimeContextField,
+  contextFiles: contextFilesField,
 });
 
 /** Discriminated union covering both built-in and custom audit requests. */

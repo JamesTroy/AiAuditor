@@ -157,14 +157,8 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      runAudit(buildAuditInput());
+      runAudit(buildAuditInput(), files.length > 0 ? files : undefined);
     }
-  }
-
-  function buildCombinedInput(existingInput: string, newFiles: FileEntry[]): string {
-    if (newFiles.length === 0) return existingInput;
-    const parts = newFiles.map((f) => `--- ${f.name} ---\n${f.content}`);
-    return parts.join('\n\n').slice(0, MAX_CHARS);
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -182,23 +176,18 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
         })
     );
 
+    // Context files are kept separate — they are NOT merged into the main textarea.
+    // They are sent alongside the primary code so auditors can see related files
+    // (middleware, auth config, shared utilities) without flagging them as missing.
     Promise.all(readers).then((newEntries) => {
-      setFiles((prev) => {
-        const merged = [...prev, ...newEntries];
-        setInput(buildCombinedInput('', merged));
-        return merged;
-      });
+      setFiles((prev) => [...prev, ...newEntries].slice(0, 5));
     });
 
     e.target.value = '';
   }
 
   function removeFile(name: string) {
-    setFiles((prev) => {
-      const updated = prev.filter((f) => f.name !== name);
-      setInput(buildCombinedInput('', updated));
-      return updated;
-    });
+    setFiles((prev) => prev.filter((f) => f.name !== name));
   }
 
   // SM-002/SM-020: Unified input fetch handler for URL and PR panels.
@@ -503,7 +492,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
           className="w-full h-64 sm:h-80 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg p-4 font-mono text-sm text-gray-900 dark:text-zinc-100 resize-y focus:outline-none focus:border-gray-500 dark:focus:border-zinc-500 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-50 dark:focus-visible:ring-offset-zinc-950 placeholder-gray-500 dark:placeholder-zinc-400"
           placeholder={`${agent.placeholder}\n\nTip: Press ⌘+Enter to run · Esc to stop`}
           value={input}
-          onChange={(e) => { setInput(e.target.value); if (files.length > 0) setFiles([]); }}
+          onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           maxLength={MAX_CHARS}
           disabled={loading}
@@ -548,7 +537,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <button
-          onClick={() => runAudit(buildAuditInput())}
+          onClick={() => runAudit(buildAuditInput(), files.length > 0 ? files : undefined)}
           disabled={loading || !input.trim()}
           className={`inline-flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-lg font-semibold text-sm text-white transition-colors disabled-muted focus-ring ${agent.buttonClass}`}
         >
@@ -581,13 +570,14 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
           </button>
         )}
 
-        {/* File upload */}
+        {/* Context file upload */}
         <button
           onClick={() => fileInputRef.current?.click()}
-          disabled={loading}
+          disabled={loading || files.length >= 5}
+          title="Attach related files (middleware, auth config, shared utilities) so auditors can see what the primary code depends on — these files won't be audited themselves"
           className="px-4 py-2.5 min-h-[44px] rounded-lg text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors disabled-muted-light focus-ring"
         >
-          Upload file{files.length > 1 ? 's' : ''}
+          + Context file{files.length > 1 ? 's' : ''}{files.length > 0 ? ` (${files.length}/5)` : ''}
         </button>
         <input
           ref={fileInputRef}
@@ -601,13 +591,16 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
 
         {/* Right-side metadata */}
         <div className="ml-auto flex items-center gap-3 flex-wrap justify-end">
-          {/* Multi-file chips */}
+          {/* Context file chips */}
+          {files.length > 0 && (
+            <span className="text-xs text-blue-500 dark:text-blue-400 font-medium">context:</span>
+          )}
           {files.map((f) => (
-            <span key={f.name} className="text-xs text-gray-500 dark:text-zinc-500 bg-gray-100 dark:bg-zinc-800 px-2 py-1 rounded font-mono flex items-center gap-1">
+            <span key={f.name} title="Context file — sent alongside your code but not audited itself" className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 px-2 py-1 rounded font-mono flex items-center gap-1">
               {f.name}
               <button
                 onClick={() => removeFile(f.name)}
-                className="text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 ml-1"
+                className="text-blue-400 dark:text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 ml-1"
                 aria-label={`Remove ${f.name}`}
               >✕</button>
             </span>
@@ -656,7 +649,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
             {!loading && result && (
               <div className="flex items-center gap-2 flex-wrap">
                 <button
-                  onClick={() => runAudit(buildAuditInput())}
+                  onClick={() => runAudit(buildAuditInput(), files.length > 0 ? files : undefined)}
                   aria-label="Re-run this audit"
                   className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 px-2 py-1 min-h-[44px] rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors focus-ring"
                 >

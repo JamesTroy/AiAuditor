@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import SafeMarkdown from '@/components/markdownComponents';
 import { setChainInput } from '@/lib/session';
 import { parseAuditResult } from '@/lib/parseAuditResult';
 import { detectSnippet } from '@/lib/detectSnippet';
+import type { AgentFpRate } from '@/app/api/agents/fp-rates/route';
 
 interface Props {
   result: string | null;
@@ -45,11 +46,24 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
   const [copied, setCopied] = useState(false);
   const [dismissed, setDismissed] = useState<Set<string>>(() => loadDismissed(auditId));
   const [showDismissed, setShowDismissed] = useState(false);
+  const [highFpLikely, setHighFpLikely] = useState(false);
+
+  // FP-RATE: Fetch per-agent [LIKELY] false-positive rates and downgrade
+  // [LIKELY] findings to [POSSIBLE] for agents that cross the threshold.
+  useEffect(() => {
+    fetch('/api/agents/fp-rates')
+      .then((r) => r.ok ? r.json() : { rates: [] })
+      .then(({ rates }: { rates: AgentFpRate[] }) => {
+        const match = rates.find((r) => r.agentId === agentId);
+        if (match?.highLikelyFpRate) setHighFpLikely(true);
+      })
+      .catch(() => { /* degrade gracefully — don't affect the render */ });
+  }, [agentId]);
 
   const metrics = useMemo(() => {
     if (!result) return null;
-    return parseAuditResult(result);
-  }, [result]);
+    return parseAuditResult(result, { downgradeHighFpLikely: highFpLikely });
+  }, [result, highFpLikely]);
 
   const snippetDetection = useMemo(() => detectSnippet(input), [input]);
 

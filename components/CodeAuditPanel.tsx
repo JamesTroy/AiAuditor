@@ -124,6 +124,31 @@ export default function CodeAuditPanel() {
   const [runtimeContext, setRuntimeContext] = useState('');
   const [runtimeContextOpen, setRuntimeContextOpen] = useState(false);
 
+  // --- Context files ---
+  interface ContextFile { name: string; content: string; }
+  const [contextFiles, setContextFiles] = useState<ContextFile[]>([]);
+  const contextFileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleContextFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const fileList = Array.from(e.target.files ?? []);
+    if (fileList.length === 0) return;
+    const readers = fileList.map(
+      (file) => new Promise<ContextFile>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => resolve({ name: file.name, content: (ev.target?.result as string) ?? '' });
+        reader.readAsText(file);
+      }),
+    );
+    Promise.all(readers).then((newFiles) => {
+      setContextFiles((prev) => [...prev, ...newFiles].slice(0, 5));
+    });
+    e.target.value = '';
+  }
+
+  function removeContextFile(name: string) {
+    setContextFiles((prev) => prev.filter((f) => f.name !== name));
+  }
+
   // --- Auto-detection result ---
   const [autoDetectInfo, setAutoDetectInfo] = useState<{
     language: string | null;
@@ -182,7 +207,7 @@ export default function CodeAuditPanel() {
         const agent = selectedAgents[i];
         if (!agent) return null;
         const metrics = parseAuditResult(text);
-        return { agentId: agent.id, agentName: agent.name, findings: metrics.findings };
+        return { agentId: agent.id, agentName: agent.name, agentCategory: agent.category, findings: metrics.findings };
       })
       .filter((s): s is NonNullable<typeof s> => s !== null);
     if (agentSets.length < 2) return null;
@@ -316,9 +341,11 @@ export default function CodeAuditPanel() {
     signal: AbortSignal,
     onChunk: (text: string) => void,
     extraContext?: string,
+    ctxFiles?: { name: string; content: string }[],
   ): Promise<string> {
     const body: Record<string, unknown> = { agentType: agentId, input };
     if (extraContext) body.runtimeContext = extraContext;
+    if (ctxFiles && ctxFiles.length > 0) body.contextFiles = ctxFiles;
     const res = await fetch('/api/audit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -422,6 +449,7 @@ export default function CodeAuditPanel() {
             rebuildResult();
           },
           runtimeContext.trim() || undefined,
+          contextFiles.length > 0 ? contextFiles : undefined,
         );
         agentResults[i] = agentResult;
         rebuildResultImmediate();
@@ -586,6 +614,52 @@ export default function CodeAuditPanel() {
             </span>
           </div>
         )}
+
+        {/* Context files — collapsible upload for related files */}
+        <div className="mb-3">
+          <div className="inline-flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => contextFileInputRef.current?.click()}
+              disabled={loading || contextFiles.length >= 5}
+              title="Attach related files (middleware, auth config, shared utilities) so auditors know what the primary code depends on — these files are not audited themselves"
+              className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+              </svg>
+              Attach context files{contextFiles.length > 0 ? ` (${contextFiles.length}/5)` : ''}
+            </button>
+            <input
+              ref={contextFileInputRef}
+              type="file"
+              multiple
+              accept=".js,.ts,.tsx,.jsx,.html,.css,.py,.go,.java,.rb,.php,.md,.txt,.json,.yaml,.yml,.toml,.env.example"
+              onChange={handleContextFileChange}
+              className="hidden"
+              aria-label="Attach context files"
+            />
+            {contextFiles.map((f) => (
+              <span
+                key={f.name}
+                title="Context file — sent alongside your code but not audited itself"
+                className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 px-2 py-0.5 rounded font-mono flex items-center gap-1"
+              >
+                {f.name}
+                <button
+                  onClick={() => removeContextFile(f.name)}
+                  className="text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 ml-1"
+                  aria-label={`Remove ${f.name}`}
+                >✕</button>
+              </span>
+            ))}
+          </div>
+          {contextFiles.length > 0 && (
+            <p className="mt-1 text-[11px] text-blue-500 dark:text-blue-400">
+              These files help auditors understand what the primary code depends on — they reduce false positives from patterns like auth middleware or shared validators that live outside the audited file.
+            </p>
+          )}
+        </div>
 
         {/* Runtime context — collapsible */}
         <div className="mb-3">
@@ -1102,7 +1176,7 @@ export default function CodeAuditPanel() {
                         <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
                         Synthesizing findings…
                       </span>
-                    ) : 'Remediation Roadmap'}
+                    ) : 'Remediation Roadmap & Analysis'}
                   </span>
                 </div>
                 <div className="p-6 prose prose-sm max-w-prose dark:prose-invert">

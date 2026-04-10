@@ -74,7 +74,15 @@ function hasEvidence(lines: string[], startIdx: number): boolean {
   return false;
 }
 
-export function parseAuditResult(markdown: string): AuditMetrics {
+export interface ParseOptions {
+  /**
+   * When true, [LIKELY] findings are also excluded from filteredFindings —
+   * used for agents whose dismissal analytics show a high [LIKELY] FP rate.
+   */
+  downgradeHighFpLikely?: boolean;
+}
+
+export function parseAuditResult(markdown: string, options: ParseOptions = {}): AuditMetrics {
   const severityCounts = {
     critical: 0,
     high: 0,
@@ -142,6 +150,8 @@ export function parseAuditResult(markdown: string): AuditMetrics {
     if (f.confidence === 'possible') return false;
     // Filter out [SUGGESTION] classification — not a defect
     if (f.classification === 'suggestion') return false;
+    // For agents with a high [LIKELY] dismissal rate, treat [LIKELY] as [POSSIBLE]
+    if (options.downgradeHighFpLikely && f.confidence === 'likely') return false;
     return true;
   });
 

@@ -16,12 +16,14 @@ import type { Finding } from '@/lib/parseAuditResult';
 export interface AgentFindingSet {
   agentId: string;
   agentName: string;
+  agentCategory: string;
   findings: Finding[];
 }
 
 export interface DedupEntry {
   agentId: string;
   agentName: string;
+  agentCategory: string;
   finding: Finding;
 }
 
@@ -106,32 +108,63 @@ function highestSeverity(entries: DedupEntry[]): Finding['severity'] {
   }, 'informational');
 }
 
+// ---------- Per-category thresholds ----------
+
+/**
+ * Security agents use a stricter (higher) threshold so that distinct
+ * vulnerabilities with overlapping keywords — e.g. "XSS via innerHTML" and
+ * "XSS via eval" — are not collapsed into one group. Missing a separate
+ * vuln is worse than showing it twice.
+ *
+ * Design, SEO, Marketing, and DX agents use a looser (lower) threshold
+ * because they describe the same issue in very varied language — e.g.
+ * "Images missing alt text" and "No alternative text on img elements" — and
+ * at 0.40 these would fail to group even though they are clearly the same.
+ *
+ * All other pairs use the default.
+ */
+const SECURITY_CATEGORIES = new Set(['Security & Privacy']);
+const PERMISSIVE_CATEGORIES = new Set(['Design', 'SEO', 'Marketing', 'Developer Experience']);
+
+const THRESHOLD_SECURITY   = 0.55; // strict — avoid collapsing distinct vulns
+const THRESHOLD_DEFAULT    = 0.40;
+const THRESHOLD_PERMISSIVE = 0.30; // loose — catch varied phrasing
+
+function pairThreshold(catA: string, catB: string): number {
+  const aIsSec = SECURITY_CATEGORIES.has(catA);
+  const bIsSec = SECURITY_CATEGORIES.has(catB);
+  if (aIsSec && bIsSec) return THRESHOLD_SECURITY;
+  if (aIsSec || bIsSec) return THRESHOLD_DEFAULT; // cross-category with security → default
+  if (PERMISSIVE_CATEGORIES.has(catA) || PERMISSIVE_CATEGORIES.has(catB)) return THRESHOLD_PERMISSIVE;
+  return THRESHOLD_DEFAULT;
+}
+
 // ---------- Public API ----------
 
 /**
  * Deduplicate findings across multiple agent result sets.
  *
  * Two findings are considered duplicates when their normalised titles have a
- * Jaccard similarity ≥ 0.40, or when one title's tokens are a full subset of
- * the other's. Only findings from *different* agents are grouped — repeated
- * findings within the same agent are left as-is.
+ * Jaccard similarity ≥ the per-category threshold, or when one title's tokens
+ * are a full subset of the other's. Thresholds vary by agent category:
+ *   - Security & Privacy pairs: 0.55 (strict — distinct vulns must stay distinct)
+ *   - Design / SEO / Marketing / DX pairs: 0.30 (loose — varied language for same issue)
+ *   - All other pairs: 0.40 (default)
  *
- * Findings marked [SUGGESTION] are excluded from deduplication because they
- * are already filtered from the scored results and rarely refer to the same
- * precise issue across agents.
+ * Only findings from *different* agents are grouped — repeated findings
+ * within the same agent are left as-is. Findings marked [SUGGESTION] are
+ * excluded because they are already filtered from scored results.
  */
 export function deduplicateFindings(
   agentSets: AgentFindingSet[],
 ): DeduplicationResult {
-  const SIMILARITY_THRESHOLD = 0.40;
-
   // Flatten all actionable findings with their source agent.
   const flat: DedupEntry[] = [];
   for (const set of agentSets) {
     for (const f of set.findings) {
       // Skip suggestions — they're already excluded from scoring
       if (f.classification === 'suggestion') continue;
-      flat.push({ agentId: set.agentId, agentName: set.agentName, finding: f });
+      flat.push({ agentId: set.agentId, agentName: set.agentName, agentCategory: set.agentCategory, finding: f });
     }
   }
 
@@ -159,8 +192,9 @@ export function deduplicateFindings(
     for (let j = i + 1; j < flat.length; j++) {
       // Never group findings from the same agent
       if (flat[i].agentId === flat[j].agentId) continue;
+      const threshold = pairThreshold(flat[i].agentCategory, flat[j].agentCategory);
       const sim = jaccard(tokens[i], tokens[j]);
-      if (sim >= SIMILARITY_THRESHOLD || isSubset(tokens[i], tokens[j])) {
+      if (sim >= threshold || isSubset(tokens[i], tokens[j])) {
         union(i, j);
       }
     }
