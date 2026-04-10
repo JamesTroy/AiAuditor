@@ -89,8 +89,8 @@ describe('auditRequestSchema', () => {
   });
 
   describe('VALID_AGENT_TYPES', () => {
-    it('contains 186 agent types', () => {
-      expect(VALID_AGENT_TYPES.length).toBe(186);
+    it('contains 187 agent types', () => {
+      expect(VALID_AGENT_TYPES.length).toBe(187);
     });
 
     it('has no duplicates', () => {
