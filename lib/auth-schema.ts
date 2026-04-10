@@ -190,3 +190,25 @@ export const agentDismissalStats = pgTable('agent_dismissal_stats', {
 }, (t) => [
   uniqueIndex('idx_agent_dismissal_stats_agentId').on(t.agentId),
 ]);
+
+// ─── Finding dismissals ──────────────────────────────────────────
+// Append-only audit trail for dismiss/restore actions on individual findings.
+// One row per action — reconstruct current state by replaying events.
+// RBAC enforced at the API layer (CRITICAL/HIGH require admin or senior_reviewer).
+
+export const findingDismissals = pgTable('finding_dismissals', {
+  id:         text('id').primaryKey(),
+  auditId:    text('auditId').notNull().references(() => audit.id, { onDelete: 'cascade' }),
+  findingId:  text('findingId').notNull(),
+  userId:     text('userId').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  action:     text('action', { enum: ['dismiss', 'restore'] }).notNull(),
+  severity:   text('severity', { enum: ['critical', 'high', 'medium', 'low', 'informational'] }).notNull(),
+  confidence: text('confidence', { enum: ['certain', 'likely', 'possible'] }),
+  reason:     text('reason'),
+  createdAt:  timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('idx_fd_auditId').on(t.auditId),
+  index('idx_fd_userId').on(t.userId),
+  index('idx_fd_auditId_finding').on(t.auditId, t.findingId),
+  index('idx_fd_createdAt').on(t.createdAt),
+]);
