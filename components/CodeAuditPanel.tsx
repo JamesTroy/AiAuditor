@@ -840,7 +840,7 @@ export default function CodeAuditPanel() {
                             return (
                               <label
                                 key={agent.id}
-                                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-colors ${isSelected ? 'bg-white dark:bg-zinc-800 shadow-sm' : 'hover:bg-white dark:hover:bg-zinc-800/50'}`}
+                                className={`flex items-start gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-colors ${isSelected ? 'bg-white dark:bg-zinc-800 shadow-sm' : 'hover:bg-white dark:hover:bg-zinc-800/50'}`}
                               >
                                 <input
                                   type="checkbox"
@@ -848,15 +848,22 @@ export default function CodeAuditPanel() {
                                   onChange={() => toggleAgent(agent.id)}
                                   className="sr-only"
                                 />
-                                <span className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-violet-600 border-violet-600' : 'border-gray-300 dark:border-zinc-600'}`}>
+                                <span className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors mt-0.5 ${isSelected ? 'bg-violet-600 border-violet-600' : 'border-gray-300 dark:border-zinc-600'}`}>
                                   {isSelected && (
                                     <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                     </svg>
                                   )}
                                 </span>
-                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor(agent.accentClass)}`} />
-                                <span className="text-sm text-gray-700 dark:text-zinc-300 truncate">{agent.name}</span>
+                                <span className={`w-2 h-2 rounded-full flex-shrink-0 mt-1 ${dotColor(agent.accentClass)}`} />
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-sm text-gray-700 dark:text-zinc-300">{agent.name}</span>
+                                  {agent.description && (
+                                    <span className="text-[11px] text-gray-400 dark:text-zinc-500 leading-tight mt-0.5 block">
+                                      {agent.description.length > 80 ? agent.description.slice(0, 80) + '…' : agent.description}
+                                    </span>
+                                  )}
+                                </div>
                               </label>
                             );
                           })}

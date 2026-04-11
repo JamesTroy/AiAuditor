@@ -311,6 +311,19 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
         </span>
       </div>
 
+      {/* Severity legend — helps vibe coders decode the report without Googling */}
+      <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-500 dark:text-zinc-500 px-1">
+        <span className="font-medium text-gray-600 dark:text-zinc-400">Severity:</span>
+        <span><span className="text-red-500 font-medium">Critical</span> = fix now</span>
+        <span><span className="text-orange-500 font-medium">High</span> = fix soon</span>
+        <span><span className="text-amber-500 font-medium">Medium</span> = plan to fix</span>
+        <span><span className="text-slate-500 font-medium">Low</span> = minor</span>
+        <span className="hidden sm:inline text-gray-300 dark:text-zinc-700">·</span>
+        <span><span className="font-medium">Vulnerability</span> = exploitable bug</span>
+        <span><span className="font-medium">Deficiency</span> = gap from best practice</span>
+        <span><span className="font-medium">Suggestion</span> = optional improvement</span>
+      </div>
+
       <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 prose prose-sm dark:prose-invert max-w-prose">
         <SafeMarkdown>{result}</SafeMarkdown>
       </div>
