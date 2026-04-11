@@ -194,7 +194,7 @@ export default function SettingsPage() {
                 {profileStatus === 'saving' ? 'Saving...' : 'Save changes'}
               </button>
               {profileStatus === 'saved' && (
-                <span className="text-sm text-green-600 dark:text-green-400 motion-safe:animate-fade-up">Saved!</span>
+                <span role="status" aria-live="polite" className="text-sm text-green-600 dark:text-green-400 motion-safe:animate-fade-up">Saved!</span>
               )}
             </div>
           </form>
@@ -292,7 +292,7 @@ export default function SettingsPage() {
                   {workspaceStatus === 'saving' ? 'Saving...' : 'Save context'}
                 </button>
                 {workspaceStatus === 'saved' && (
-                  <span className="text-sm text-green-600 dark:text-green-400 motion-safe:animate-fade-up">Saved!</span>
+                  <span role="status" aria-live="polite" className="text-sm text-green-600 dark:text-green-400 motion-safe:animate-fade-up">Saved!</span>
                 )}
                 {workspaceStatus === 'error' && (
                   <span className="text-sm text-red-600 dark:text-red-400">Failed to save — try again</span>

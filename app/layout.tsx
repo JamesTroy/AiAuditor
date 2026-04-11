@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { headers } from 'next/headers';
 import ThemeProvider from '@/components/ThemeProvider';
@@ -17,6 +17,17 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://claudit.consulting';
+
+// AUDIT-001: Viewport must be a separate export in Next.js 15 App Router.
+// Without this, mobile devices render at desktop width and scale down.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
+  ],
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),

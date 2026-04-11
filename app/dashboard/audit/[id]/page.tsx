@@ -11,6 +11,7 @@ import { scoreColorClass } from '@/lib/ui';
 
 export const metadata: Metadata = {
   title: 'Audit Result',
+  description: 'View severity-rated findings, dismiss false positives, and track your code quality score.',
 };
 
 export default async function AuditDetailPage({ params }: { params: Promise<{ id: string }> }) {
