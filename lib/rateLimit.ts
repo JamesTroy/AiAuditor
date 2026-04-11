@@ -260,7 +260,7 @@ export const authGeneralLimiter = new RateLimiter({
   prefix: 'auth-general',
 });
 
-// RL-010: Global daily audit call budget (in-memory; replace with Redis for multi-instance).
+// RL-010: Global daily audit call budget — Redis-backed when available (cross-replica).
 // 2000/day supports ~16 full 125-agent runs across all users.
 export const dailyAuditBudget = new RateLimiter({
   windowMs: 24 * 60 * 60_000,

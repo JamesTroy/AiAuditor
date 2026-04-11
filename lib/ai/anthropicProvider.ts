@@ -69,7 +69,7 @@ export class AnthropicProvider implements AIProvider {
         // CLOUD-030: Check circuit breaker before making API call.
         // FP-008: Enqueue a visible error before erroring the stream so
         // clients see an explanation instead of a silent stream end.
-        if (!anthropicCircuitBreaker.allowRequest()) {
+        if (!(await anthropicCircuitBreaker.allowRequest())) {
           controller.enqueue(encoder.encode('\n\n[Service temporarily unavailable. Please try again in a few minutes.]'));
           controller.error(new Error('Circuit breaker open: Anthropic API unavailable. Try again later.'));
           return;
@@ -169,7 +169,7 @@ export class AnthropicProvider implements AIProvider {
             }
 
             // Stream completed successfully.
-            anthropicCircuitBreaker.onSuccess();
+            await anthropicCircuitBreaker.onSuccess();
             break;
           } catch (err) {
             // Do not retry if the AbortSignal fired — caller timed out.
@@ -179,7 +179,7 @@ export class AnthropicProvider implements AIProvider {
               return;
             }
 
-            anthropicCircuitBreaker.onFailure();
+            await anthropicCircuitBreaker.onFailure();
 
             if (attempt < ANTHROPIC_MAX_RETRIES && isRetryable(err)) {
               const delay = ANTHROPIC_RETRY_BASE_MS * 2 ** (attempt - 1);
