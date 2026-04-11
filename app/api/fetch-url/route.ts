@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { isAllowedUrl, ALLOWED_URL_DESCRIPTION } from '@/lib/config/urlAllowlist';
 import { fetchUrlLimiter } from '@/lib/rateLimit';
 import { API_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
+import { validateUrlForSSRF } from '@/lib/ssrf';
 
 export const runtime = 'nodejs';
 
@@ -41,6 +42,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // SSRF-002: DNS-level validation — resolve the hostname and verify all
+  // IPs are public BEFORE making the request. Mitigates DNS rebinding:
+  // even though the allowlist restricts to GitHub domains, this check
+  // closes the TOCTOU window where a CNAME could point to a private IP.
+  const ssrfError = await validateUrlForSSRF(trimmed);
+  if (ssrfError) {
+    return new Response(ssrfError, { status: 400 });
+  }
+
   let fetchRes: Response;
   try {
     fetchRes = await fetch(trimmed, {
@@ -50,7 +60,7 @@ export async function POST(req: NextRequest) {
       // internal address even if the original URL passed the allowlist.
       redirect: 'error',
     });
-  } catch (err) {
+  } catch {
     return new Response('Failed to fetch URL. Please check the URL and try again.', { status: 502 });
   }
 
