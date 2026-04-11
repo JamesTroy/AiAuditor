@@ -219,9 +219,9 @@ export default function Home() {
       {/* ─── Example findings ─── */}
       <section className="px-4 sm:px-6 pb-24">
         <div className="max-w-3xl mx-auto">
-          <p className="text-xs font-semibold uppercase tracking-widest text-violet-500 dark:text-violet-400 mb-3 text-center">Real output</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-violet-500 dark:text-violet-400 mb-3 text-center">Example findings</p>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center text-gray-900 dark:text-zinc-100 mb-10">
-            See what Claudit catches
+            What findings look like
           </h2>
           <div className="space-y-3">
             {/* Security — Critical */}
@@ -231,13 +231,20 @@ export default function Home() {
                 <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">Critical</span>
                 <span className="text-xs text-gray-300 dark:text-zinc-600 mx-0.5">·</span>
                 <span className="text-xs text-gray-500 dark:text-zinc-400">Security Audit</span>
-                <span className="ml-auto text-xs font-mono text-gray-400 dark:text-zinc-500">CERTAIN · VULNERABILITY</span>
+                <span className="ml-auto flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400">certain</span>
+                  <span className="text-[10px] text-gray-400 dark:text-zinc-500">vulnerability</span>
+                </span>
               </div>
               <div className="px-5 py-4 space-y-3">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">SQL Injection via unsanitized query parameter</h3>
                 <div className="relative bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 font-mono text-xs leading-relaxed overflow-x-auto">
                   <span className="text-zinc-500 select-none">app/api/users/route.ts:42 &nbsp;</span>
                   <span className="text-red-400">{"const query = \"SELECT * FROM users WHERE id = \" + req.params.id;"}</span>
+                </div>
+                <div className="text-xs text-gray-500 dark:text-zinc-500 leading-relaxed space-y-1">
+                  <p><span className="text-gray-600 dark:text-zinc-400 font-medium">Attack vector:</span> Attacker sends <code className="bg-gray-100 dark:bg-zinc-800 px-1 py-0.5 rounded font-mono text-[11px]">?id=1 OR 1=1--</code> via GET /api/users</p>
+                  <p><span className="text-gray-600 dark:text-zinc-400 font-medium">Data flow:</span> <span className="font-mono text-[11px]">req.params.id → query string → db.query()</span> — no sanitization found</p>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed">
                   <strong className="text-gray-800 dark:text-zinc-200">Fix:</strong> Use parameterized queries: <code className="bg-gray-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-xs font-mono">{"db.execute(\"SELECT * FROM users WHERE id = ?\", [req.params.id])"}</code>
@@ -252,7 +259,10 @@ export default function Home() {
                 <span className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">High</span>
                 <span className="text-xs text-gray-300 dark:text-zinc-600 mx-0.5">·</span>
                 <span className="text-xs text-gray-500 dark:text-zinc-400">Performance Audit</span>
-                <span className="ml-auto text-xs font-mono text-gray-400 dark:text-zinc-500">CERTAIN · DEFICIENCY</span>
+                <span className="ml-auto flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400">certain</span>
+                  <span className="text-[10px] text-gray-400 dark:text-zinc-500">deficiency</span>
+                </span>
               </div>
               <div className="px-5 py-4 space-y-3">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">{"Render-blocking CSS loaded synchronously in <head>"}</h3>
@@ -273,7 +283,10 @@ export default function Home() {
                 <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400 uppercase tracking-wider">Medium</span>
                 <span className="text-xs text-gray-300 dark:text-zinc-600 mx-0.5">·</span>
                 <span className="text-xs text-gray-500 dark:text-zinc-400">Accessibility Audit</span>
-                <span className="ml-auto text-xs font-mono text-gray-400 dark:text-zinc-500">CERTAIN · DEFICIENCY</span>
+                <span className="ml-auto flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400">certain</span>
+                  <span className="text-[10px] text-gray-400 dark:text-zinc-500">deficiency</span>
+                </span>
               </div>
               <div className="px-5 py-4 space-y-3">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Image missing alt text — screen readers cannot describe content</h3>
