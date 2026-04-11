@@ -124,8 +124,8 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
     try {
       await authClient.admin.setRole({ userId, role });
       router.refresh();
-    } catch (e: any) {
-      alert(e.message || 'Failed to update role');
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message :'Failed to update role');
     } finally {
       setLoading(null);
       setConfirmAction(null);
@@ -147,8 +147,8 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
         setBanReason('');
       }
       router.refresh();
-    } catch (e: any) {
-      alert(e.message || 'Failed to update ban status');
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message :'Failed to update ban status');
     } finally {
       setLoading(null);
       setConfirmAction(null);
@@ -160,8 +160,8 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
     try {
       await authClient.admin.removeUser({ userId });
       router.refresh();
-    } catch (e: any) {
-      alert(e.message || 'Failed to delete user');
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message :'Failed to delete user');
     } finally {
       setLoading(null);
       setConfirmAction(null);
@@ -174,8 +174,8 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
       await authClient.admin.impersonateUser({ userId });
       router.push('/dashboard');
       router.refresh();
-    } catch (e: any) {
-      alert(e.message || 'Failed to impersonate user');
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message :'Failed to impersonate user');
     } finally {
       setLoading(null);
     }

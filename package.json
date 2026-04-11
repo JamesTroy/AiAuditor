@@ -39,9 +39,12 @@
     "react-dom": "19.2.4",
     "react-markdown": "9.1.0",
     "resend": "6.9.3",
+    "@sentry/nextjs": "^9.27.0",
+    "web-vitals": "^4.2.4",
     "zod": "4.3.6"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.5.12",
     "@tailwindcss/typography": "0.5.19",
     "@types/node": "20.19.37",
     "@types/react": "19.2.14",

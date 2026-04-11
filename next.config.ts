@@ -1,5 +1,13 @@
 import type { NextConfig } from 'next';
 
+// AUDIT-BUNDLE: Bundle analyzer — run `ANALYZE=true npm run build` to generate
+// an interactive treemap of the client and server bundles.
+// Only activates when ANALYZE=true to avoid slowing down normal builds.
+const withBundleAnalyzer = process.env.ANALYZE === 'true'
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  ? require('@next/bundle-analyzer')({ enabled: true })
+  : (config: NextConfig) => config;
+
 // Security headers applied to every route via next.config.ts.
 // VULN-007: Content-Security-Policy is intentionally absent here — it is set
 // dynamically in middleware.ts with a per-request nonce, which allows removing
@@ -99,4 +107,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

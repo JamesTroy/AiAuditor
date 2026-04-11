@@ -83,8 +83,7 @@ export class AnthropicProvider implements AIProvider {
             // CACHE-014: Use cache_control on system prompt so Anthropic caches the
             // processed prompt for 5 minutes. Saves ~90% of input token cost on
             // repeated requests to the same agent.
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const requestParams: any = {
+            const requestParams: Anthropic.Messages.MessageCreateParamsStreaming = {
               model: ANTHROPIC_MODEL,
               max_tokens: ANTHROPIC_MAX_TOKENS,
               temperature: 0,
@@ -96,13 +95,9 @@ export class AnthropicProvider implements AIProvider {
                 },
               ],
               messages,
+              stream: true as const,
+              ...(tools && tools.length > 0 ? { tools } : {}),
             };
-
-            // STRUCT-001: Include tools when provided for structured output.
-            if (tools && tools.length > 0) {
-              requestParams.tools = tools;
-              // tool_choice: 'auto' lets Claude write text AND call the tool.
-            }
 
             const stream = client.messages.stream(
               requestParams,
