@@ -111,7 +111,8 @@ export const member = pgTable('member', {
 }, (t) => [
   index('idx_member_orgId').on(t.organizationId),
   index('idx_member_userId').on(t.userId),
-  index('idx_member_orgId_userId').on(t.organizationId, t.userId),
+  // ARCH-REVIEW-003: Enforce one membership per user per org at the DB level.
+  uniqueIndex('uq_member_orgId_userId').on(t.organizationId, t.userId),
 ]);
 
 export const invitation = pgTable('invitation', {
@@ -128,6 +129,8 @@ export const invitation = pgTable('invitation', {
 }, (t) => [
   index('idx_invitation_orgId').on(t.organizationId),
   index('idx_invitation_email').on(t.email),
+  // ARCH-REVIEW-004: Constrain invitation status to valid values.
+  check('invitation_status_check', sql`${t.status} IN ('pending', 'accepted', 'rejected', 'expired', 'canceled')`),
 ]);
 
 // ─── Shared types ──────────────────────────────────────────────

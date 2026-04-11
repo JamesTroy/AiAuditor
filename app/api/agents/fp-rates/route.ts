@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { agentDismissalStats } from '@/lib/auth-schema';
+import { fpRatesLimiter } from '@/lib/rateLimit';
 
 // Minimum [LIKELY] dismissals before we trust the signal.
 // Below this sample size the rate is too noisy to act on.
@@ -32,7 +33,12 @@ export interface AgentFpRate {
  * No auth required — this is aggregate, non-personal data.
  * Cached for 5 minutes so every audit page load doesn't hit the DB.
  */
-export async function GET(): Promise<NextResponse> {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  // ARCH-REVIEW-002: Rate limit fp-rates endpoint.
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? req.headers.get('x-real-ip') ?? '127.0.0.1';
+  const rl = await fpRatesLimiter.check(ip);
+  if (!rl.allowed) return NextResponse.json({ rates: [] }, { status: 429, headers: rl.headers });
+
   try {
     const rows = await db
       .select({

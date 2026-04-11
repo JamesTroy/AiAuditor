@@ -3,6 +3,7 @@ import { synthesisLimiter } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { STREAM_RESPONSE_HEADERS, ALLOWED_ORIGINS } from '@/lib/config/apiHeaders';
 import { escapeXml } from '@/lib/escapeXml';
+import { synthesizeRequestSchema } from '@/lib/schemas/synthesizeRequest';
 
 export const runtime = 'nodejs';
 
@@ -86,19 +87,24 @@ export async function POST(req: NextRequest) {
     return new Response('Too many requests.', { status: 429, headers: { ...rl.headers, 'X-Request-Id': requestId } });
   }
 
-  let body: { results?: unknown; expectedAgentCount?: unknown };
+  let rawBody: unknown;
   try {
-    body = await req.json();
+    rawBody = await req.json();
   } catch {
     return new Response('Invalid JSON', { status: 400, headers: { 'X-Request-Id': requestId } });
   }
 
-  const results = typeof body.results === 'string' ? body.results : '';
-  if (!results || results.length < 100) {
-    return new Response('Missing or too short audit results', { status: 400, headers: { 'X-Request-Id': requestId } });
+  // ARCH-REVIEW-005: Zod schema validation — consistent with /api/audit pattern.
+  const parsed = synthesizeRequestSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? 'Invalid request';
+    return new Response(message, { status: 400, headers: { 'X-Request-Id': requestId } });
   }
 
-  const truncated = results.slice(0, MAX_INPUT_CHARS);
+  const truncated = parsed.data.results.slice(0, MAX_INPUT_CHARS);
+
+  // expectedAgentCount is not in the schema — extract manually (optional field)
+  const body = rawBody as Record<string, unknown>;
 
   // Track partial coverage: count agent sections in the combined results
   const expectedCount = typeof body.expectedAgentCount === 'number' ? body.expectedAgentCount : null;

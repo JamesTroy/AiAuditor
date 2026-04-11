@@ -301,3 +301,19 @@ export const perEmailLoginLimiter = new RateLimiter({
   maxRequests: 10,
   prefix: 'login-email',
 });
+
+// ARCH-REVIEW-001: Settings endpoint — 20 req/min per IP.
+// Workspace context updates are rare; higher rates indicate automated abuse.
+export const settingsLimiter = new RateLimiter({
+  windowMs: 60_000,
+  maxRequests: 20,
+  prefix: 'settings',
+});
+
+// ARCH-REVIEW-002: FP-rates endpoint — 60 req/min per IP.
+// Read-only aggregate data; generous limit but prevents scraping.
+export const fpRatesLimiter = new RateLimiter({
+  windowMs: 60_000,
+  maxRequests: 60,
+  prefix: 'fp-rates',
+});

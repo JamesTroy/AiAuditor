@@ -72,9 +72,15 @@ export function middleware(request: NextRequest) {
 
   if (isProtected && !sessionCookie) {
     const loginUrl = new URL('/login', request.url);
-    // AUTH-001: Only pass safe relative paths as callbackUrl
-    const safePath = pathname.startsWith('/') && !pathname.startsWith('//') ? pathname : '/dashboard';
-    loginUrl.searchParams.set('callbackUrl', safePath);
+    // AUTH-001 / ARCH-REVIEW-006: Only pass safe relative paths as callbackUrl.
+    // Include search params so users return to the exact page (e.g. /dashboard?status=failed).
+    // Double-slash prefix blocks protocol-relative URLs (//evil.com).
+    if (pathname.startsWith('/') && !pathname.startsWith('//')) {
+      const search = request.nextUrl.search; // includes leading '?'
+      loginUrl.searchParams.set('callbackUrl', pathname + search);
+    } else {
+      loginUrl.searchParams.set('callbackUrl', '/dashboard');
+    }
     return NextResponse.redirect(loginUrl);
   }
 
