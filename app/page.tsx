@@ -37,11 +37,11 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Is this just ChatGPT in a trench coat?',
-    a: `No — and it's a fair question. Claudit uses Claude (Anthropic's model), but the work is in the prompts, not the model. Each of the ${agents.length}+ auditors is a carefully engineered prompt that encodes a specific domain — OWASP Top 10, WCAG 2.2 AA, Core Web Vitals, SQL injection patterns, etc. The model supplies language understanding; the auditor supplies the expertise. Think of it like the difference between hiring a generalist and hiring someone who has read every OWASP advisory twice.`,
+    a: `No — and it's a fair question. Claudit uses Claude (Anthropic's model), but the work is in the prompts, not the model. Each of the ${agents.length}+ auditors is a carefully engineered prompt that encodes a specific domain — OWASP Top 10 (the most common security mistakes), WCAG 2.2 AA (accessibility standards), Core Web Vitals (Google's page speed metrics), SQL injection patterns, and more. The model supplies language understanding; the auditor supplies the expertise. Think of it like the difference between hiring a generalist and hiring someone who has read every security advisory twice.`,
   },
   {
     q: 'What does Claudit miss or get wrong?',
-    a: 'A few known limitations worth knowing upfront: (1) We analyze code statically — runtime behavior, production load patterns, and environment-specific bugs are outside scope. (2) Findings marked POSSIBLE or LIKELY require human judgment; not everything flagged is a real issue. (3) Codebases over ~30,000 characters are sampled, not analyzed in full. (4) Claudit is not a replacement for a specialist security audit in regulated industries (PCI-DSS, HIPAA, SOC 2 certification). Treat every finding as a candidate for your review — not a final verdict.',
+    a: 'A few known limitations worth knowing upfront: (1) We analyze code statically — runtime behavior, production load patterns, and environment-specific bugs are outside scope. (2) Findings marked POSSIBLE or LIKELY require human judgment; not everything flagged is a real issue. (3) Codebases over ~30,000 characters are sampled, not analyzed in full. (4) Claudit is not a replacement for a specialist security audit in regulated industries (PCI-DSS for payments, HIPAA for healthcare, SOC 2 for enterprise SaaS compliance). Treat every finding as a candidate for your review — not a final verdict.',
   },
   {
     q: 'How is Claudit different from SonarQube, Snyk, or a linter?',
@@ -307,14 +307,14 @@ export default function Home() {
                 <li className="flex gap-2"><span className="text-emerald-500 shrink-0 mt-0.5">✓</span>Patterns static analysis misses — auth logic, cross-file data flow, insecure defaults</li>
                 <li className="flex gap-2"><span className="text-emerald-500 shrink-0 mt-0.5">✓</span>Fast second opinion before a code review or security engagement</li>
                 <li className="flex gap-2"><span className="text-emerald-500 shrink-0 mt-0.5">✓</span>Coverage across domains you don&apos;t specialize in — accessibility, SEO, infrastructure</li>
-                <li className="flex gap-2"><span className="text-emerald-500 shrink-0 mt-0.5">✓</span>Common OWASP Top 10, WCAG 2.2 AA, and GDPR Article 25 patterns</li>
+                <li className="flex gap-2"><span className="text-emerald-500 shrink-0 mt-0.5">✓</span>Common security (OWASP Top 10), accessibility (WCAG 2.2 AA), and privacy (GDPR) patterns</li>
               </ul>
             </div>
             <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50">
               <p className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-3">Hard limits</p>
               <ul className="space-y-2 text-sm text-gray-700 dark:text-zinc-300">
                 <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Very large monorepos — analyses up to 120k characters; split by module for full coverage</li>
-                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Replacing a specialist audit for regulated industries (PCI-DSS, HIPAA, SOC 2)</li>
+                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Replacing a specialist audit for regulated industries (payments, healthcare, enterprise SaaS compliance)</li>
               </ul>
             </div>
           </div>

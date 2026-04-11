@@ -212,13 +212,13 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
         </div>
       )}
 
-      {/* FP-UI: Findings triage panel — dismiss false positives */}
+      {/* FP-UI: Review findings panel — dismiss false positives */}
       {metrics && metrics.findings.length > 0 && (
         <div className="mb-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-3">
               <span className="text-xs font-mono uppercase tracking-widest text-gray-500 dark:text-zinc-400">
-                Findings triage
+                Review Findings
               </span>
               {metrics.suggestionCount > 0 && (
                 <span className="text-xs text-gray-400 dark:text-zinc-500">
@@ -242,9 +242,18 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
               {adjustedScore !== null && adjustedScore !== metrics?.score && (
                 <span className="text-green-600 dark:text-green-400 font-medium" title="Estimated score after dismissing false positives">
                   ~{adjustedScore}/100
+                  <span className="ml-1 font-normal text-green-500 dark:text-green-500"> est. after removing false positives</span>
                 </span>
               )}
             </div>
+          </div>
+          {/* Confidence legend — helps vibe coders understand what the badges mean */}
+          <div className="px-4 py-2 border-b border-gray-100 dark:border-zinc-800 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-500 dark:text-zinc-500">
+            <span><span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 mr-1 align-middle" />Critical / High — fix soon</span>
+            <span><span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 mr-1 align-middle" />Medium / Low — plan to fix</span>
+            <span className="text-green-700 dark:text-green-400 font-medium">certain</span><span>= confirmed in your code</span>
+            <span className="text-amber-700 dark:text-amber-400 font-medium">⚠ likely</span><span>= probable — verify before fixing</span>
+            <span className="italic">Dismiss = not a real issue in your case (you can restore it)</span>
           </div>
           <div className="divide-y divide-gray-100 dark:divide-zinc-800 max-h-80 overflow-y-auto">
             {metrics.filteredFindings.map((finding: Finding) => {

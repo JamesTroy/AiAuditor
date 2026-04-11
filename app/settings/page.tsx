@@ -266,9 +266,9 @@ export default function SettingsPage() {
 
         {/* Workspace Context */}
         <section className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-1">Workspace context</h2>
+          <h2 className="text-lg font-semibold mb-1">Workspace context <span className="text-xs font-normal text-gray-400 dark:text-zinc-500 ml-1">(optional)</span></h2>
           <p className="text-sm text-gray-500 dark:text-zinc-500 mb-4">
-            Describe your stack, compliance requirements, or coding conventions. This is injected into every audit so findings are relevant to your specific environment.
+            Tell the auditors about your project — your tech stack, any rules you follow, or things to watch out for. Automatically included with every audit so findings are relevant to your setup. Leave blank if you&apos;re just getting started.
           </p>
           <form onSubmit={handleSaveWorkspace} className="space-y-3">
             <textarea
@@ -276,7 +276,7 @@ export default function SettingsPage() {
               onChange={(e) => setWorkspaceContext(e.target.value)}
               maxLength={2000}
               rows={5}
-              placeholder={`Examples:\n- Stack: Next.js 15, Drizzle ORM, PostgreSQL, deployed on Railway\n- Standards: OWASP Top 10, GDPR — no PII in logs\n- Conventions: functional React components only, no class components`}
+              placeholder={`Examples:\n- Stack: Next.js, Supabase, deployed on Railway\n- I use Tailwind CSS and prefer simple, readable code\n- No user data should appear in logs\n- Flag anything that could expose user data to other users`}
               className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm font-mono text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 resize-y transition-colors"
             />
             <div className="flex items-center justify-between">
