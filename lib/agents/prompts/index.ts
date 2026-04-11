@@ -141,9 +141,6 @@ import { prompt as refactoring } from './refactoring';
 import { prompt as apiContracts } from './api-contracts';
 import { prompt as asyncPatterns } from './async-patterns';
 import { prompt as testingStrategy } from './testing-strategy';
-import { prompt as pciDss } from './pci-dss';
-import { prompt as soc2Controls } from './soc2-controls';
-import { prompt as hipaaSecurity } from './hipaa-security';
 
 export const SYSTEM_PROMPTS: Readonly<Record<string, string>> = {
   'code-quality': codeQuality,
@@ -289,7 +286,4 @@ export const SYSTEM_PROMPTS: Readonly<Record<string, string>> = {
   'api-contracts': apiContracts,
   'async-patterns': asyncPatterns,
   'testing-strategy': testingStrategy,
-  'pci-dss': pciDss,
-  'soc2-controls': soc2Controls,
-  'hipaa-security': hipaaSecurity,
 };
