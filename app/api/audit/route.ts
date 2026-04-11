@@ -23,6 +23,9 @@ import { eq, and, lt } from 'drizzle-orm';
 import { extractSkeleton } from '@/lib/chunking/skeletonExtract';
 import { revalidateTag } from 'next/cache';
 import { escapeXml } from '@/lib/escapeXml';
+import { STRUCTURED_OUTPUT_INSTRUCTION } from '@/lib/ai/findingSchema';
+import { validateFindings, validationStats } from '@/lib/validateFindings';
+import type { ToolCapture } from '@/lib/ai/provider';
 
 // STALE-001: Mark 'running' audits older than 30 min as 'failed'.
 // Streams that crash or server restarts leave records stuck in 'running' forever.
@@ -120,6 +123,7 @@ function makeStream(
   logMeta: Record<string, unknown>,
   auditRecord?: { id: string; startedAt: number; userId?: string; organizationId?: string },
   requestSignal?: AbortSignal,
+  sourceCode?: string,
 ): ReadableStream {
   // PERF-NEW-07: Combine client disconnect signal with hard timeout so that
   // abandoned audits stop consuming Anthropic API tokens immediately.
@@ -127,9 +131,12 @@ function makeStream(
   const combinedSignal = requestSignal
     ? AbortSignal.any([timeoutSignal, requestSignal])
     : timeoutSignal;
-  const upstream = anthropicProvider.streamAudit(systemPrompt, safeInput, {
-    signal: combinedSignal,
-  });
+
+  // STRUCT-001: Use structured streaming with tool capture for finding validation.
+  const { stream: upstream, toolCapture } = anthropicProvider.streamAuditStructured(
+    systemPrompt, safeInput, { signal: combinedSignal },
+  );
+
   return new ReadableStream({
     async start(controller) {
       const reader = upstream.getReader();
@@ -155,17 +162,50 @@ function makeStream(
         // DB-001/DB-021: Save completed audit with result truncation and proper error logging
         if (auditRecord) {
           const fullResult = resultBuffer;
-          const rawScore = extractScore(fullResult);
-          const score = sanityCheckScore(rawScore, fullResult);
+
+          // STRUCT-001: Use structured score from tool call when available,
+          // falling back to regex extraction from markdown.
+          let score: number | null = null;
+          if (toolCapture.parsed && typeof toolCapture.parsed.overall_score === 'number') {
+            const toolScore = Math.round(toolCapture.parsed.overall_score);
+            score = sanityCheckScore(
+              toolScore >= 0 && toolScore <= 100 ? toolScore : null,
+              fullResult,
+            );
+            log('info', 'score_from_tool', { requestId: logMeta.requestId, toolScore, finalScore: score });
+          } else {
+            const rawScore = extractScore(fullResult);
+            score = sanityCheckScore(rawScore, fullResult);
+          }
+
           if (score === null && fullResult.length > 200) {
             log('warn', 'score_extraction_null', { requestId: logMeta.requestId, auditId: auditRecord.id, agentType: logMeta.agentType, resultTail: fullResult.slice(-200) });
           }
+
+          // STRUCT-001: Validate structured findings against source code and
+          // embed them in the result for downstream parsing.
+          let resultToStore = fullResult;
+          if (toolCapture.parsed && sourceCode) {
+            const validated = validateFindings(toolCapture.parsed.findings, sourceCode);
+            const stats = validationStats(toolCapture.parsed.findings, validated);
+            log('info', 'finding_validation', {
+              requestId: logMeta.requestId,
+              auditId: auditRecord.id,
+              ...stats,
+            });
+
+            // Embed validated findings as a hidden block in the result.
+            // parseAuditResult extracts this and uses it over regex parsing.
+            const findingsJson = JSON.stringify(validated);
+            resultToStore = fullResult + `\n\n<!-- STRUCTURED_FINDINGS_START -->\n${findingsJson}\n<!-- STRUCTURED_FINDINGS_END -->`;
+          }
+
           try {
             // FP-011: Only update if still 'running' to prevent a stale
             // stream from overwriting a newer completed audit on re-run.
             await db.update(auditTable)
               .set({
-                result: fullResult.slice(0, MAX_RESULT_CHARS),
+                result: resultToStore.slice(0, MAX_RESULT_CHARS),
                 status: 'completed',
                 score: score !== null && score >= 0 && score <= 100 ? score : null,
                 durationMs: Date.now() - auditRecord.startedAt,
@@ -446,6 +486,9 @@ export async function POST(req: NextRequest) {
     // Inject workspace context if available.
     if (workspaceContextBlock) guardedPrompt += workspaceContextBlock;
 
+    // STRUCT-001: Append structured output instruction so Claude calls the tool.
+    guardedPrompt += STRUCTURED_OUTPUT_INSTRUCTION;
+
     const auditRecord = await createAuditRecord('custom', 'Custom Agent');
     log('info', 'custom_audit_start', {
       requestId,
@@ -456,7 +499,7 @@ export async function POST(req: NextRequest) {
       detectedLang: customDetection.language,
     });
     return new Response(
-      makeStream(guardedPrompt, safeInput, { requestId, ip: anonIp, agentType: 'custom' }, auditRecord, req.signal),
+      makeStream(guardedPrompt, safeInput, { requestId, ip: anonIp, agentType: 'custom' }, auditRecord, req.signal, data.input),
       { headers: { ...STREAM_HEADERS, ...rl.headers, 'X-Request-Id': requestId } },
     );
   }
@@ -489,6 +532,9 @@ export async function POST(req: NextRequest) {
   // Inject workspace context if available.
   if (workspaceContextBlock) contextPrompt += workspaceContextBlock;
 
+  // STRUCT-001: Append structured output instruction so Claude calls the tool.
+  contextPrompt += STRUCTURED_OUTPUT_INSTRUCTION;
+
   const auditRecord = await createAuditRecord(data.agentType, agent.name);
   log('info', 'audit_start', {
     requestId,
@@ -500,7 +546,7 @@ export async function POST(req: NextRequest) {
     detectedFramework: detection.framework,
   });
   return new Response(
-    makeStream(contextPrompt, safeInput, { requestId, ip: anonIp, agentType: data.agentType }, auditRecord, req.signal),
+    makeStream(contextPrompt, safeInput, { requestId, ip: anonIp, agentType: data.agentType }, auditRecord, req.signal, data.input),
     { headers: { ...STREAM_HEADERS, ...rl.headers, 'X-Request-Id': requestId } },
   );
 }

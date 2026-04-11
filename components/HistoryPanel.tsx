@@ -6,6 +6,7 @@ import { ChevronRight, ChevronDown, X } from 'lucide-react';
 
 import { getHistory, deleteAudit, AuditEntry } from '@/lib/history';
 import SafeMarkdown from '@/components/markdownComponents';
+import { stripStructuredBlock } from '@/lib/parseAuditResult';
 
 interface Props {
   agentId: string;
@@ -90,7 +91,7 @@ export default function HistoryPanel({ agentId, reloadRef }: Props) {
               {expanded === entry.id && (
                 <div className="border-t border-gray-200 dark:border-zinc-800 px-4 py-4">
                   <div className="prose prose-sm max-w-prose dark:prose-invert">
-                    <SafeMarkdown>{entry.result}</SafeMarkdown>
+                    <SafeMarkdown>{stripStructuredBlock(entry.result)}</SafeMarkdown>
                   </div>
                 </div>
               )}

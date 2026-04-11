@@ -7,7 +7,7 @@ import SafeMarkdown from '@/components/markdownComponents';
 import { saveAudit } from '@/lib/history';
 import { friendlyError } from '@/lib/friendlyError';
 import { useSession } from '@/lib/auth-client';
-import { parseAuditResult } from '@/lib/parseAuditResult';
+import { parseAuditResult, stripStructuredBlock } from '@/lib/parseAuditResult';
 import { deduplicateFindings, type DeduplicationResult } from '@/lib/deduplicateFindings';
 
 // ---------- Constants ----------
@@ -1054,7 +1054,7 @@ export default function CodeAuditPanel() {
                   <span className="animate-blink"> ▍</span>
                 </pre>
               ) : (
-                <SafeMarkdown>{result}</SafeMarkdown>
+                <SafeMarkdown>{stripStructuredBlock(result)}</SafeMarkdown>
               )}
               <div ref={resultEndRef} />
             </div>

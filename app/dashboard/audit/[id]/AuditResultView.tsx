@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import SafeMarkdown from '@/components/markdownComponents';
 import { setChainInput } from '@/lib/session';
-import { parseAuditResult, type Finding } from '@/lib/parseAuditResult';
+import { parseAuditResult, stripStructuredBlock, type Finding } from '@/lib/parseAuditResult';
 import { detectSnippet } from '@/lib/detectSnippet';
 import type { AgentFpRate } from '@/app/api/agents/fp-rates/route';
 
@@ -335,7 +335,7 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
       </div>
 
       <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 prose prose-sm dark:prose-invert max-w-prose">
-        <SafeMarkdown>{result}</SafeMarkdown>
+        <SafeMarkdown>{stripStructuredBlock(result)}</SafeMarkdown>
       </div>
     </>
   );

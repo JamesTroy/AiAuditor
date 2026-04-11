@@ -11,7 +11,7 @@ import { ALLOWED_URL_DESCRIPTION } from '@/lib/config/urlAllowlist';
 import { useAuditSession } from '@/lib/hooks/useAuditSession';
 import { detectAgents } from '@/lib/detectAgents';
 import { detectSnippet } from '@/lib/detectSnippet';
-import { parseAuditResult } from '@/lib/parseAuditResult';
+import { parseAuditResult, stripStructuredBlock } from '@/lib/parseAuditResult';
 import { friendlyError } from '@/lib/friendlyError';
 
 const CATEGORIES = ['Code Quality', 'Security & Privacy', 'Performance', 'Infrastructure', 'Design', 'SEO', 'Marketing'] as const;
@@ -766,7 +766,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
             {loading ? (
               <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-zinc-200 m-0 p-0 bg-transparent">{result}<span className="animate-blink"> ▍</span></pre>
             ) : (
-              <SafeMarkdown>{result}</SafeMarkdown>
+              <SafeMarkdown>{stripStructuredBlock(result)}</SafeMarkdown>
             )}
             <div ref={resultEndRef} />
           </div>
