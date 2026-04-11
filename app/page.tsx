@@ -102,7 +102,7 @@ export default function Home() {
           {/* Badge */}
           <div className="flex items-center justify-center gap-2 mb-7 motion-safe:animate-fade-up">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-500/30 shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" aria-hidden="true" />
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-500 motion-safe:animate-pulse" aria-hidden="true" />
               Early Access — Free
             </span>
           </div>
@@ -125,7 +125,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <Link
                 href="/audit"
-                className="relative px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-gradient-to-br from-violet-500 to-indigo-600 hover:from-violet-400 hover:to-indigo-500 active:scale-[0.98] transition-all focus-ring whitespace-nowrap glow-violet-sm hover:glow-violet shadow-lg shadow-violet-600/30"
+                className="relative px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-gradient-to-br from-violet-500 to-indigo-600 hover:from-violet-400 hover:to-indigo-500 active:scale-[0.98] transition-[color,background-color,transform] focus-ring whitespace-nowrap glow-violet-sm hover:glow-violet shadow-lg shadow-violet-600/30"
               >
                 Audit Your Code Free
               </Link>
@@ -200,7 +200,7 @@ export default function Home() {
                 ),
               },
             ].map((item) => (
-              <div key={item.step} className="relative flex flex-col items-center text-center p-6 rounded-2xl bg-white dark:bg-zinc-900/80 border border-gray-200 dark:border-zinc-800 shadow-sm hover:shadow-md hover:border-violet-500/30 transition-all group">
+              <div key={item.step} className="relative flex flex-col items-center text-center p-6 rounded-2xl bg-white dark:bg-zinc-900/80 border border-gray-200 dark:border-zinc-800 shadow-sm hover:shadow-md hover:border-violet-500/30 transition-[box-shadow,border-color] group">
                 {/* Step number */}
                 <div className="relative mb-4">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-100 to-indigo-100 dark:from-violet-900/40 dark:to-indigo-900/40 border border-violet-200 dark:border-violet-800/60 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -225,7 +225,7 @@ export default function Home() {
           </h2>
           <div className="space-y-3">
             {/* Security — Critical */}
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 border-l-4 border-l-red-500 rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:shadow-red-500/5 transition-all">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 border-l-4 border-l-red-500 rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:shadow-red-500/5 transition-shadow">
               <div className="flex items-center gap-2.5 px-5 py-3 border-b border-gray-100 dark:border-zinc-800/80">
                 <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" aria-hidden="true" />
                 <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">Critical</span>
@@ -246,7 +246,7 @@ export default function Home() {
             </div>
 
             {/* Performance — High */}
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 border-l-4 border-l-orange-500 rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:shadow-orange-500/5 transition-all">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 border-l-4 border-l-orange-500 rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:shadow-orange-500/5 transition-shadow">
               <div className="flex items-center gap-2.5 px-5 py-3 border-b border-gray-100 dark:border-zinc-800/80">
                 <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0" aria-hidden="true" />
                 <span className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">High</span>
@@ -267,7 +267,7 @@ export default function Home() {
             </div>
 
             {/* Accessibility — Medium */}
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 border-l-4 border-l-yellow-500 rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:shadow-yellow-500/5 transition-all">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 border-l-4 border-l-yellow-500 rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:shadow-yellow-500/5 transition-shadow">
               <div className="flex items-center gap-2.5 px-5 py-3 border-b border-gray-100 dark:border-zinc-800/80">
                 <span className="w-2 h-2 rounded-full bg-yellow-500 shrink-0" aria-hidden="true" />
                 <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400 uppercase tracking-wider">Medium</span>
@@ -340,7 +340,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/audit"
-              className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-gradient-to-br from-violet-500 to-indigo-600 hover:from-violet-400 hover:to-indigo-500 active:scale-[0.98] transition-all focus-ring shadow-lg shadow-violet-600/25 glow-violet-sm"
+              className="px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-gradient-to-br from-violet-500 to-indigo-600 hover:from-violet-400 hover:to-indigo-500 active:scale-[0.98] transition-[color,background-color,transform] focus-ring shadow-lg shadow-violet-600/25 glow-violet-sm"
             >
               Try It on Your Code
             </Link>
@@ -359,7 +359,7 @@ export default function Home() {
             {CATEGORIES.map((cat) => (
               <div
                 key={cat.name}
-                className={`group flex items-start gap-3 p-4 rounded-xl glass border-l-4 ${cat.border} hover:shadow-lg ${cat.glow} transition-all duration-200`}
+                className={`group flex items-start gap-3 p-4 rounded-xl glass border-l-4 ${cat.border} hover:shadow-lg ${cat.glow} transition-shadow duration-200`}
               >
                 <span className="text-xl leading-none mt-0.5 group-hover:scale-110 transition-transform" aria-hidden="true">{cat.icon}</span>
                 <div className="min-w-0">
@@ -430,7 +430,7 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
                   href="/audit"
-                  className="inline-block px-8 py-3.5 rounded-xl font-semibold text-base text-violet-700 bg-white hover:bg-violet-50 active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-violet-600 shadow-lg whitespace-nowrap"
+                  className="inline-block px-8 py-3.5 rounded-xl font-semibold text-base text-violet-700 bg-white hover:bg-violet-50 active:scale-[0.98] transition-[color,background-color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-violet-600 shadow-lg whitespace-nowrap"
                 >
                   Audit Your Code
                 </Link>

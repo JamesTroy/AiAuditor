@@ -22,7 +22,7 @@ export default function CustomAgentPage() {
   if (agent === 'loading') {
     return (
       <div className="flex-1 flex items-center justify-center text-gray-900 dark:text-zinc-100">
-        <span className="text-gray-500 dark:text-zinc-500 animate-pulse text-sm">Loading...</span>
+        <span className="text-gray-500 dark:text-zinc-500 motion-safe:animate-pulse text-sm">Loading...</span>
       </div>
     );
   }

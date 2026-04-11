@@ -542,7 +542,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
           className={`inline-flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-lg font-semibold text-sm text-white transition-colors disabled-muted focus-ring ${agent.buttonClass}`}
         >
           {loading && (
-            <svg className="animate-spin h-4 w-4 text-white/80" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+            <svg className="motion-safe:animate-spin h-4 w-4 text-white/80" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
@@ -621,7 +621,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
       {/* Streaming indicator (no result yet) */}
       {loading && !result && (
         <div className="flex items-center gap-2 text-gray-500 dark:text-zinc-500 text-sm">
-          <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-violet-500 motion-safe:animate-pulse" />
           <span>Analyzing...</span>
         </div>
       )}
@@ -638,7 +638,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
             <span className="text-xs font-mono uppercase tracking-widest">
               {loading ? (
                 <span className="flex items-center gap-1.5 text-violet-400">
-                  <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-violet-500 motion-safe:animate-pulse" />
                   Streaming
                   {wordCount > 0 && (
                     <span className="text-gray-400 dark:text-zinc-500 normal-case">· {wordCount.toLocaleString()} words</span>
@@ -764,7 +764,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
             {/* PERF-011: Render plain text while streaming to avoid re-parsing
                 markdown on every RAF tick. SafeMarkdown only on completion. */}
             {loading ? (
-              <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-zinc-200 m-0 p-0 bg-transparent">{result}<span className="animate-blink"> ▍</span></pre>
+              <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-zinc-200 m-0 p-0 bg-transparent">{result}<span className="motion-safe:animate-blink"> ▍</span></pre>
             ) : (
               <SafeMarkdown>{stripStructuredBlock(result)}</SafeMarkdown>
             )}
@@ -815,7 +815,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
               ))}
               {chatLoading && chatMessages[chatMessages.length - 1]?.role === 'user' && (
                 <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-zinc-500">
-                  <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-500 motion-safe:animate-pulse" />
                   Thinking…
                 </div>
               )}
@@ -842,7 +842,7 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
               className="inline-flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-lg text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 transition-colors disabled-muted focus-ring"
             >
               {chatLoading ? (
-                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                <svg className="w-4 h-4 motion-safe:animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
               ) : 'Ask'}
             </button>
           </div>

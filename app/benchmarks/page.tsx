@@ -157,7 +157,7 @@ export default function BenchmarksPage() {
             </p>
             <Link
               href="/audit"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-br from-violet-500 to-indigo-600 hover:from-violet-400 hover:to-indigo-500 transition-all shadow-sm"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-br from-violet-500 to-indigo-600 hover:from-violet-400 hover:to-indigo-500 transition-colors shadow-sm"
             >
               Run a free audit
             </Link>

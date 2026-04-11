@@ -338,7 +338,7 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
             <div className="flex-1">
               <div className="h-3 rounded-full bg-gray-100 dark:bg-zinc-800 overflow-hidden">
                 <div
-                  className="h-full bg-emerald-500 rounded-full transition-all"
+                  className="h-full bg-emerald-500 rounded-full transition-[width]"
                   style={{ width: `${stats.successRate}%` }}
                 />
               </div>
@@ -792,7 +792,7 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-2 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden min-w-[60px]">
                             <div
-                              className={`h-full rounded-full transition-all ${row.dismissals > 20 ? 'bg-red-500' : row.dismissals > 5 ? 'bg-amber-500' : 'bg-blue-400'}`}
+                              className={`h-full rounded-full transition-[width] ${row.dismissals > 20 ? 'bg-red-500' : row.dismissals > 5 ? 'bg-amber-500' : 'bg-blue-400'}`}
                               style={{ width: `${pct}%` }}
                             />
                           </div>

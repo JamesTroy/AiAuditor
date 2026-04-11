@@ -251,7 +251,7 @@ export default async function DashboardPage({
                 <Link
                   key={a.id}
                   href={`/dashboard/audit/${a.id}`}
-                  className="group block bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-5 py-4 flex items-center justify-between hover:border-violet-500/30 hover:shadow-md hover:-translate-y-px transition-all"
+                  className="group block bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-5 py-4 flex items-center justify-between hover:border-violet-500/30 hover:shadow-md hover:-translate-y-px transition-[box-shadow,border-color,transform]"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{a.agentName}</p>
@@ -287,7 +287,7 @@ export default async function DashboardPage({
                         <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                       )}
                       {a.status === 'running' && (
-                        <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>
+                        <svg className="w-3 h-3 motion-safe:animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>
                       )}
                       {a.status}
                     </span>

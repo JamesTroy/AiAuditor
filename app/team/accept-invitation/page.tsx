@@ -65,7 +65,7 @@ export default function AcceptInvitationPage() {
         {status === 'loading' && (
           <>
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center">
-              <svg className="w-6 h-6 text-violet-500 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <svg className="w-6 h-6 text-violet-500 motion-safe:animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                 <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
               </svg>
             </div>

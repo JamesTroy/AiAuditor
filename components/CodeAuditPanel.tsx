@@ -894,7 +894,7 @@ export default function CodeAuditPanel() {
             </div>
             <div className="w-full h-2 bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-500 ease-out"
+                className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-[width] duration-500 ease-out"
                 style={{ width: `${(completedIndices.size / selectedAgents.length) * 100}%` }}
               />
             </div>
@@ -944,7 +944,7 @@ export default function CodeAuditPanel() {
                       <button
                         key={agent.id}
                         onClick={() => document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:ring-1 hover:ring-violet-500/40 hover:text-violet-600 dark:hover:text-violet-300"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:ring-1 hover:ring-violet-500/40 hover:text-violet-600 dark:hover:text-violet-300"
                       >
                         <svg className="w-3 h-3 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" aria-hidden="true">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -957,7 +957,7 @@ export default function CodeAuditPanel() {
                   return (
                     <span
                       key={agent.id}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors duration-300 ${
                         isActive
                           ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 ring-1 ring-violet-500/30 shadow-sm'
                           : isDone
@@ -965,7 +965,7 @@ export default function CodeAuditPanel() {
                             : 'bg-gray-100/50 dark:bg-zinc-900 text-gray-400 dark:text-zinc-600'
                       }`}
                     >
-                      {isActive && <span className={`w-2 h-2 rounded-full ${dotColor(agent.accentClass)} animate-pulse flex-shrink-0`} />}
+                      {isActive && <span className={`w-2 h-2 rounded-full ${dotColor(agent.accentClass)} motion-safe:animate-pulse flex-shrink-0`} />}
                       {isDone && (
                         <svg className="w-3 h-3 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" aria-hidden="true">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -991,7 +991,7 @@ export default function CodeAuditPanel() {
         {/* Streaming indicator */}
         {loading && !result && (
           <div className="flex items-center gap-2 text-gray-500 dark:text-zinc-500 text-sm mb-6">
-            <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-violet-500 motion-safe:animate-pulse" />
             <span>Dispatching auditors… <span className="text-xs text-gray-400 dark:text-zinc-600">(usually under 30s)</span></span>
           </div>
         )}
@@ -1015,7 +1015,7 @@ export default function CodeAuditPanel() {
               <span className="text-xs font-mono uppercase tracking-widest">
                 {loading ? (
                   <span className="flex items-center gap-1.5 text-violet-400">
-                    <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-violet-500 motion-safe:animate-pulse" />
                     {runningIndices.size > 0
                       ? `Auditing — ${completedIndices.size} of ${selectedAgents.length} complete`
                       : 'Starting…'}
@@ -1051,7 +1051,7 @@ export default function CodeAuditPanel() {
               {loading ? (
                 <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-zinc-200 m-0 p-0 bg-transparent">
                   {result}
-                  <span className="animate-blink"> ▍</span>
+                  <span className="motion-safe:animate-blink"> ▍</span>
                 </pre>
               ) : (
                 <SafeMarkdown>{stripStructuredBlock(result)}</SafeMarkdown>
@@ -1153,7 +1153,7 @@ export default function CodeAuditPanel() {
                   <>
                     <button
                       onClick={runSynthesis}
-                      className="w-full py-3.5 rounded-xl font-semibold text-base text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all focus-ring flex items-center justify-center gap-2"
+                      className="w-full py-3.5 rounded-xl font-semibold text-base text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-colors focus-ring flex items-center justify-center gap-2"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
@@ -1180,7 +1180,7 @@ export default function CodeAuditPanel() {
                   <span className="text-xs font-mono uppercase tracking-widest">
                     {synthStatus === 'loading' ? (
                       <span className="flex items-center gap-1.5 text-indigo-400">
-                        <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-indigo-500 motion-safe:animate-pulse" />
                         Synthesizing findings…
                       </span>
                     ) : 'Remediation Roadmap & Analysis'}
@@ -1190,7 +1190,7 @@ export default function CodeAuditPanel() {
                   {synthStatus === 'loading' ? (
                     <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-zinc-200 m-0 p-0 bg-transparent">
                       {synthesis}
-                      <span className="animate-blink"> ▍</span>
+                      <span className="motion-safe:animate-blink"> ▍</span>
                     </pre>
                   ) : (
                     <SafeMarkdown>{synthesis}</SafeMarkdown>

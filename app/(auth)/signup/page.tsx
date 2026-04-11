@@ -117,7 +117,7 @@ export default function SignupPage() {
             <div className="mt-2 flex items-center gap-2">
               <div className="flex-1 h-1.5 rounded-full bg-gray-200 dark:bg-zinc-800 overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all ${
+                  className={`h-full rounded-full transition-[width] ${
                     password.length >= 12 && /[A-Z]/.test(password) && /[0-9]/.test(password)
                       ? 'w-full bg-green-500'
                       : password.length >= 8
@@ -152,10 +152,10 @@ export default function SignupPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled-muted text-white font-medium rounded-xl px-4 py-2.5 min-h-[44px] text-sm transition-all focus-ring"
+          className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled-muted text-white font-medium rounded-xl px-4 py-2.5 min-h-[44px] text-sm transition-colors focus-ring"
         >
           {loading && (
-            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+            <svg className="w-4 h-4 motion-safe:animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
           )}
           {loading ? 'Creating account...' : 'Create account'}
         </button>

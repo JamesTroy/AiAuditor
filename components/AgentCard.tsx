@@ -104,7 +104,7 @@ export default memo(function AgentCard({ agent, href, index = 0, onEdit, onDelet
 
   return (
     <div
-      className={`agent-card group relative overflow-hidden border border-gray-200 dark:border-zinc-800 rounded-xl p-6 bg-white/95 dark:bg-zinc-900/80 transition-all duration-200 ease-out hover:scale-[1.03] hover:border-violet-500/30 hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.4)] active:scale-[0.98] ${agent.accentClass}`}
+      className={`agent-card group relative overflow-hidden border border-gray-200 dark:border-zinc-800 rounded-xl p-6 bg-white/95 dark:bg-zinc-900/80 transition-[box-shadow,border-color,transform] duration-200 ease-out hover:scale-[1.03] hover:border-violet-500/30 hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.4)] active:scale-[0.98] ${agent.accentClass}`}
     >
       {/* Full-coverage link — sits behind content but covers the entire card */}
       <Link
