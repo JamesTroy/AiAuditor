@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import SafeMarkdown from '@/components/markdownComponents';
 import { setChainInput } from '@/lib/session';
-import { parseAuditResult } from '@/lib/parseAuditResult';
+import { parseAuditResult, type Finding } from '@/lib/parseAuditResult';
 import { detectSnippet } from '@/lib/detectSnippet';
 import type { AgentFpRate } from '@/app/api/agents/fp-rates/route';
 
@@ -130,17 +130,22 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
     );
   }
 
-  const dismissedCount = dismissed.size;
-  // FP-010: Use filteredTotal (excludes [POSSIBLE] and [SUGGESTION]) for active count
-  // so users see actionable findings, not speculative or nice-to-have items.
-  const activeFindingCount = metrics ? Math.max(0, metrics.filteredTotal - dismissedCount) : 0;
+  // FP-010: Count only dismissed findings that are in filteredFindings (i.e. [CERTAIN]/[LIKELY]
+  // vulnerabilities/deficiencies). Dismissed [POSSIBLE] or [SUGGESTION] IDs in localStorage
+  // must not affect the active count — those findings aren't scored to begin with.
+  const dismissedCount = metrics
+    ? metrics.filteredFindings.filter((f) => dismissed.has(f.id)).length
+    : 0;
+  const activeFindingCount = Math.max(0, (metrics?.filteredTotal ?? 0) - dismissedCount);
 
   // FP-007: Estimate adjusted score when findings are dismissed.
   // Each dismissed critical finding adds ~8 points, high adds ~5, medium adds ~3, low adds ~1.
+  // Only count dismissed findings from filteredFindings — [POSSIBLE] and [SUGGESTION] are
+  // already excluded from scoring, so dismissing them should not add a bonus.
   const adjustedScore = useMemo(() => {
     if (!metrics?.score || dismissedCount === 0) return null;
     let bonus = 0;
-    for (const f of metrics.findings) {
+    for (const f of metrics.filteredFindings) {
       if (!dismissed.has(f.id)) continue;
       if (f.severity === 'critical') bonus += 8;
       else if (f.severity === 'high') bonus += 5;
@@ -242,7 +247,7 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
             </div>
           </div>
           <div className="divide-y divide-gray-100 dark:divide-zinc-800 max-h-80 overflow-y-auto">
-            {metrics.findings.map((finding) => {
+            {metrics.filteredFindings.map((finding: Finding) => {
               const isDismissed = dismissed.has(finding.id);
               if (isDismissed && !showDismissed) return null;
               return (
@@ -266,21 +271,14 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
                     <span
                       className={`flex-shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${
                         finding.confidence === 'certain' ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400' :
-                        finding.confidence === 'likely' ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400' :
-                        'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400'
+                        'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400'
                       }`}
                       title={
                         finding.confidence === 'certain' ? 'Confirmed in submitted code — still verify before applying any fix' :
-                        finding.confidence === 'likely' ? 'Probable issue — verify this applies to your full codebase before changing anything' :
-                        'Speculative — depends on code or context not in the submission'
+                        'Probable issue — verify this applies to your full codebase before changing anything'
                       }
                     >
                       {finding.confidence === 'likely' ? '⚠ likely' : finding.confidence}
-                    </span>
-                  )}
-                  {finding.classification === 'suggestion' && (
-                    <span className="flex-shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
-                      suggestion
                     </span>
                   )}
                   <button

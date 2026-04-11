@@ -97,7 +97,7 @@ export default function OGImage() {
             fontSize: 20,
           }}
         >
-          <span>125+ Audits</span>
+          <span>187+ Audits</span>
           <span>·</span>
           <span>OWASP · GDPR · SOC 2</span>
           <span>·</span>

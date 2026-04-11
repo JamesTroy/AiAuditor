@@ -134,4 +134,52 @@ password = input()
     // NOT APPLICABLE has no classification set
     expect(result.findings[0].classification).toBeUndefined();
   });
+
+  it('downgradeHighFpLikely: true filters out [LIKELY] findings from filteredFindings', () => {
+    const markdown = `## Findings
+- **[CRITICAL]** [CERTAIN] [VULNERABILITY] Remote code execution via deserialization
+- **[HIGH]** [LIKELY] [DEFICIENCY] Missing authentication check on admin endpoint
+
+## Overall Score: 40/100`;
+
+    const result = parseAuditResult(markdown, { downgradeHighFpLikely: true });
+
+    // Raw findings list is unaffected — both findings are still present
+    expect(result.findings).toHaveLength(2);
+    expect(result.findings[1].confidence).toBe('likely');
+
+    // Only the [CERTAIN] finding survives the filter
+    expect(result.filteredFindings).toHaveLength(1);
+    expect(result.filteredFindings[0].title).toContain('Remote code execution');
+    expect(result.filteredTotal).toBe(1);
+  });
+
+  it('downgradeHighFpLikely: false (default) keeps [LIKELY] findings in filteredFindings', () => {
+    const markdown = `## Findings
+- **[CRITICAL]** [CERTAIN] [VULNERABILITY] Remote code execution via deserialization
+- **[HIGH]** [LIKELY] [DEFICIENCY] Missing authentication check on admin endpoint
+
+## Overall Score: 40/100`;
+
+    // Explicitly false
+    const resultFalse = parseAuditResult(markdown, { downgradeHighFpLikely: false });
+    expect(resultFalse.filteredFindings).toHaveLength(2);
+
+    // Default (no option)
+    const resultDefault = parseAuditResult(markdown);
+    expect(resultDefault.filteredFindings).toHaveLength(2);
+  });
+
+  it('downgradeHighFpLikely: true does not affect [CERTAIN] findings', () => {
+    const markdown = `## Findings
+- **[CRITICAL]** [CERTAIN] [VULNERABILITY] Arbitrary file write via path traversal
+- **[HIGH]** [CERTAIN] [VULNERABILITY] SQL injection in search parameter
+- **[MEDIUM]** [CERTAIN] [DEFICIENCY] Sensitive data logged in plaintext`;
+
+    const result = parseAuditResult(markdown, { downgradeHighFpLikely: true });
+
+    expect(result.findings).toHaveLength(3);
+    expect(result.filteredFindings).toHaveLength(3);
+    expect(result.filteredTotal).toBe(3);
+  });
 });

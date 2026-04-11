@@ -57,22 +57,6 @@ function extractClassification(text: string): { classification?: Classification;
   return { classification, rest };
 }
 
-/** Check whether the next few lines after a finding contain a Location/Evidence line. */
-function hasEvidence(lines: string[], startIdx: number): boolean {
-  // Look ahead up to 6 lines for Location or Evidence markers
-  const lookAhead = Math.min(startIdx + 7, lines.length);
-  for (let i = startIdx + 1; i < lookAhead; i++) {
-    const line = lines[i].trim().toLowerCase();
-    if (line.startsWith('- location:') || line.startsWith('- evidence:') ||
-        line.startsWith('location:') || line.startsWith('evidence:') ||
-        line.startsWith('- **location') || line.startsWith('- **evidence')) {
-      return true;
-    }
-    // Stop looking if we hit another finding or section header
-    if (line.startsWith('- **[') || line.startsWith('## ')) break;
-  }
-  return false;
-}
 
 export interface ParseOptions {
   /**
