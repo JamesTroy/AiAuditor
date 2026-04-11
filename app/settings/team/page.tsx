@@ -265,6 +265,12 @@ export default function TeamSettingsPage() {
         <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">
           <h2 className="text-sm font-semibold mb-4">Your teams</h2>
 
+          {orgs.length === 0 && (
+            <p className="text-xs text-gray-500 dark:text-zinc-500 mb-4">
+              Just building solo? You don&apos;t need a team &mdash; your personal audits are always private to you. Create a team if you want to share audit history with collaborators.
+            </p>
+          )}
+
           {orgs.length > 0 && (
             <div className="space-y-2 mb-4">
               <button

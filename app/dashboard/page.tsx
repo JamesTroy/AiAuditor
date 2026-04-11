@@ -340,7 +340,7 @@ function ScoreSparkline({ scores }: { scores: number[] }) {
   const trendLabel = improving ? 'Trend: improving' : 'Trend: declining';
 
   return (
-    <span className={`inline-flex items-center gap-1 ${trending}`}>
+    <span className={`inline-flex items-center gap-1 ${trending}`} title="Higher score = fewer issues found. 80+ is a strong score.">
       <svg width={w} height={h} aria-hidden="true">
         <polygon fill={fillColor} points={areaPoints} />
         <polyline

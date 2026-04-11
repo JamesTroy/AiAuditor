@@ -785,7 +785,7 @@ export default function CodeAuditPanel() {
                     onClick={resetDefaults}
                     className="text-xs px-3 py-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors"
                   >
-                    Defaults ({SEED_IDS.size})
+                    Recommended ({SEED_IDS.size})
                   </button>
                   <button
                     onClick={clearAll}

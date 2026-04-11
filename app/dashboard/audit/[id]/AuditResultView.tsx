@@ -186,7 +186,7 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
           }}
           className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-500 border border-violet-300 dark:border-violet-700 rounded-lg px-3 py-1.5 min-h-[44px] transition-colors focus-ring font-medium"
         >
-          Re-audit
+          Re-run on this code
         </button>
         <button
           onClick={handleCopy}
@@ -208,6 +208,16 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
           <span className="mt-0.5 flex-shrink-0">ℹ️</span>
           <span>
             <strong>Partial context detected</strong> — this audit was run on a code snippet ({snippetDetection.reason}). Findings that depend on imports, surrounding types, or module-level state may not apply to your actual codebase. Re-run with the full file for higher confidence results.
+          </span>
+        </div>
+      )}
+
+      {/* FP-RATE-UI: Banner shown when [LIKELY] findings are auto-hidden for a high-FP agent */}
+      {highFpLikely && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-xs text-amber-800 dark:text-amber-300">
+          <span className="mt-0.5 flex-shrink-0">⚠️</span>
+          <span>
+            <strong>Some findings were filtered out</strong> — this auditor has a higher-than-usual false positive rate on &ldquo;likely&rdquo; findings, so those were automatically hidden to reduce noise. You&rsquo;re seeing only high-confidence results.
           </span>
         </div>
       )}
