@@ -260,18 +260,22 @@ export default function Home() {
                 <span className="text-xs text-gray-300 dark:text-zinc-600 mx-0.5">·</span>
                 <span className="text-xs text-gray-500 dark:text-zinc-400">Performance Audit</span>
                 <span className="ml-auto flex items-center gap-1.5">
-                  <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400">certain</span>
+                  <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400">⚠ likely</span>
                   <span className="text-[10px] text-gray-400 dark:text-zinc-500">deficiency</span>
                 </span>
               </div>
               <div className="px-5 py-4 space-y-3">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">{"Render-blocking CSS loaded synchronously in <head>"}</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">N+1 query inside loop — one database call per user instead of batch</h3>
                 <div className="relative bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 font-mono text-xs leading-relaxed overflow-x-auto">
-                  <span className="text-zinc-500 select-none">app/layout.tsx:8 &nbsp;</span>
-                  <span className="text-orange-400">{"<link rel=\"stylesheet\" href=\"/styles/fonts.css\">"}</span>
+                  <span className="text-zinc-500 select-none">lib/teams.ts:18 &nbsp;</span>
+                  <span className="text-orange-400">{"for (const id of userIds) { await db.query(\"SELECT * FROM users WHERE id = ?\", [id]); }"}</span>
+                </div>
+                <div className="text-xs text-gray-500 dark:text-zinc-500 leading-relaxed space-y-1">
+                  <p><span className="text-gray-600 dark:text-zinc-400 font-medium">Impact:</span> 50 team members = 50 separate database round-trips. Scales linearly with team size.</p>
+                  <p><span className="text-gray-600 dark:text-zinc-400 font-medium">Assumption:</span> No query batching or DataLoader is applied upstream.</p>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed">
-                  <strong className="text-gray-800 dark:text-zinc-200">Fix:</strong> Use <code className="bg-gray-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-xs font-mono">{"media=\"print\" onload=\"this.media='all'\""}</code> or inline critical CSS and lazy-load the rest.
+                  <strong className="text-gray-800 dark:text-zinc-200">Fix:</strong> Batch into one query: <code className="bg-gray-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-xs font-mono">{"db.query(\"SELECT * FROM users WHERE id IN (?)\", [userIds])"}</code>
                 </p>
               </div>
             </div>
@@ -289,13 +293,16 @@ export default function Home() {
                 </span>
               </div>
               <div className="px-5 py-4 space-y-3">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Image missing alt text — screen readers cannot describe content</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Custom dropdown not keyboard-accessible — unreachable for keyboard-only users</h3>
                 <div className="relative bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 font-mono text-xs leading-relaxed overflow-x-auto">
-                  <span className="text-zinc-500 select-none">components/Hero.tsx:24 &nbsp;</span>
-                  <span className="text-yellow-400">{"<img src=\"/hero-banner.webp\" className=\"w-full\" />"}</span>
+                  <span className="text-zinc-500 select-none">components/RolePicker.tsx:31 &nbsp;</span>
+                  <span className="text-yellow-400">{"<div onClick={toggle}>{selected}</div>"}</span>
+                </div>
+                <div className="text-xs text-gray-500 dark:text-zinc-500 leading-relaxed space-y-1">
+                  <p><span className="text-gray-600 dark:text-zinc-400 font-medium">Issue:</span> Uses <code className="bg-gray-100 dark:bg-zinc-800 px-1 py-0.5 rounded font-mono text-[11px]">div</code> + <code className="bg-gray-100 dark:bg-zinc-800 px-1 py-0.5 rounded font-mono text-[11px]">onClick</code> instead of a focusable element. No <code className="bg-gray-100 dark:bg-zinc-800 px-1 py-0.5 rounded font-mono text-[11px]">role</code>, <code className="bg-gray-100 dark:bg-zinc-800 px-1 py-0.5 rounded font-mono text-[11px]">aria-expanded</code>, or keyboard handler.</p>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed">
-                  <strong className="text-gray-800 dark:text-zinc-200">Fix:</strong> <code className="bg-gray-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-xs font-mono">{"<img src=\"/hero-banner.webp\" alt=\"Dashboard showing audit results\" />"}</code>
+                  <strong className="text-gray-800 dark:text-zinc-200">Fix:</strong> Use <code className="bg-gray-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-xs font-mono">{"<button aria-haspopup=\"listbox\" aria-expanded={open}>"}</code> and handle Arrow/Enter/Escape keys.
                 </p>
               </div>
             </div>
