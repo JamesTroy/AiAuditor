@@ -90,6 +90,9 @@ import { prompt as threatModeling } from './threat-modeling';
 import { prompt as zeroTrust } from './zero-trust';
 import { prompt as incidentResponse } from './incident-response';
 import { prompt as complianceAudit } from './compliance-audit';
+import { prompt as pciDss } from './pci-dss';
+import { prompt as hipaaSecurity } from './hipaa-security';
+import { prompt as soc2Controls } from './soc2-controls';
 import { prompt as networkPerformance } from './network-performance';
 import { prompt as databasePerformance } from './database-performance';
 import { prompt as imageOptimization } from './image-optimization';
@@ -138,6 +141,9 @@ import { prompt as refactoring } from './refactoring';
 import { prompt as apiContracts } from './api-contracts';
 import { prompt as asyncPatterns } from './async-patterns';
 import { prompt as testingStrategy } from './testing-strategy';
+import { prompt as pciDss } from './pci-dss';
+import { prompt as soc2Controls } from './soc2-controls';
+import { prompt as hipaaSecurity } from './hipaa-security';
 
 export const SYSTEM_PROMPTS: Readonly<Record<string, string>> = {
   'code-quality': codeQuality,
@@ -232,6 +238,9 @@ export const SYSTEM_PROMPTS: Readonly<Record<string, string>> = {
   'zero-trust': zeroTrust,
   'incident-response': incidentResponse,
   'compliance-audit': complianceAudit,
+  'pci-dss': pciDss,
+  'hipaa-security': hipaaSecurity,
+  'soc2-controls': soc2Controls,
   'network-performance': networkPerformance,
   'database-performance': databasePerformance,
   'image-optimization': imageOptimization,
@@ -280,4 +289,7 @@ export const SYSTEM_PROMPTS: Readonly<Record<string, string>> = {
   'api-contracts': apiContracts,
   'async-patterns': asyncPatterns,
   'testing-strategy': testingStrategy,
+  'pci-dss': pciDss,
+  'soc2-controls': soc2Controls,
+  'hipaa-security': hipaaSecurity,
 };

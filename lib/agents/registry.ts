@@ -3745,6 +3745,179 @@ Format each file:
 Keep total under 30,000 characters.`,
   }),
   builtin({
+    id: 'soc2-controls',
+    name: 'SOC 2 Controls',
+    description: 'Deep SOC 2 Type II audit mapping code-level controls to all five Trust Services Criteria (CC, A, PI, C, P).',
+    category: 'Security & Privacy',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-800 hover:bg-amber-700',
+    placeholder: 'Paste your authentication, authorization, logging, CI/CD, monitoring, or encryption code for SOC 2 control analysis...',
+    systemPrompt: SYSTEM_PROMPTS['soc2-controls'],
+    prepPrompt: `I'm preparing for a **SOC 2 Type II** code-level control assessment. Please help me collect the relevant files and information.
+
+## SOC 2 context (fill in)
+- Trust Services Categories in scope: [e.g. Security only, Security + Availability, all five]
+- Current SOC 2 status: [e.g. "first-time readiness", "preparing for Type II after Type I", "annual renewal"]
+- Service description: [brief description of the SaaS service and its users]
+- Data types processed: [e.g. PII, business data, financial data, credentials]
+- Known control gaps: [e.g. "no formal access reviews", "audit logging incomplete", "no DR testing"]
+
+## Files to gather — organized by Trust Services Criteria
+
+### 1. Authentication & Authorization (CC6.1, CC6.2, CC6.3)
+- Authentication middleware and configuration
+- Session management (token expiration, refresh logic)
+- RBAC/ABAC role definitions and permission checks
+- User provisioning and deprovisioning logic
+- MFA enforcement configuration
+- API key management and rotation
+
+### 2. Audit Logging & Monitoring (CC4.1, CC7.2, CC7.3)
+- Logging middleware and configuration
+- Audit log schema (what fields are captured)
+- Log retention and rotation configuration
+- Monitoring and alerting rules
+- Health check endpoints
+- Error tracking configuration
+
+### 3. Change Management (CC8.1)
+- CI/CD pipeline configuration (.github/workflows, Jenkinsfile, etc.)
+- Branch protection rules or configuration
+- PR review requirements
+- Deployment approval gates
+- Rollback procedures
+- Infrastructure-as-code files (Terraform, CloudFormation)
+
+### 4. Encryption & Data Protection (CC6.7, C1.1, C1.2)
+- Encryption at rest configuration (database, file storage)
+- TLS/mTLS configuration
+- Key management setup (KMS, Vault, etc.)
+- Data classification logic or labels
+- PII handling and masking
+- Data retention and disposal logic
+
+### 5. Availability & Recovery (A1.1, A1.2, A1.3)
+- Backup configuration and schedules
+- Auto-scaling configuration
+- Load balancer and health check setup
+- Disaster recovery configuration
+- RTO/RPO definitions (if in code or config)
+- Failover and redundancy setup
+
+### 6. Input Validation & Processing Integrity (PI1.2, PI1.3, PI1.4)
+- Input validation and sanitization
+- Data transformation and processing logic
+- Idempotency implementation
+- Error handling patterns
+- Transaction management
+
+### 7. Vendor & Dependency Management (CC9.2)
+- Dependency manifest (package.json, requirements.txt, etc.)
+- Dependency scanning configuration (Dependabot, Snyk, etc.)
+- Third-party API integrations
+
+## Formatting rules
+
+Format each file:
+\\\`\\\`\\\`
+--- lib/auth/middleware.ts (authentication — CC6.1) ---
+--- lib/rbac/permissions.ts (authorization — CC6.3) ---
+--- lib/logging/audit-logger.ts (audit logging — CC7.2) ---
+--- .github/workflows/deploy.yml (change management — CC8.1) ---
+--- terraform/backup.tf (availability — A1.2) ---
+\\\`\\\`\\\`
+
+## Don't forget
+- [ ] Include authentication AND authorization code (they map to different criteria)
+- [ ] Show the complete audit logging pipeline — capture, storage, retention
+- [ ] Include CI/CD with review gates and deployment approvals
+- [ ] Show encryption for both data at rest and in transit
+- [ ] Include backup and recovery configuration
+- [ ] Note which Trust Services Categories are in scope for your audit
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'pci-dss',
+    name: 'PCI DSS v4.0',
+    description: 'Deep PCI DSS v4.0 audit — maps code to all 12 requirements for cardholder data protection, encryption, access control, and network security.',
+    category: 'Security & Privacy',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-800 hover:bg-amber-700',
+    placeholder: 'Paste your payment processing, encryption, tokenization, key management, or cardholder data handling code...',
+    systemPrompt: SYSTEM_PROMPTS['pci-dss'],
+    prepPrompt: `I'm preparing for a **PCI DSS v4.0** code-level assessment. Please help me collect the relevant files.
+
+## PCI DSS context (fill in)
+- SAQ type: [e.g. SAQ A, SAQ A-EP, SAQ D, full ROC]
+- Payment integration: [e.g. Stripe Elements, Braintree Drop-in, direct card handling, tokenization]
+- Cardholder data stored: [e.g. "none — fully tokenized", "PAN stored encrypted", "card-on-file for subscriptions"]
+- Current PCI status: [e.g. "first assessment", "annual recertification", "post-breach remediation"]
+- Known concerns: [e.g. "not sure if we store SAD", "key rotation not automated", "test card numbers in logs"]
+
+## Files to gather
+
+### 1. Payment processing code
+- Checkout / payment form components
+- Server-side payment API routes (charge, refund, subscription)
+- Payment SDK integration (Stripe, Braintree, Adyen)
+- Tokenization logic and webhook handlers
+
+### 2. Cardholder data handling
+- Any code that touches PAN, CVV, expiry, or cardholder name
+- Card-on-file / saved payment method logic
+- Data masking or truncation functions
+- Database schema for payment-related tables
+
+### 3. Encryption, key management, access control, logging
+- Encryption at rest and in transit (TLS config, column-level encryption)
+- Key generation, storage, rotation scripts and KMS/HSM integration
+- RBAC for payment admin functions and MFA setup
+- Audit logging for payment operations (what is logged vs redacted)
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'hipaa-security',
+    name: 'HIPAA Security',
+    description: 'Deep HIPAA Security Rule audit — maps code to Administrative, Physical, and Technical safeguards for ePHI protection.',
+    category: 'Security & Privacy',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-800 hover:bg-amber-700',
+    placeholder: 'Paste your ePHI handling, access control, encryption, audit logging, or healthcare data processing code...',
+    systemPrompt: SYSTEM_PROMPTS['hipaa-security'],
+    prepPrompt: `I'm preparing for a **HIPAA Security Rule** code-level assessment. Please help me collect the relevant files.
+
+## HIPAA context (fill in)
+- Entity type: [e.g. covered entity, business associate, subcontractor]
+- ePHI types handled: [e.g. patient records, lab results, billing data, appointment schedules]
+- Infrastructure: [e.g. AWS with BAA, GCP Healthcare API, Azure with HIPAA BAA]
+- Current HIPAA status: [e.g. "first risk assessment", "post-breach remediation", "annual review"]
+- Known concerns: [e.g. "not sure what counts as ePHI", "audit logs incomplete", "no emergency access procedure"]
+
+## Files to gather
+
+### 1. ePHI data handling
+- Patient/health record models and database schemas
+- API routes that read, write, or transmit ePHI
+- Data serialization — what fields appear in API responses
+- PHI de-identification or anonymization logic
+
+### 2. Access control and encryption
+- Authentication (login, session, MFA) and authorization (RBAC)
+- Automatic logoff / session timeout configuration
+- Encryption at rest (AES-256) and in transit (TLS config)
+- Key management (generation, storage, rotation)
+
+### 3. Audit controls and integrity
+- Audit logging — who accessed what ePHI and when
+- Log storage, retention, and tamper detection
+- Data validation and integrity verification
+- Backup and recovery procedures
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
     id: 'seo-technical',
     name: 'SEO Technical',
     description: 'Reviews meta tags, structured data, canonical URLs, sitemap, and crawlability.',

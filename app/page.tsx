@@ -41,7 +41,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What does Claudit miss or get wrong?',
-    a: 'A few known limitations worth knowing upfront: (1) We analyze code statically — runtime behavior, production load patterns, and environment-specific bugs are outside scope. (2) Findings marked POSSIBLE or LIKELY require human judgment; not everything flagged is a real issue. (3) Codebases over ~30,000 characters are sampled, not analyzed in full. (4) Claudit is not a replacement for a specialist security audit in regulated industries (PCI-DSS for payments, HIPAA for healthcare, SOC 2 for enterprise SaaS compliance). Treat every finding as a candidate for your review — not a final verdict.',
+    a: 'A few known limitations worth knowing upfront: (1) We analyze code statically — runtime behavior, production load patterns, and environment-specific bugs are outside scope. (2) Findings marked POSSIBLE or LIKELY require human judgment; not everything flagged is a real issue. (3) Very large codebases (500k+ characters) should be split by module for best results. (4) Our PCI DSS, HIPAA, and SOC 2 agents help you prepare for compliance — but they don\u2019t replace a certified auditor for formal certification. Treat every finding as a candidate for your review — not a final verdict.',
   },
   {
     q: 'How is Claudit different from SonarQube, Snyk, or a linter?',
@@ -333,8 +333,8 @@ export default function Home() {
             <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50">
               <p className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-3">Hard limits</p>
               <ul className="space-y-2 text-sm text-gray-700 dark:text-zinc-300">
-                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Very large monorepos — analyses up to 120k characters; split by module for full coverage</li>
-                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Replacing a specialist audit for regulated industries (payments, healthcare, enterprise SaaS compliance)</li>
+                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Very large monorepos — analyses up to 500k characters with auto file-indexing; split by module for best results on bigger codebases</li>
+                <li className="flex gap-2"><span className="text-amber-500 shrink-0 mt-0.5">!</span>Not a replacement for a certified auditor — use our PCI DSS, HIPAA, and SOC 2 agents to prepare for formal audits, not replace them</li>
               </ul>
             </div>
           </div>

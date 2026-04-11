@@ -13,7 +13,7 @@ export const STREAM_TIMEOUT_MS = 300_000;     // 5 min
 /** Per-chunk read timeout — prevents stalled streams from holding serverless functions open. */
 export const CHUNK_TIMEOUT_MS = 30_000;       // 30 sec
 /** Maximum request body size (advisory; field lengths also enforced by Zod). */
-export const MAX_CONTENT_LENGTH = 400_000;    // ~400 KB — accommodates 120k input + 15k runtime context
+export const MAX_CONTENT_LENGTH = 600_000;    // ~600 KB — accommodates 500k input + 15k runtime context + context files
 /** Truncate stored audit results to prevent oversized DB rows. */
 export const MAX_RESULT_CHARS = 100_000;
 /** Maximum chars of user input stored in the audit DB record. */

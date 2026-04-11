@@ -21,6 +21,7 @@ import { db } from '@/lib/db';
 import { audit as auditTable, member as memberTable, user as userTable } from '@/lib/auth-schema';
 import { eq, and, lt } from 'drizzle-orm';
 import { extractSkeleton } from '@/lib/chunking/skeletonExtract';
+import { splitByFile } from '@/lib/chunking/splitByFile';
 import { revalidateTag } from 'next/cache';
 import { escapeXml } from '@/lib/escapeXml';
 import { STRUCTURED_OUTPUT_INSTRUCTION } from '@/lib/ai/findingSchema';
@@ -374,7 +375,15 @@ export async function POST(req: NextRequest) {
   const skeleton = extractSkeleton(data.input);
   const skeletonPrefix = skeleton ? `<code_structure>\n${skeleton}\n</code_structure>\n\n` : '';
 
-  let safeInput = `${skeletonPrefix}<user_content>\n${escapedInput}\n</user_content>`;
+  // CHUNK-001: For multi-file inputs, prepend a file index so the auditor knows
+  // what files are present and can reference them by path. This is especially
+  // useful for large monorepo dumps where the auditor needs to navigate between files.
+  const fileChunks = splitByFile(data.input);
+  const fileIndexPrefix = fileChunks.length > 1
+    ? `<file_index>\nThis submission contains ${fileChunks.length} files (${(data.input.length / 1000).toFixed(0)}k chars total):\n${fileChunks.map((f) => `  - ${f.path} (${(f.chars / 1000).toFixed(1)}k chars)`).join('\n')}\nAnalyze all files systematically. Reference findings by file path and line number.\n</file_index>\n\n`
+    : '';
+
+  let safeInput = `${fileIndexPrefix}${skeletonPrefix}<user_content>\n${escapedInput}\n</user_content>`;
 
   // Inject related context files — labeled as supporting context, NOT audit targets.
   // This lets auditors understand middleware, shared utilities, and config that the

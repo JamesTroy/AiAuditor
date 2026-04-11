@@ -5,7 +5,11 @@
 // Constraints here must match the server-side ceilings in app/api/audit/route.ts.
 import { z } from 'zod';
 
-export const MAX_INPUT_CHARS = 120_000;
+// CHUNK-001: Raised from 120k → 500k. Claude Sonnet 4.6 supports ~680k input tokens
+// (~2.7M chars). 500k accommodates large monorepos while leaving room for system
+// prompt, context files, and structured output. For inputs > 100k, the skeleton
+// extractor and file-boundary chunker help the auditor navigate the codebase.
+export const MAX_INPUT_CHARS = 500_000;
 export const MAX_SYSTEM_PROMPT_CHARS = 10_000;
 export const MAX_RUNTIME_CONTEXT_CHARS = 15_000;
 export const MAX_CONTEXT_FILE_CHARS = 20_000;
@@ -209,6 +213,10 @@ export const VALID_AGENT_TYPES = [
   'api-docs',
   'pwa',
   'browser-compat',
+  // Compliance (framework-specific)
+  'pci-dss',
+  'hipaa-security',
+  'soc2-controls',
 ] as const;
 
 export type AgentTypeValue = (typeof VALID_AGENT_TYPES)[number];
