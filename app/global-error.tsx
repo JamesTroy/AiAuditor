@@ -1,6 +1,5 @@
 'use client';
 
-import * as Sentry from '@sentry/nextjs';
 import { useEffect } from 'react';
 
 export default function GlobalError({
@@ -11,7 +10,8 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    Sentry.captureException(error);
+    // Report to Sentry if available (no-op without NEXT_PUBLIC_SENTRY_DSN)
+    import('@sentry/nextjs').then((Sentry) => Sentry.captureException(error)).catch(() => {});
   }, [error]);
   return (
     <html lang="en" suppressHydrationWarning>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, createContext, useContext, type ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -104,27 +103,29 @@ const TOUR_STEPS: TourStep[] = [
 // and the modal overlay would block the auth form inputs.
 const SUPPRESSED_PREFIXES = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email', '/two-factor'];
 
+function isSuppressedRoute(): boolean {
+  if (typeof window === 'undefined') return true; // SSR — don't show
+  return SUPPRESSED_PREFIXES.some((p) => window.location.pathname.startsWith(p));
+}
+
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<Phase>('done');
   const [stepIdx, setStepIdx] = useState(0);
   const [tourIdx, setTourIdx] = useState(0);
   const [mounted, setMounted] = useState(false);
-  const pathname = usePathname();
-
-  // Suppress onboarding on auth pages
-  const suppressed = SUPPRESSED_PREFIXES.some((p) => pathname.startsWith(p));
 
   useEffect(() => {
     setMounted(true);
+    if (isSuppressedRoute()) return; // Don't show on auth pages
     try {
       const done = localStorage.getItem(STORAGE_KEY);
-      if (!done && !suppressed) setPhase('welcome');
+      if (!done) setPhase('welcome');
     } catch {
       // localStorage unavailable (SSR, private browsing) — skip onboarding
     }
-  }, [suppressed]);
+  }, []);
 
-  const isActive = mounted && phase !== 'done' && !suppressed;
+  const isActive = mounted && phase !== 'done' && !isSuppressedRoute();
 
   const nextStep = useCallback(() => {
     if (stepIdx < WELCOME_STEPS.length - 1) {
