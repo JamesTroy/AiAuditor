@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { admin, twoFactor, organization } from 'better-auth/plugins';
+import { admin, twoFactor, organization, apiKey } from 'better-auth/plugins';
 import { nextCookies } from 'better-auth/next-js';
 import { db } from '@/lib/db';
 import * as schema from '@/lib/auth-schema';
@@ -168,6 +168,12 @@ export const auth = betterAuth({
           </div>`,
         );
       },
+    }),
+    apiKey({
+      defaultPrefix: 'cldt_live_',
+      defaultExpiresIn: null, // org keys don't expire
+      enableMetadata: true,
+      rateLimit: { enabled: true, window: 60, max: 100 },
     }),
   ],
 });
