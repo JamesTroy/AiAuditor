@@ -14,7 +14,8 @@ import type { Metric } from 'web-vitals';
 function sendToPlausible(metric: Metric) {
   // Plausible custom events: window.plausible() is injected by the Plausible script.
   // If Plausible isn't loaded (no domain configured), this is a no-op.
-  const plausible = (window as Record<string, unknown>).plausible as
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const plausible = (window as any).plausible as
     | ((event: string, opts: { props: Record<string, string | number> }) => void)
     | undefined;
 
