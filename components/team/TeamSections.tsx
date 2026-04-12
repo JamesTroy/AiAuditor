@@ -9,7 +9,7 @@ import { useState, useEffect, useTransition } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { SectionHeader, Card } from './OrgProfileSection';
-import { PLANS, type PlanId } from '@/lib/stripe';
+import { PLANS, type PlanId } from '@/lib/plans';
 import type { MemberWithUser } from './MembersSection';
 
 // ── DangerZoneSection ───────────────────────────────────────────────────────

@@ -4,23 +4,15 @@
 
 import Stripe from 'stripe';
 
+// Re-export plan config from the shared module (safe for client imports).
+export { PLANS, type PlanId } from '@/lib/plans';
+
 export const stripe: Stripe | null = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2025-02-24.acacia' as Stripe.LatestApiVersion,
       typescript: true,
     })
   : null;
-
-// ── Plan config ─────────────────────────────────────────────────────────────
-
-export const PLANS = {
-  free: { name: 'Free', priceId: null, seats: 1, auditsPerMonth: 10, price: 0 },
-  pro: { name: 'Pro', priceId: process.env.STRIPE_PRICE_PRO ?? '', seats: 3, auditsPerMonth: 100, price: 29 },
-  team: { name: 'Team', priceId: process.env.STRIPE_PRICE_TEAM ?? '', seats: 10, auditsPerMonth: 500, price: 79 },
-  enterprise: { name: 'Enterprise', priceId: process.env.STRIPE_PRICE_ENTERPRISE ?? '', seats: -1, auditsPerMonth: -1, price: 299 },
-} as const;
-
-export type PlanId = keyof typeof PLANS;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
