@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, createContext, useContext, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -99,23 +100,31 @@ const TOUR_STEPS: TourStep[] = [
 
 // ── Provider ─────────────────────────────────────────────────────────────────
 
+// Routes where onboarding should never show — user needs to sign in first,
+// and the modal overlay would block the auth form inputs.
+const SUPPRESSED_PREFIXES = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email', '/two-factor'];
+
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<Phase>('done');
   const [stepIdx, setStepIdx] = useState(0);
   const [tourIdx, setTourIdx] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+
+  // Suppress onboarding on auth pages
+  const suppressed = SUPPRESSED_PREFIXES.some((p) => pathname.startsWith(p));
 
   useEffect(() => {
     setMounted(true);
     try {
       const done = localStorage.getItem(STORAGE_KEY);
-      if (!done) setPhase('welcome');
+      if (!done && !suppressed) setPhase('welcome');
     } catch {
       // localStorage unavailable (SSR, private browsing) — skip onboarding
     }
-  }, []);
+  }, [suppressed]);
 
-  const isActive = mounted && phase !== 'done';
+  const isActive = mounted && phase !== 'done' && !suppressed;
 
   const nextStep = useCallback(() => {
     if (stepIdx < WELCOME_STEPS.length - 1) {
@@ -169,8 +178,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 // ── Welcome Modal ────────────────────────────────────────────────────────────
 
 export function WelcomeModal() {
-  const { phase, stepIdx, nextStep, prevStep, skipTour } = useOnboarding();
+  const { phase, stepIdx, nextStep, prevStep, skipTour, isActive } = useOnboarding();
   const modalRef = useRef<HTMLDivElement>(null);
+
+  if (!isActive || phase !== 'welcome') return null;
 
   // Trap focus inside modal + handle Escape
   useEffect(() => {
@@ -204,8 +215,6 @@ export function WelcomeModal() {
     });
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [phase, stepIdx, skipTour]);
-
-  if (phase !== 'welcome') return null;
 
   const step = WELCOME_STEPS[stepIdx];
 
@@ -277,7 +286,7 @@ export function WelcomeModal() {
 // ── Guided Tour ──────────────────────────────────────────────────────────────
 
 export function GuidedTour() {
-  const { phase, tourIdx, nextTour, skipTour } = useOnboarding();
+  const { phase, tourIdx, nextTour, skipTour, isActive } = useOnboarding();
   const [tipPos, setTipPos] = useState<{ top: number; left: number } | null>(null);
   const tipRef = useRef<HTMLDivElement>(null);
 
@@ -381,7 +390,7 @@ export function GuidedTour() {
     }
   }, [tipPos]);
 
-  if (phase !== 'tour') return null;
+  if (!isActive || phase !== 'tour') return null;
 
   const isLast = tourIdx === TOUR_STEPS.length - 1;
 
