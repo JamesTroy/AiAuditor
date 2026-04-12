@@ -40,12 +40,15 @@ export async function POST(req: NextRequest) {
       const sub = event.data.object as Stripe.Subscription;
       const orgId = sub.metadata?.orgId;
       if (orgId) {
+        // Stripe v18+: current_period_end moved to subscription items.
+        // Extract from the first item if available, fallback to null.
+        const itemPeriodEnd = sub.items?.data?.[0]?.current_period_end;
         await db
           .update(orgBilling)
           .set({
             plan: sub.metadata?.planId ?? 'pro',
             status: sub.status,
-            currentPeriodEnd: new Date(sub.current_period_end * 1000),
+            currentPeriodEnd: itemPeriodEnd ? new Date(itemPeriodEnd * 1000) : null,
             cancelAtPeriodEnd: sub.cancel_at_period_end,
             updatedAt: new Date(),
           })
