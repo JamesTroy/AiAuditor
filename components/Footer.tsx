@@ -22,6 +22,9 @@ const LEGAL_LINKS = [
 export default function Footer() {
   const pathname = usePathname();
 
+  // Landing page has its own footer
+  if (pathname === '/') return null;
+
   const linkClass = (href: string) => {
     const isActive = pathname === href;
     return `text-sm py-3 min-h-[44px] inline-flex items-center transition-colors focus-ring rounded ${

@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import Link from 'next/link';
+import { LandingNav } from '@/components/landing/LandingNav';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { ProofStrip, HowItWorks, Features, Testimonials } from '@/components/landing/Sections';
-import { Pricing, CtaSection } from '@/components/landing/PricingFooter';
-import { GlobalJsonLd } from '@/components/JsonLd';
+import { Pricing, CtaSection, LandingFooter } from '@/components/landing/PricingFooter';
 
 export const metadata: Metadata = {
   title: 'Claudit \u2014 AI code auditor. 190 specialized auditors.',
@@ -24,7 +24,9 @@ export default async function LandingPage() {
   const firstName = session?.user?.name?.split(' ')[0] ?? null;
 
   return (
-    <div className="bg-zinc-950 text-zinc-100 -mt-[1px]">
+    <div className="bg-zinc-950 text-zinc-100">
+      <LandingNav isLoggedIn={isLoggedIn} />
+
       {/* Logged-in welcome banner */}
       {isLoggedIn && (
         <div className="bg-violet-600 border-b border-violet-500/60 py-2.5 px-6 flex items-center justify-center gap-4">
@@ -46,6 +48,8 @@ export default async function LandingPage() {
         <Pricing />
         <CtaSection />
       </main>
+
+      <LandingFooter />
     </div>
   );
 }
