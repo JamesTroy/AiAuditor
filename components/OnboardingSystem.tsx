@@ -181,12 +181,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 export function WelcomeModal() {
   const { phase, stepIdx, nextStep, prevStep, skipTour, isActive } = useOnboarding();
   const modalRef = useRef<HTMLDivElement>(null);
-
-  if (!isActive || phase !== 'welcome') return null;
+  const shouldShow = isActive && phase === 'welcome';
 
   // Trap focus inside modal + handle Escape
+  // Hook must be called unconditionally (Rules of Hooks) — guard is inside.
   useEffect(() => {
-    if (phase !== 'welcome') return;
+    if (!shouldShow) return;
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') { skipTour(); return; }
@@ -215,7 +215,9 @@ export function WelcomeModal() {
       modalRef.current?.querySelector<HTMLElement>('[data-cta]')?.focus();
     });
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [phase, stepIdx, skipTour]);
+  }, [shouldShow, stepIdx, skipTour]);
+
+  if (!shouldShow) return null;
 
   const step = WELCOME_STEPS[stepIdx];
 
