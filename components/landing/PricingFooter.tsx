@@ -2,64 +2,50 @@ import Link from 'next/link';
 
 // ── Pricing ─────────────────────────────────────────────────────────────────
 
-const PLANS = [
-  { name: 'Free', price: '$0', period: 'forever', features: ['5 audits per month', 'All 190 auditors', 'Severity-ranked findings', 'Fix guidance included'], cta: 'Start free', href: '/signup', featured: false },
-  { name: 'Pro', price: '$29', period: 'per month', features: ['100 audits per month', 'Score trend history', 'API access', 'Priority processing'], cta: 'Get Pro', href: '/signup?plan=pro', featured: true, badge: 'Most popular' },
-  { name: 'Team', price: '$79', period: 'per month \u00b7 up to 10 seats', features: ['500 audits per month', 'Team dashboard', 'Shared audit history', 'Org-wide defaults'], cta: 'Start team trial', href: '/signup?plan=team', featured: false },
-];
-
 export function Pricing() {
   return (
     <section id="pricing" className="py-28 border-b border-zinc-800/60">
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-5xl mx-auto px-6">
         <p className="text-xs font-semibold text-violet-400 uppercase tracking-widest mb-4">Pricing</p>
-        <h2 className="text-4xl font-bold text-white tracking-tight mb-3">Simple, honest pricing</h2>
-        <p className="text-zinc-400 text-lg font-light mb-16">Start free. Upgrade when your team needs it.</p>
+        <h2 className="text-4xl font-bold text-white tracking-tight mb-3">Free while in early access</h2>
+        <p className="text-zinc-400 text-lg font-light mb-16">Everything is free right now. No credit card, no limits, no catch.</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {PLANS.map((p) => (
-            <div
-              key={p.name}
-              className={`relative rounded-2xl border p-7 flex flex-col ${
-                p.featured
-                  ? 'bg-violet-600 border-violet-500 shadow-2xl shadow-violet-900/30'
-                  : 'bg-zinc-900 border-zinc-800'
-              }`}
-            >
-              {p.badge && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-violet-700 text-xs font-semibold px-3 py-1 rounded-full shadow-sm whitespace-nowrap">
-                  {p.badge}
-                </div>
-              )}
-              <p className={`text-sm font-medium mb-3 ${p.featured ? 'text-violet-200' : 'text-zinc-400'}`}>{p.name}</p>
-              <span className="text-4xl font-bold text-white mb-1">{p.price}</span>
-              <p className={`text-xs mb-6 ${p.featured ? 'text-violet-300' : 'text-zinc-500'}`}>{p.period}</p>
-              <div className={`border-t mb-6 ${p.featured ? 'border-violet-500/40' : 'border-zinc-800'}`} />
-              <ul className="space-y-2.5 mb-8 flex-1">
-                {p.features.map((f) => (
-                  <li key={f} className={`flex items-center gap-2.5 text-sm ${p.featured ? 'text-violet-100' : 'text-zinc-400'}`}>
-                    <svg className={`w-4 h-4 flex-shrink-0 ${p.featured ? 'text-violet-200' : 'text-violet-500'}`} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="2 8 6 12 14 4" />
-                    </svg>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={p.href}
-                className={`block text-center py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                  p.featured
-                    ? 'bg-white text-violet-700 hover:bg-violet-50'
-                    : 'bg-zinc-800 text-zinc-100 hover:bg-zinc-700 border border-zinc-700'
-                }`}
-              >
-                {p.cta} &rarr;
-              </Link>
+        <div className="max-w-md mx-auto">
+          <div className="relative rounded-2xl bg-violet-600 border border-violet-500 shadow-2xl shadow-violet-900/30 p-8 text-center">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-violet-700 text-xs font-semibold px-3 py-1 rounded-full shadow-sm whitespace-nowrap">
+              Early Access
             </div>
-          ))}
+            <span className="text-5xl font-bold text-white">$0</span>
+            <p className="text-violet-200 text-sm mt-1 mb-6">Free for everyone during early access</p>
+            <div className="border-t border-violet-500/40 mb-6" />
+            <ul className="space-y-2.5 mb-8 text-left">
+              {[
+                'All 190 specialized auditors',
+                'Unlimited audits',
+                'Severity-ranked findings with fix guidance',
+                'Score trend history',
+                'Team features (orgs, shared history)',
+                'No account required to try it',
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-2.5 text-sm text-violet-100">
+                  <svg className="w-4 h-4 flex-shrink-0 text-violet-200" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="2 8 6 12 14 4" />
+                  </svg>
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/signup"
+              className="block text-center py-3 rounded-xl text-sm font-semibold bg-white text-violet-700 hover:bg-violet-50 transition-all"
+            >
+              Get started free &rarr;
+            </Link>
+          </div>
         </div>
+
         <p className="text-center text-xs text-zinc-600 mt-8">
-          All plans include: OWASP &middot; WCAG &middot; GDPR coverage &middot; your code is never stored or trained on
+          Paid plans coming later. Early access users will be grandfathered. Your code is never stored or trained on.
         </p>
       </div>
     </section>
@@ -82,7 +68,7 @@ export function CtaSection() {
             Learn more
           </Link>
         </div>
-        <p className="text-xs text-zinc-600">No credit card &middot; 5 free audits &middot; Cancel anytime</p>
+        <p className="text-xs text-zinc-600">No credit card &middot; free during early access &middot; no limits</p>
       </div>
     </section>
   );
