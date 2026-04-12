@@ -325,13 +325,31 @@ export function GuidedTour() {
 
     positionTip();
 
-    // Reposition on resize/scroll
-    window.addEventListener('resize', positionTip);
-    window.addEventListener('scroll', positionTip, { passive: true });
+    // Debounced reposition on resize — prevents layout thrash during drag-resize.
+    // Scroll uses rAF gating instead of debounce for smoother tracking.
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    function debouncedResize() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(positionTip, 100);
+    }
+
+    let scrollRafId: number | null = null;
+    function rafScroll() {
+      if (scrollRafId !== null) return; // already queued
+      scrollRafId = requestAnimationFrame(() => {
+        positionTip();
+        scrollRafId = null;
+      });
+    }
+
+    window.addEventListener('resize', debouncedResize);
+    window.addEventListener('scroll', rafScroll, { passive: true });
 
     return () => {
-      window.removeEventListener('resize', positionTip);
-      window.removeEventListener('scroll', positionTip);
+      clearTimeout(resizeTimer);
+      if (scrollRafId !== null) cancelAnimationFrame(scrollRafId);
+      window.removeEventListener('resize', debouncedResize);
+      window.removeEventListener('scroll', rafScroll);
       // Remove highlight from current target
       const target = document.getElementById(tour.targetId);
       if (target) {
