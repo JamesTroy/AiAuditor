@@ -99,13 +99,16 @@ const TOUR_STEPS: TourStep[] = [
 
 // ── Provider ─────────────────────────────────────────────────────────────────
 
-// Routes where onboarding should never show — user needs to sign in first,
-// and the modal overlay would block the auth form inputs.
-const SUPPRESSED_PREFIXES = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email', '/two-factor'];
+// Only show onboarding on pages where the tour targets exist.
+// The audit page (/audit) is where users paste code — that's where the
+// tour makes sense. Showing the modal on /login blocks the auth form.
+const ALLOWED_PREFIXES = ['/audit', '/dashboard', '/'];
 
-function isSuppressedRoute(): boolean {
-  if (typeof window === 'undefined') return true; // SSR — don't show
-  return SUPPRESSED_PREFIXES.some((p) => window.location.pathname.startsWith(p));
+function isAllowedRoute(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  // Exact match for '/' (homepage), prefix match for /audit and /dashboard
+  return p === '/' || ALLOWED_PREFIXES.some((prefix) => prefix !== '/' && p.startsWith(prefix));
 }
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
@@ -116,7 +119,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    if (isSuppressedRoute()) return; // Don't show on auth pages
+    if (!isAllowedRoute()) return;
     try {
       const done = localStorage.getItem(STORAGE_KEY);
       if (!done) setPhase('welcome');
@@ -125,7 +128,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const isActive = mounted && phase !== 'done' && !isSuppressedRoute();
+  const isActive = mounted && phase !== 'done';
 
   const nextStep = useCallback(() => {
     if (stepIdx < WELCOME_STEPS.length - 1) {
@@ -181,7 +184,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 export function WelcomeModal() {
   const { phase, stepIdx, nextStep, prevStep, skipTour, isActive } = useOnboarding();
   const modalRef = useRef<HTMLDivElement>(null);
-  const shouldShow = isActive && phase === 'welcome';
+  // Re-check route on every render — handles client-side navigation to /login
+  const shouldShow = isActive && phase === 'welcome' && (typeof window === 'undefined' || isAllowedRoute());
 
   // Trap focus inside modal + handle Escape
   // Hook must be called unconditionally (Rules of Hooks) — guard is inside.
@@ -393,7 +397,7 @@ export function GuidedTour() {
     }
   }, [tipPos]);
 
-  if (!isActive || phase !== 'tour') return null;
+  if (!isActive || phase !== 'tour' || (typeof window !== 'undefined' && !isAllowedRoute())) return null;
 
   const isLast = tourIdx === TOUR_STEPS.length - 1;
 
