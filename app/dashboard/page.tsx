@@ -183,7 +183,7 @@ export default async function DashboardPage({
           </div>
         </div>}
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div id="dashboard-history" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-semibold">Recent audits</h2>
           <div className="flex items-center gap-2">
             {totalCount > 0 && (

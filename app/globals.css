@@ -132,6 +132,13 @@ html {
   contain-intrinsic-size: 0 200px;
 }
 
+/* ─── Onboarding tour highlight ──────────────────────────────── */
+[data-tour-highlight="true"] {
+  outline: 2px solid rgb(139 92 246); /* violet-500 */
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
 /* ─── Print ──────────────────────────────────────────────────── */
 @media print {
   nav, footer, button, .no-print { display: none !important; }

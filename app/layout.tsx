@@ -10,6 +10,7 @@ import dynamic from 'next/dynamic';
 import { GlobalJsonLd } from '@/components/JsonLd';
 import Analytics from '@/components/Analytics';
 import WebVitals from '@/components/WebVitals';
+import { OnboardingProvider, WelcomeModal, GuidedTour } from '@/components/OnboardingSystem';
 // PERF-004: Lazy-load SmoothScroll — it's a UI enhancement (returns null),
 // not critical to initial paint. Defers Lenis (~10KB) until after hydration.
 const SmoothScroll = dynamic(() => import('@/components/SmoothScroll'));
@@ -97,6 +98,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className={`${inter.className} bg-gray-50 dark:bg-zinc-950`}>
         <ThemeProvider>
+          <OnboardingProvider>
           <SmoothScroll />
           <WebVitals />
           <div className="flex flex-col min-h-screen">
@@ -118,6 +120,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </noscript>
             <Footer />
           </div>
+          <WelcomeModal />
+          <GuidedTour />
+          </OnboardingProvider>
         </ThemeProvider>
       </body>
     </html>

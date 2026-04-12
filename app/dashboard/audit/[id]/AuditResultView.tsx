@@ -224,7 +224,7 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
 
       {/* FP-UI: Review findings panel — dismiss false positives */}
       {metrics && metrics.findings.length > 0 && (
-        <div className="mb-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+        <div id="findings-triage" className="mb-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-3">
               <span className="text-xs font-mono uppercase tracking-widest text-gray-500 dark:text-zinc-400">

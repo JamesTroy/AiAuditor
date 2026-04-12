@@ -5,9 +5,22 @@ import { useRouter } from 'next/navigation';
 import { useSession, authClient } from '@/lib/auth-client';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
 import ActiveSessions from '@/components/ActiveSessions';
+import { useOnboarding } from '@/components/OnboardingSystem';
 
 // SM-004: Discriminated form status replaces saving + saved booleans.
 type FormStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+function ReplayTourButton() {
+  const { restart } = useOnboarding();
+  return (
+    <button
+      onClick={restart}
+      className="text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-500 transition-colors focus-ring rounded-lg px-4 py-2 border border-violet-200 dark:border-violet-800 hover:bg-violet-50 dark:hover:bg-violet-950/50"
+    >
+      Replay onboarding tour
+    </button>
+  );
+}
 
 export default function SettingsPage() {
   const { data: session, isPending } = useSession();
@@ -301,6 +314,15 @@ export default function SettingsPage() {
               <span className="text-xs text-gray-400 dark:text-zinc-600">{workspaceContext.length}/2000</span>
             </div>
           </form>
+        </section>
+
+        {/* Onboarding replay */}
+        <section className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
+          <h2 className="text-lg font-semibold mb-2">Onboarding tour</h2>
+          <p className="text-sm text-gray-500 dark:text-zinc-500 mb-4">
+            Replay the guided tour that explains how Claudit works.
+          </p>
+          <ReplayTourButton />
         </section>
 
         {/* Danger zone — CRED-002: Requires password re-entry */}
