@@ -61,36 +61,39 @@ const WELCOME_STEPS = [
   },
 ];
 
-const TOUR_STEPS = [
+type TourPosition = 'top' | 'bottom' | 'left' | 'right';
+interface TourStep { targetId: string; title: string; body: string; position: TourPosition; }
+
+const TOUR_STEPS: TourStep[] = [
   {
     targetId: 'code-input',
     title: 'Paste your code here',
     body: 'Any language, any size. A single function, a full file, or an entire module — Claudit handles it all.',
-    position: 'bottom' as const,
+    position: 'bottom',
   },
   {
     targetId: 'agent-picker',
     title: 'Choose your auditors',
     body: '190 specialized auditors across security, performance, accessibility, code quality, SEO, and more. Claudit auto-selects based on your code, or pick manually.',
-    position: 'bottom' as const,
+    position: 'bottom',
   },
   {
     targetId: 'run-audit-btn',
     title: 'Run the audit',
     body: 'Results stream in real time — you\'ll see findings appear as each auditor finishes. Most audits complete in under 60 seconds.',
-    position: 'bottom' as const,
+    position: 'bottom',
   },
   {
     targetId: 'findings-triage',
     title: 'Review and triage findings',
     body: 'Findings are ranked by severity. Dismiss false positives, and your estimated score adjusts instantly. Each finding links to the exact code.',
-    position: 'top' as const,
+    position: 'top',
   },
   {
     targetId: 'dashboard-history',
     title: 'Track your audit history',
     body: 'Every audit is saved to your dashboard. Re-run after fixing issues to measure progress and build a quality baseline over time.',
-    position: 'top' as const,
+    position: 'top',
   },
 ];
 
