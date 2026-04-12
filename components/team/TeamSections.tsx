@@ -321,7 +321,7 @@ export function BillingSection({
               <div className="h-full bg-violet-500 rounded-full transition-[width]" style={{ width: `${Math.min(100, (memberCount / currentPlan.seats) * 100)}%` }} />
             </div>
             <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1.5">
-              {memberCount} of {currentPlan.seats} seats &middot; {currentPlan.auditsPerMonth === -1 ? 'Unlimited' : currentPlan.auditsPerMonth} audits/mo
+              {memberCount} of {currentPlan.seats} seats &middot; {currentPlan.auditsPerMonth} audits/mo
             </p>
           </div>
         )}
