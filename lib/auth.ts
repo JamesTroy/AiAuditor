@@ -1,6 +1,10 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { admin, twoFactor, organization, apiKey } from 'better-auth/plugins';
+import { admin, twoFactor, organization } from 'better-auth/plugins';
+// NOTE: apiKey plugin is not available in better-auth 1.5.5.
+// When upgrading to a version that includes it, uncomment below and run:
+//   npx @better-auth/cli migrate
+// import { apiKey } from 'better-auth/plugins';
 import { nextCookies } from 'better-auth/next-js';
 import { db } from '@/lib/db';
 import * as schema from '@/lib/auth-schema';
@@ -169,11 +173,6 @@ export const auth = betterAuth({
         );
       },
     }),
-    apiKey({
-      defaultPrefix: 'cldt_live_',
-      defaultExpiresIn: null, // org keys don't expire
-      enableMetadata: true,
-      rateLimit: { enabled: true, window: 60, max: 100 },
-    }),
+    // apiKey({ defaultPrefix: 'cldt_live_', defaultExpiresIn: null, enableMetadata: true }),
   ],
 });

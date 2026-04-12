@@ -1,5 +1,7 @@
 import { createAuthClient } from 'better-auth/react';
-import { adminClient, twoFactorClient, organizationClient, apiKeyClient } from 'better-auth/client/plugins';
+import { adminClient, twoFactorClient, organizationClient } from 'better-auth/client/plugins';
+// NOTE: apiKeyClient not available in better-auth 1.5.5
+// import { apiKeyClient } from 'better-auth/client/plugins';
 
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
@@ -11,7 +13,7 @@ export const authClient = createAuthClient({
       },
     }),
     organizationClient(),
-    apiKeyClient(),
+    // apiKeyClient(),
   ],
 });
 
