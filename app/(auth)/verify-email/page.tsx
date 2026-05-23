@@ -27,7 +27,7 @@ export default function VerifyEmailPage() {
       }
     }).catch(() => {
       setStatus('error');
-      setError('Something went wrong. Please try again.');
+      setError('Verification failed. Please try clicking the link in your email again.');
     });
   }, [token]);
 

@@ -81,7 +81,7 @@ export default function ResetPasswordPage() {
         setSuccess(true);
       }
     } catch {
-      setError('Something went wrong. Please try again.');
+      setError('Unable to reset password. Please request a new reset link.');
       setLoading(false);
     }
   }
