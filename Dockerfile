@@ -14,9 +14,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build-time env vars (dummy values — real secrets injected at runtime by Railway)
-ENV ANTHROPIC_API_KEY=dummy_key_for_build
-ENV BETTER_AUTH_SECRET=dummy_secret_for_build_only_00000000
+# Build-time placeholders — real secrets are injected at runtime by Railway.
+# ARG instead of ENV: values are available to RUN commands but are not
+# baked into image layers and won't appear in docker inspect.
+ARG ANTHROPIC_API_KEY=dummy_key_for_build
+ARG BETTER_AUTH_SECRET=dummy_secret_for_build_only_00000000
 ENV DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
 ENV NEXT_TELEMETRY_DISABLED=1
 # NEXT_PUBLIC_* vars are inlined into the JS bundle at build time by Next.js.
