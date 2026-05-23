@@ -25,11 +25,6 @@ export default function Navbar() {
   const drawerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  // Landing page has its own nav — hide the global one
-  if (pathname === '/') return null;
-
-  const NAV_LINKS = session ? [...PUBLIC_LINKS, ...AUTH_LINKS] : PUBLIC_LINKS;
-
   const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
     triggerRef.current?.focus();
@@ -83,6 +78,11 @@ export default function Navbar() {
     }
     return () => { document.body.style.overflow = ''; };
   }, [drawerOpen]);
+
+  // Landing page has its own nav — hide the global one
+  if (pathname === '/') return null;
+
+  const NAV_LINKS = session ? [...PUBLIC_LINKS, ...AUTH_LINKS] : PUBLIC_LINKS;
 
   return (
     <>
