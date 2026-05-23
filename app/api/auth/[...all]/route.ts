@@ -78,7 +78,20 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return authPost(req);
+  try {
+    return await authPost(req);
+  } catch (err) {
+    // Catch unhandled exceptions from better-auth and surface the error message.
+    // Temporary debug wrapper — will be removed once root cause is identified.
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    // eslint-disable-next-line no-console
+    console.error(JSON.stringify({ ts: new Date().toISOString(), level: 'error', event: 'auth_unhandled_exception', message, stack }));
+    return new Response(JSON.stringify({ message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }
 
 export { authGet as GET };
