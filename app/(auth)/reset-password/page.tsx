@@ -75,7 +75,7 @@ export default function ResetPasswordPage() {
       });
 
       if (authError) {
-        setError(authError.message ?? 'Failed to reset password. The link may have expired.');
+        setError(authError.message ?? authError.statusText ?? 'Failed to reset password. The link may have expired.');
         setLoading(false);
       } else {
         setSuccess(true);

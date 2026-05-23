@@ -38,10 +38,10 @@ export default function SignupPage() {
       });
 
       if (authError) {
-        setError(authError.message ?? 'Something went wrong');
+        setError(authError.message ?? authError.statusText ?? 'Sign-up failed. Please try again.');
         setLoading(false);
-      } else if (data?.user && !data.user.emailVerified) {
-        // Email verification required (production) — account created but no session yet.
+      } else if (data?.token === null) {
+        // token is null when requireEmailVerification=true — user created but not logged in yet.
         setVerificationSent(true);
         setLoading(false);
       } else {
