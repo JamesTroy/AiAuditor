@@ -26,7 +26,7 @@ function getIp(req: NextRequest): string {
 function getLimiterForPath(pathname: string): RateLimiter {
   if (pathname.endsWith('/sign-in/email')) return authLoginLimiter;
   if (pathname.endsWith('/sign-up/email')) return authSignupLimiter;
-  if (pathname.endsWith('/forgot-password')) return authResetLimiter;
+  if (pathname.endsWith('/request-password-reset')) return authResetLimiter;
   if (pathname.endsWith('/reset-password')) return authResetLimiter;
   if (pathname.endsWith('/two-factor/verify')) return auth2faLimiter;
   if (pathname.endsWith('/two-factor/enable')) return auth2faLimiter;
