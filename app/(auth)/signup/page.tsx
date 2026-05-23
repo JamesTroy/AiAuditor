@@ -40,11 +40,13 @@ export default function SignupPage() {
       if (authError) {
         setError(authError.message ?? authError.statusText ?? 'Sign-up failed. Please try again.');
         setLoading(false);
-      } else if (data?.token === null) {
-        // token is null when requireEmailVerification=true — user created but not logged in yet.
+      } else if (!data?.session) {
+        // No session = email verification required (token is null, user not logged in yet).
         setVerificationSent(true);
         setLoading(false);
       } else {
+        // Auto sign-in succeeded — session exists, navigate to dashboard.
+        setLoading(false);
         router.push('/dashboard');
         router.refresh();
       }
