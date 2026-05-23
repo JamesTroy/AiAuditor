@@ -17233,3 +17233,16 @@ Rewrite pattern: Add a one-line disclosure: "Processed via [Provider] API. Never
 | **Composite** | | Weighted average. 80+ is skeptic-resistant. Below 60 is actively damaging. |`,
 
 };
+
+// RULE-007: Confidence calibration based on input size.
+// Injected into every system prompt so Claude self-limits certainty claims
+// on large submissions where cross-file behavior cannot be verified.
+export function buildConfidenceCalibration(inputLength: number): string {
+  if (inputLength < 200 * 50) { // ~200 lines at ~50 chars/line = 10KB
+    return '\n\nCONFIDENCE CALIBRATION: This submission is short — you have full context. Prefer [CERTAIN] for issues you can see directly.';
+  }
+  if (inputLength < 2000 * 50) { // ~2000 lines = 100KB
+    return '\n\nCONFIDENCE CALIBRATION: This is a medium-sized submission. Use [LIKELY] for cross-file assumptions where you cannot see both sides of an interaction.';
+  }
+  return '\n\nCONFIDENCE CALIBRATION: This is a large submission with limited context per function. Use [POSSIBLE] for behaviors that depend on distant code. NEVER claim [CERTAIN] for cross-module interactions unless both modules are in the submission.';
+}

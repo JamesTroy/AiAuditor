@@ -12,6 +12,44 @@ import type { StructuredAuditResult } from '@/lib/ai/findingSchema';
 
 const RETRYABLE_STATUS = new Set([500, 502, 503, 529]);
 
+// WORKFLOW-9: Attempt to parse tool JSON, with lightweight repair on failure.
+function repairJson(raw: string): string {
+  let s = raw.trim();
+  // Remove trailing commas before ] or }
+  s = s.replace(/,\s*([\]}])/g, '$1');
+  // Close unclosed arrays/objects by counting brackets
+  const opens = (s.match(/[{[]/g) ?? []).length;
+  const closes = (s.match(/[}\]]/g) ?? []).length;
+  if (opens > closes) {
+    // Append closing brackets in reverse order of likely opening
+    const tail = s.slice(-200);
+    const needsCurly = (tail.match(/\{/g) ?? []).length > (tail.match(/\}/g) ?? []).length;
+    s = s + (needsCurly ? '}' : '') + ']'.repeat(opens - closes - (needsCurly ? 1 : 0));
+  }
+  return s;
+}
+
+function tryParseToolJson(raw: string): StructuredAuditResult | null {
+  // Attempt 1: direct parse
+  try {
+    return JSON.parse(raw) as StructuredAuditResult;
+  } catch { /* fall through to repair */ }
+
+  // Attempt 2: repair common truncation/formatting issues
+  try {
+    const repaired = repairJson(raw);
+    const result = JSON.parse(repaired) as StructuredAuditResult;
+    // eslint-disable-next-line no-console
+    console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', event: 'tool_json_repaired', originalLength: raw.length }));
+    return result;
+  } catch { /* fall through to give up */ }
+
+  // Attempt 3: give up — route will fall back to regex extraction
+  // eslint-disable-next-line no-console
+  console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', event: 'tool_json_parse_failed', jsonLength: raw.length, preview: raw.slice(0, 200) }));
+  return null;
+}
+
 // PERF-012: Hoist TextEncoder to module scope — it's stateless and reusable.
 const encoder = new TextEncoder();
 
@@ -145,22 +183,11 @@ export class AnthropicProvider implements AIProvider {
               ));
             }
 
-            // STRUCT-001: Parse accumulated tool JSON after stream ends.
+            // STRUCT-001 / WORKFLOW-9: Parse accumulated tool JSON after stream ends.
+            // Attempt 1: direct parse. Attempt 2: lightweight JSON repair.
+            // Attempt 3: give up and log — route falls back to regex extraction.
             if (toolCapture && toolCapture.toolJson.length > 0) {
-              try {
-                toolCapture.parsed = JSON.parse(toolCapture.toolJson) as StructuredAuditResult;
-              } catch {
-                // Malformed tool JSON — degrade gracefully to regex parsing.
-                // eslint-disable-next-line no-console
-                console.warn(JSON.stringify({
-                  ts: new Date().toISOString(),
-                  level: 'warn',
-                  event: 'tool_json_parse_failed',
-                  jsonLength: toolCapture.toolJson.length,
-                  preview: toolCapture.toolJson.slice(0, 200),
-                }));
-                toolCapture.parsed = null;
-              }
+              toolCapture.parsed = tryParseToolJson(toolCapture.toolJson);
             }
 
             // Stream completed successfully.

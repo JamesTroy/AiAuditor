@@ -1,6 +1,41 @@
 // Shared score extraction logic used by both the API route (on save)
 // and the dashboard (for backfilling existing records).
 
+import type { ValidatedFinding } from '@/lib/validateFindings';
+
+// RULE-010: Deterministic expected score from validated findings.
+// base=100, critical:-15, high:-8, medium:-4, low:-1, floor at 5.
+// When the agent-reported score deviates >20pts from this formula, trust
+// the formula (it is objective) and log the discrepancy.
+export function computeExpectedScore(findings: ValidatedFinding[]): number {
+  let score = 100;
+  for (const f of findings) {
+    if (f.classification === 'suggestion') continue; // suggestions don't affect score
+    switch (f.severity) {
+      case 'critical': score -= 15; break;
+      case 'high':     score -= 8;  break;
+      case 'medium':   score -= 4;  break;
+      case 'low':      score -= 1;  break;
+    }
+  }
+  return Math.max(5, score);
+}
+
+export function reconcileScore(
+  agentScore: number | null,
+  findings: ValidatedFinding[],
+  log: (event: string, data: Record<string, unknown>) => void,
+): number | null {
+  if (agentScore === null) return null;
+  const expected = computeExpectedScore(findings);
+  const delta = Math.abs(agentScore - expected);
+  if (delta > 20) {
+    log('score_formula_override', { agentScore, formulaScore: expected, delta });
+    return expected;
+  }
+  return agentScore;
+}
+
 /**
  * Extract the overall/composite score from audit markdown output.
  * Checks multiple formats in priority order:

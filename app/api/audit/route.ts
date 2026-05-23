@@ -15,8 +15,18 @@ import {
   MAX_AUDIT_INPUT_CHARS,
 } from '@/lib/config/constants';
 import { auth } from '@/lib/auth';
-import { extractScore, sanityCheckScore } from '@/lib/extractScore';
+import { createHash } from 'crypto';
+import { extractScore, sanityCheckScore, reconcileScore } from '@/lib/extractScore';
 import { detectAgents } from '@/lib/detectAgents';
+import { buildConfidenceCalibration } from '@/lib/agents/prompts';
+import { parseDiff, formatDiffContext } from '@/lib/agents/diffAudit';
+import { extractDependencyGraph, formatDependencyGraph } from '@/lib/chunking/dependencyGraph';
+import { analyzeComplexity, formatComplexityHotspots } from '@/lib/chunking/complexityScore';
+import { analyzeTaint, formatTaintAnalysis } from '@/lib/chunking/taintAnalysis';
+import { preprocessInput } from '@/lib/chunking/preprocessor';
+import { recommendAgents, formatRecommendationHeader } from '@/lib/agents/agentRecommender';
+import { prioritizeFindings } from '@/lib/findingPrioritizer';
+import { cacheGet, cacheSet } from '@/lib/cache';
 import { db } from '@/lib/db';
 import { audit as auditTable, member as memberTable, user as userTable } from '@/lib/auth-schema';
 import { eq, and, lt } from 'drizzle-orm';
@@ -125,6 +135,7 @@ function makeStream(
   auditRecord?: { id: string; startedAt: number; userId?: string; organizationId?: string },
   requestSignal?: AbortSignal,
   sourceCode?: string,
+  workspaceContext?: string,
 ): ReadableStream {
   // PERF-NEW-07: Combine client disconnect signal with hard timeout so that
   // abandoned audits stop consuming Anthropic API tokens immediately.
@@ -166,28 +177,32 @@ function makeStream(
 
           // STRUCT-001: Use structured score from tool call when available,
           // falling back to regex extraction from markdown.
-          let score: number | null = null;
+          let rawAgentScore: number | null = null;
           if (toolCapture.parsed && typeof toolCapture.parsed.overall_score === 'number') {
             const toolScore = Math.round(toolCapture.parsed.overall_score);
-            score = sanityCheckScore(
+            rawAgentScore = sanityCheckScore(
               toolScore >= 0 && toolScore <= 100 ? toolScore : null,
               fullResult,
             );
-            log('info', 'score_from_tool', { requestId: logMeta.requestId, toolScore, finalScore: score });
+            log('info', 'score_from_tool', { requestId: logMeta.requestId, toolScore, finalScore: rawAgentScore });
           } else {
-            const rawScore = extractScore(fullResult);
-            score = sanityCheckScore(rawScore, fullResult);
+            rawAgentScore = sanityCheckScore(extractScore(fullResult), fullResult);
           }
 
-          if (score === null && fullResult.length > 200) {
+          if (rawAgentScore === null && fullResult.length > 200) {
             log('warn', 'score_extraction_null', { requestId: logMeta.requestId, auditId: auditRecord.id, agentType: logMeta.agentType, resultTail: fullResult.slice(-200) });
           }
 
           // STRUCT-001: Validate structured findings against source code and
           // embed them in the result for downstream parsing.
           let resultToStore = fullResult;
+          let score = rawAgentScore;
           if (toolCapture.parsed && sourceCode) {
-            const validated = validateFindings(toolCapture.parsed.findings, sourceCode);
+            const validated = validateFindings(
+              toolCapture.parsed.findings,
+              sourceCode,
+              workspaceContext,
+            );
             const stats = validationStats(toolCapture.parsed.findings, validated);
             log('info', 'finding_validation', {
               requestId: logMeta.requestId,
@@ -195,10 +210,26 @@ function makeStream(
               ...stats,
             });
 
-            // Embed validated findings as a hidden block in the result.
-            // parseAuditResult extracts this and uses it over regex parsing.
+            // RULE-010: Reconcile agent score against deterministic formula.
+            score = reconcileScore(rawAgentScore, validated, (event, data) =>
+              log('warn', event, { requestId: logMeta.requestId, auditId: auditRecord.id, ...data }),
+            );
+
+            // WORKFLOW-4: Prioritize findings.
+            const prioritized = prioritizeFindings(validated);
             const findingsJson = JSON.stringify(validated);
-            resultToStore = fullResult + `\n\n<!-- STRUCTURED_FINDINGS_START -->\n${findingsJson}\n<!-- STRUCTURED_FINDINGS_END -->`;
+            const prioritizedJson = JSON.stringify({
+              tierCounts: prioritized.tierCounts,
+              findings: prioritized.findings.map((f) => ({
+                id: f.id, title: f.title, severity: f.severity,
+                confidence: f.confidence, classification: f.classification,
+                priorityScore: f.priorityScore, tier: f.tier,
+                validated: f.validated, location: f.location,
+              })),
+            });
+            resultToStore = fullResult
+              + `\n\n<!-- STRUCTURED_FINDINGS_START -->\n${findingsJson}\n<!-- STRUCTURED_FINDINGS_END -->`
+              + `\n\n<!-- PRIORITIZED_FINDINGS_START -->\n${prioritizedJson}\n<!-- PRIORITIZED_FINDINGS_END -->`;
           }
 
           try {
@@ -370,20 +401,93 @@ export async function POST(req: NextRequest) {
   // cannot break out of the delimiter and inject prompt-level instructions.
   const escapedInput = escapeXml(data.input);
 
-  // For large inputs, prepend a structural skeleton so auditors can navigate
-  // the codebase without losing context on deeply nested functions.
-  const skeleton = extractSkeleton(data.input);
-  const skeletonPrefix = skeleton ? `<code_structure>\n${skeleton}\n</code_structure>\n\n` : '';
+  // WORKFLOW-3: Strip binary/encoded noise before any other preprocessing.
+  const { output: cleanInput, originalChars, finalChars } = preprocessInput(data.input);
+  const prepCharsRemoved = originalChars - finalChars;
+  if (prepCharsRemoved > 0) {
+    log('info', 'input_preprocessed', { requestId, charsRemoved: prepCharsRemoved });
+  }
 
-  // CHUNK-001: For multi-file inputs, prepend a file index so the auditor knows
-  // what files are present and can reference them by path. This is especially
-  // useful for large monorepo dumps where the auditor needs to navigate between files.
-  const fileChunks = splitByFile(data.input);
-  const fileIndexPrefix = fileChunks.length > 1
-    ? `<file_index>\nThis submission contains ${fileChunks.length} files (${(data.input.length / 1000).toFixed(0)}k chars total):\n${fileChunks.map((f) => `  - ${f.path} (${(f.chars / 1000).toFixed(1)}k chars)`).join('\n')}\nAnalyze all files systematically. Reference findings by file path and line number.\n</file_index>\n\n`
+  // WORKFLOW-5: Detect diff/patch format input and inject change-context block.
+  const diffAnalysis = parseDiff(cleanInput);
+  const diffContextBlock = diffAnalysis.isDiff ? formatDiffContext(diffAnalysis) : null;
+
+  // WORKFLOW-8: Redis artifact cache — keyed by SHA-256 of the cleaned input.
+  // Caches skeleton, file chunks, dependency graph, and complexity analysis
+  // so repeated audits of the same input don't recompute these on every request.
+  const inputHash = createHash('sha256').update(cleanInput).digest('hex').slice(0, 32);
+  const artifactCacheKey = `artifacts:${inputHash}`;
+  const ARTIFACT_TTL = 600; // 10 minutes
+
+  type CachedArtifacts = {
+    skeleton: string | null;
+    fileChunkPaths: string[];
+    fileChunkChars: number[];
+    depGraphBlock: string | null;
+    complexityBlock: string | null;
+    taintBlock: string | null;
+  };
+
+  let artifacts: CachedArtifacts | null = await cacheGet<CachedArtifacts>(artifactCacheKey);
+  let artifactCacheHit = artifacts !== null;
+
+  if (!artifacts) {
+    const skeleton = extractSkeleton(cleanInput);
+    const fileChunks = splitByFile(cleanInput);
+    const depGraph = fileChunks.length > 1 ? extractDependencyGraph(fileChunks) : null;
+    const depGraphBlock = depGraph ? formatDependencyGraph(depGraph) : null;
+    const complexity = analyzeComplexity(cleanInput);
+    const complexityBlock = complexity.hotspots.length > 0 ? formatComplexityHotspots(complexity) : null;
+    const taint = analyzeTaint(cleanInput);
+    const taintBlock = taint.paths.length > 0 ? formatTaintAnalysis(taint) : null;
+
+    artifacts = {
+      skeleton,
+      fileChunkPaths: fileChunks.map((f) => f.path),
+      fileChunkChars: fileChunks.map((f) => f.chars),
+      depGraphBlock,
+      complexityBlock,
+      taintBlock,
+    };
+    // Best-effort cache write — never blocks the audit.
+    cacheSet(artifactCacheKey, artifacts, ARTIFACT_TTL).catch(() => {});
+  }
+
+  log('info', 'artifact_cache', { requestId, hit: artifactCacheHit, inputHash });
+
+  // Reconstruct fileChunks summary from cached data.
+  const cachedFileCount = artifacts.fileChunkPaths.length;
+
+  // WORKFLOW-6: Adaptive context budgeting — scale prompt construction to input size.
+  const inputLen = cleanInput.length;
+  let safeInput: string;
+
+  const fileIndexPrefix = cachedFileCount > 1
+    ? `<file_index>\nThis submission contains ${cachedFileCount} files (${(inputLen / 1000).toFixed(0)}k chars total):\n${artifacts.fileChunkPaths.map((p, i) => `  - ${p} (${((artifacts!.fileChunkChars[i] ?? 0) / 1000).toFixed(1)}k chars)`).join('\n')}\nAnalyze all files systematically. Reference findings by file path and line number.\n</file_index>\n\n`
     : '';
 
-  let safeInput = `${fileIndexPrefix}${skeletonPrefix}<user_content>\n${escapedInput}\n</user_content>`;
+  if (inputLen < 50_000) {
+    // Small: full input, no skeleton overhead
+    safeInput = `${fileIndexPrefix}<user_content>\n${escapedInput}\n</user_content>`;
+  } else if (inputLen < 150_000) {
+    // Medium: skeleton + full input (original behavior)
+    const skeletonPrefix = artifacts.skeleton ? `<code_structure>\n${artifacts.skeleton}\n</code_structure>\n\n` : '';
+    safeInput = `${fileIndexPrefix}${skeletonPrefix}<user_content>\n${escapedInput}\n</user_content>`;
+  } else {
+    // Large / XL: skeleton + analysis blocks + full input (agent handles priority itself)
+    const skeletonPrefix = artifacts.skeleton ? `<code_structure>\n${artifacts.skeleton}\n</code_structure>\n\n` : '';
+    const analysisPrefix = [
+      artifacts.depGraphBlock ? `<dependency_graph>\n${artifacts.depGraphBlock}\n</dependency_graph>\n\n` : '',
+      artifacts.complexityBlock ? `<complexity_hotspots>\n${artifacts.complexityBlock}\n</complexity_hotspots>\n\n` : '',
+      artifacts.taintBlock ? `<taint_paths>\n${artifacts.taintBlock}\n</taint_paths>\n\n` : '',
+    ].join('');
+    safeInput = `${fileIndexPrefix}${skeletonPrefix}${analysisPrefix}<user_content>\n${escapedInput}\n</user_content>`;
+  }
+
+  // Inject diff context when input is a patch (WORKFLOW-5).
+  if (diffContextBlock) {
+    safeInput = `<change_context>\n${diffContextBlock}\n</change_context>\n\n${safeInput}`;
+  }
 
   // Inject related context files — labeled as supporting context, NOT audit targets.
   // This lets auditors understand middleware, shared utilities, and config that the
@@ -418,6 +522,7 @@ export async function POST(req: NextRequest) {
 
   // Fetch workspace context for the logged-in user (best-effort — never blocks audit).
   let workspaceContextBlock = '';
+  let rawWorkspaceContext: string | undefined;
   if (userId) {
     try {
       const userRows = await db
@@ -427,6 +532,7 @@ export async function POST(req: NextRequest) {
         .limit(1);
       const ctx = userRows[0]?.workspaceContext;
       if (ctx) {
+        rawWorkspaceContext = ctx;
         workspaceContextBlock = `\n\n<workspace_context>\n${escapeXml(ctx)}\n</workspace_context>\n` +
           `Use this workspace context to tailor findings — flag violations of stated standards, skip suggestions that conflict with stated conventions.`;
       }
@@ -495,6 +601,8 @@ export async function POST(req: NextRequest) {
     // Inject workspace context if available.
     if (workspaceContextBlock) guardedPrompt += workspaceContextBlock;
 
+    // RULE-007: Confidence calibration based on input size.
+    guardedPrompt += buildConfidenceCalibration(data.input.length);
     // STRUCT-001: Append structured output instruction so Claude calls the tool.
     guardedPrompt += STRUCTURED_OUTPUT_INSTRUCTION;
 
@@ -507,9 +615,16 @@ export async function POST(req: NextRequest) {
       remaining: rl.remaining,
       detectedLang: customDetection.language,
     });
+
+    // WORKFLOW-10: Compute agent recommendations for this input.
+    const customRecs = recommendAgents(data.input);
+    const customRecsHeader = formatRecommendationHeader(customRecs);
+
+    // rawWorkspaceContext is declared above at workspace context fetch time.
+
     return new Response(
-      makeStream(guardedPrompt, safeInput, { requestId, ip: anonIp, agentType: 'custom' }, auditRecord, req.signal, data.input),
-      { headers: { ...STREAM_HEADERS, ...rl.headers, 'X-Request-Id': requestId } },
+      makeStream(guardedPrompt, safeInput, { requestId, ip: anonIp, agentType: 'custom' }, auditRecord, req.signal, data.input, rawWorkspaceContext),
+      { headers: { ...STREAM_HEADERS, ...rl.headers, 'X-Request-Id': requestId, ...(customRecsHeader ? { 'X-Recommended-Agents': customRecsHeader } : {}) } },
     );
   }
 
@@ -541,8 +656,14 @@ export async function POST(req: NextRequest) {
   // Inject workspace context if available.
   if (workspaceContextBlock) contextPrompt += workspaceContextBlock;
 
+  // RULE-007: Confidence calibration based on input size.
+  contextPrompt += buildConfidenceCalibration(data.input.length);
   // STRUCT-001: Append structured output instruction so Claude calls the tool.
   contextPrompt += STRUCTURED_OUTPUT_INSTRUCTION;
+
+  // WORKFLOW-10: Compute agent recommendations for this input.
+  const recs = recommendAgents(data.input);
+  const recsHeader = formatRecommendationHeader(recs);
 
   const auditRecord = await createAuditRecord(data.agentType, agent.name);
   log('info', 'audit_start', {
@@ -553,9 +674,11 @@ export async function POST(req: NextRequest) {
     remaining: rl.remaining,
     detectedLang: detection.language,
     detectedFramework: detection.framework,
+    artifactCacheHit,
+    isDiff: diffAnalysis.isDiff,
   });
   return new Response(
-    makeStream(contextPrompt, safeInput, { requestId, ip: anonIp, agentType: data.agentType }, auditRecord, req.signal, data.input),
-    { headers: { ...STREAM_HEADERS, ...rl.headers, 'X-Request-Id': requestId } },
+    makeStream(contextPrompt, safeInput, { requestId, ip: anonIp, agentType: data.agentType }, auditRecord, req.signal, data.input, rawWorkspaceContext),
+    { headers: { ...STREAM_HEADERS, ...rl.headers, 'X-Request-Id': requestId, ...(recsHeader ? { 'X-Recommended-Agents': recsHeader } : {}) } },
   );
 }
