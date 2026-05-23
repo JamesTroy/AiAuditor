@@ -22,11 +22,8 @@ export default function ForgotPasswordPage() {
       });
 
       if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        let msg = `Request failed (${res.status})`;
-        try { const d = JSON.parse(text); if (d?.message) msg = d.message; } catch { if (text) msg = text.slice(0, 120); }
-        if (res.status === 429) msg = 'Too many attempts. Please wait before trying again.';
-        setError(msg);
+        const data = await res.json().catch(() => null);
+        setError(data?.message ?? (res.status === 429 ? 'Too many attempts. Please wait before trying again.' : 'Failed to send reset email. Please try again.'));
       } else {
         setSent(true);
       }
