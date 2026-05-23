@@ -122,6 +122,30 @@ const PATTERN_RULES: Rule[] = [
   { pattern: /\b(table|thead|tbody|DataGrid|data.?table|sortable|pagination)\b/i, tags: ['tables'] },
   { pattern: /\b(toast|snackbar|alert|notification|badge|banner)\b/i, tags: ['notifications'] },
   { pattern: /\b(gap|spacing|padding|margin|grid|whitespace|gutter)\b/i, tags: ['spacing'] },
+  // RULE-002: Dead code / tech debt signals
+  { pattern: /\/\/\s*TODO\b.*$/im, tags: ['tech-debt'] },
+  { pattern: /\/\/\s*FIXME\b.*$/im, tags: ['tech-debt'] },
+  { pattern: /\/\/\s*HACK\b.*$/im, tags: ['tech-debt'] },
+  { pattern: /\/\/\s*XXX\b.*$/im, tags: ['tech-debt'] },
+  { pattern: /^\s*\/\/.*\n(\s*\/\/.*\n){4,}/m, tags: ['dead-code'] },
+  { pattern: /\bconsole\.(log|debug|info|warn|error)\s*\(/g, tags: ['debug-leftovers'] },
+  { pattern: /\bprint\s*\(['"]debug/i, tags: ['debug-leftovers'] },
+  { pattern: /\bdebugger\b/g, tags: ['debug-leftovers'] },
+  // RULE-005: Framework-specific anti-patterns
+  // React: useEffect with empty/missing deps array
+  { pattern: /useEffect\s*\(\s*(?:async\s+)?(?:function|\(|\w+\s*=>)[^)]*\)\s*;/g, tags: ['react-antipattern'] },
+  // React: useState in a loop or condition
+  { pattern: /(?:for|while|if)\s*\([^)]*\)\s*\{[^}]*useState/g, tags: ['react-antipattern'] },
+  // Next.js: getServerSideProps fetching own API (self-call anti-pattern)
+  { pattern: /getServerSideProps[\s\S]*fetch\s*\(\s*['"`]\s*(?:\/api|\.\.\/api)/gm, tags: ['nextjs-antipattern'] },
+  // Express: permissive CORS without options
+  { pattern: /app\.use\s*\(\s*cors\s*\(\s*\)\s*\)/g, tags: ['express-antipattern'] },
+  // Express: missing helmet middleware
+  { pattern: /app\.use\s*\(\s*express\.json/g, tags: ['express-setup'] },
+  // Django: DEBUG = True outside dev config
+  { pattern: /DEBUG\s*=\s*True/g, tags: ['django-antipattern'] },
+  // Django: ALLOWED_HOSTS = ['*']
+  { pattern: /ALLOWED_HOSTS\s*=\s*\[\s*['"]\*['"]/g, tags: ['django-antipattern'] },
 ];
 
 // Map detected tags to agent IDs
@@ -199,6 +223,16 @@ const TAG_TO_AGENTS: Record<string, string[]> = {
   'tables': ['table-design', 'accessibility'],
   'notifications': ['notification-ux', 'ux-review'],
   'spacing': ['spacing-layout', 'responsive-design'],
+  // RULE-002: Dead code / tech debt detection
+  'tech-debt': ['code-bloat', 'code-quality', 'architecture'],
+  'dead-code': ['code-bloat', 'code-quality'],
+  'debug-leftovers': ['code-quality', 'security'],
+  // RULE-005: Framework-specific anti-patterns
+  'react-antipattern': ['react-patterns', 'frontend-performance', 'code-quality'],
+  'nextjs-antipattern': ['react-patterns', 'performance', 'seo-performance'],
+  'express-antipattern': ['security', 'api-design', 'cors-headers'],
+  'express-setup': ['security', 'api-design'],
+  'django-antipattern': ['security', 'code-quality'],
 };
 
 // Always-relevant agents added when any code is detected
