@@ -23,10 +23,10 @@ export default function Navbar() {
   const { data: session } = useSession();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   // Landing page has its own nav — hide the global one
   if (pathname === '/') return null;
-  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const NAV_LINKS = session ? [...PUBLIC_LINKS, ...AUTH_LINKS] : PUBLIC_LINKS;
 

@@ -100,6 +100,10 @@ export default function UserNav() {
     }
   }, [open]);
 
+  if (isPending) {
+    return <div className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-full bg-gray-200 dark:bg-zinc-700 animate-pulse" aria-hidden="true" />;
+  }
+
   if (!session) {
     return (
       <Link
