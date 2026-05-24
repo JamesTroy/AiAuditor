@@ -40,12 +40,11 @@ export default function SignupPage() {
       if (authError) {
         setError(authError.message ?? authError.statusText ?? 'Sign-up failed. Please try again.');
         setLoading(false);
-      } else if (data?.token === null || data?.token === undefined) {
-        // token is null/absent when requireEmailVerification=true — user created but no session yet.
-        setVerificationSent(true);
-        setLoading(false);
+      } else if (!data?.token) {
+        // No session = email verification required. Hard-navigate to avoid React state issues.
+        window.location.href = `/verify-email-pending?email=${encodeURIComponent(email)}`;
       } else {
-        // Auto sign-in succeeded — token is set, hard-navigate to dashboard.
+        // Auto sign-in succeeded — hard-navigate to dashboard.
         window.location.href = '/dashboard';
       }
     } catch (err) {
