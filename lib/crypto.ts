@@ -80,6 +80,7 @@ function getDecryptionKeys(): Buffer[] {
  * Output format: `v1:iv(24hex):tag(32hex):ciphertext(hex)`
  */
 export function encrypt(plaintext: string): string {
+  if (plaintext === null || plaintext === undefined) return plaintext;
   const key = getCurrentKey();
   if (!key) return plaintext; // No-op in dev without key
 
@@ -189,9 +190,11 @@ export const encryptedText = customType<{ data: string }>({
     return 'text';
   },
   toDriver(value: string): string {
+    if (value === null || value === undefined) return value;
     return encrypt(value);
   },
   fromDriver(value: unknown): string {
+    if (value === null || value === undefined) return value as string;
     return decrypt(value as string);
   },
 });
