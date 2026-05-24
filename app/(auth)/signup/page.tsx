@@ -38,7 +38,9 @@ export default function SignupPage() {
       });
 
       if (authError) {
-        setError(authError.message ?? authError.statusText ?? 'Sign-up failed. Please try again.');
+        const msg = authError.message || authError.statusText || `Error ${(authError as { status?: number }).status ?? ''}`;
+        console.error('[signup] authError:', JSON.stringify(authError));
+        setError(msg || 'Sign-up failed — check the browser console for details.');
         setLoading(false);
       } else if (!data?.token) {
         // No session = email verification required. Hard-navigate to avoid React state issues.
@@ -89,9 +91,9 @@ export default function SignupPage() {
     <div className="bg-white/90 dark:bg-zinc-900/70 backdrop-blur-sm border border-gray-200 dark:border-zinc-800 rounded-2xl p-8 shadow-sm motion-safe:animate-fade-up">
       <h2 className="text-xl font-semibold text-gray-900 dark:text-zinc-100 mb-6">Create an account</h2>
 
-      {error && (
+      {error !== '' && (
         <div role="alert" className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm motion-safe:animate-fade-up">
-          {error}
+          {error || 'Sign-up failed. Please try again.'}
         </div>
       )}
 
