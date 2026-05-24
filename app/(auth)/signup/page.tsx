@@ -45,10 +45,8 @@ export default function SignupPage() {
         setVerificationSent(true);
         setLoading(false);
       } else {
-        // Auto sign-in succeeded — token is set, stop spinner then navigate.
-        setLoading(false);
-        router.push('/dashboard');
-        router.refresh();
+        // Auto sign-in succeeded — token is set, hard-navigate to dashboard.
+        window.location.href = '/dashboard';
       }
     } catch (err) {
       // AUTH-007: Log error type only — never log user-supplied data (email, name).
