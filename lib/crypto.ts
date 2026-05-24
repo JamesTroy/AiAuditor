@@ -194,7 +194,7 @@ export const encryptedText = customType<{ data: string }>({
     return encrypt(value);
   },
   fromDriver(value: unknown): string {
-    if (value === null || value === undefined) return value as string;
+    if (value === null || value === undefined) return value as unknown as string;
     return decrypt(value as string);
   },
 });
