@@ -78,7 +78,17 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return authPost(req);
+  try {
+    return await authPost(req);
+  } catch (err) {
+    const message = err instanceof Error ? `${err.message}\n${err.stack}` : String(err);
+    // eslint-disable-next-line no-console
+    console.error(JSON.stringify({ ts: new Date().toISOString(), level: 'error', event: 'auth_500', message }));
+    return new Response(JSON.stringify({ message: err instanceof Error ? err.message : String(err) }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }
 
 export { authGet as GET };
