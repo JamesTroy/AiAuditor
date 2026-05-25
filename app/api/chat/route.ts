@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { auditLimiter } from '@/lib/rateLimit';
+import { auditLimiter, perIpConcurrencyLimiter } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { STREAM_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
 import { escapeXml } from '@/lib/escapeXml';
@@ -39,6 +39,11 @@ export async function POST(req: NextRequest) {
   const rl = await auditLimiter.check(ip);
   if (!rl.allowed) {
     return new Response('Too many requests.', { status: 429, headers: rl.headers });
+  }
+
+  const ipBurst = await perIpConcurrencyLimiter.check(ip);
+  if (!ipBurst.allowed) {
+    return new Response('Too many requests from this IP. Please slow down.', { status: 429, headers: ipBurst.headers });
   }
 
   let rawBody: unknown;

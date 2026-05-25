@@ -279,6 +279,16 @@ export const userDailyAuditLimiter = new RateLimiter({
   prefix: 'user-daily',
 });
 
+// SAFE-006: Per-IP burst guard — max 150 audits per 2-min window.
+// Sits between auditLimiter (1-min/10req) and dailyAuditBudget (24h/2000req).
+// Without this a single IP can legally re-clock the 1-min window repeatedly
+// and drain the global Anthropic budget before the daily counter fires.
+export const perIpConcurrencyLimiter = new RateLimiter({
+  windowMs: 120_000,
+  maxRequests: 150,
+  prefix: 'ip-concurrent',
+});
+
 /** Synthesis endpoint: 20 requests per minute per IP (lighter than audits). */
 export const synthesisLimiter = new RateLimiter({
   windowMs: 60_000,

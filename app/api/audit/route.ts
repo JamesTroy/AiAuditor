@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { headers as nextHeaders } from 'next/headers';
 import { getAgent } from '@/lib/agents/registry';
-import { auditLimiter, dailyAuditBudget, userDailyAuditLimiter } from '@/lib/rateLimit';
+import { auditLimiter, dailyAuditBudget, userDailyAuditLimiter, perIpConcurrencyLimiter } from '@/lib/rateLimit';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { auditRequestSchema } from '@/lib/schemas/auditRequest';
 import { STREAM_RESPONSE_HEADERS, ALLOWED_ORIGINS } from '@/lib/config/apiHeaders';
@@ -383,6 +383,17 @@ export async function POST(req: NextRequest) {
     return new Response('Too many requests. Please wait a moment.', {
       status: 429,
       headers: { ...rl.headers, 'X-Request-Id': requestId },
+    });
+  }
+
+  // SAFE-006: Per-IP burst guard — prevents a single IP from draining the
+  // global Anthropic budget by re-clocking the 1-min auditLimiter window.
+  const ipBurst = await perIpConcurrencyLimiter.check(ip);
+  if (!ipBurst.allowed) {
+    log('warn', 'ip_burst_limit_exceeded', { requestId, ip: anonIp });
+    return new Response('Too many requests from this IP. Please slow down.', {
+      status: 429,
+      headers: { ...ipBurst.headers, 'X-Request-Id': requestId },
     });
   }
 
