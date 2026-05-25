@@ -96,7 +96,7 @@ export default function Navbar() {
               {/* Desktop nav links */}
               <div className="hidden sm:flex items-center gap-0.5">
                 {NAV_LINKS.map((item) => {
-                  const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+                  const isActive = pathname.startsWith(item.href);
                   return (
                     <Link
                       key={item.href}
