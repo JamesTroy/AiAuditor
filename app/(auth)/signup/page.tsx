@@ -38,9 +38,7 @@ export default function SignupPage() {
       });
 
       if (authError) {
-        const msg = authError.message || authError.statusText || `Error ${(authError as { status?: number }).status ?? ''}`;
-        console.error('[signup] authError:', JSON.stringify(authError));
-        setError(msg || 'Sign-up failed — check the browser console for details.');
+        setError(authError.message || authError.statusText || 'Sign-up failed. Please try again.');
         setLoading(false);
       } else if (!data?.token) {
         // No session = email verification required. Hard-navigate to avoid React state issues.

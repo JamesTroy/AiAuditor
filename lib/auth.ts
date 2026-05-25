@@ -14,9 +14,6 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
-// eslint-disable-next-line no-console
-console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'info', event: 'auth_init', resendConfigured: !!resend, requireEmailVerification: process.env.NODE_ENV === 'production' ? !!process.env.RESEND_API_KEY : false }));
-
 const FROM_EMAIL = process.env.EMAIL_FROM ?? 'Claudit <noreply@claudit.consulting>';
 
 /** Escape HTML special characters to prevent injection in email templates. */
@@ -26,25 +23,24 @@ function escapeHtml(s: string): string {
 
 async function sendEmail(to: string, subject: string, html: string) {
   if (!resend) {
-    // eslint-disable-next-line no-console
-    console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', event: 'email_skipped_no_resend_key', to, subject }));
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.warn(`[email] To: ${to} | Subject: ${subject}`);
+      // eslint-disable-next-line no-console
+      console.warn(`[email] (No RESEND_API_KEY — email not sent)`);
+    }
     return;
   }
-  // eslint-disable-next-line no-console
-  console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'info', event: 'email_sending', to, subject, from: FROM_EMAIL }));
   try {
-    const result = await resend.emails.send({ from: FROM_EMAIL, to, subject, html });
     // Resend SDK returns { data, error } — it does NOT throw on failure.
+    const result = await resend.emails.send({ from: FROM_EMAIL, to, subject, html });
     if (result.error) {
       // eslint-disable-next-line no-console
-      console.error(JSON.stringify({ ts: new Date().toISOString(), level: 'error', event: 'email_send_failed', to, subject, error: result.error }));
-    } else {
-      // eslint-disable-next-line no-console
-      console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'info', event: 'email_sent', to, subject, id: result.data?.id }));
+      console.error(JSON.stringify({ ts: new Date().toISOString(), level: 'error', event: 'email_send_failed', error: result.error }));
     }
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error(JSON.stringify({ ts: new Date().toISOString(), level: 'error', event: 'email_send_exception', to, subject, error: err instanceof Error ? err.message : String(err) }));
+    console.error('[email] send failed:', err instanceof Error ? err.message : err);
   }
 }
 
@@ -98,8 +94,6 @@ export const auth = betterAuth({
       ? !!process.env.RESEND_API_KEY
       : false,
     sendResetPassword: async ({ user, url }) => {
-      // eslint-disable-next-line no-console
-      console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'info', event: 'send_reset_password_called', email: user.email }));
       await sendEmail(
         user.email,
         'Reset your Claudit password',
@@ -113,8 +107,6 @@ export const auth = betterAuth({
 
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
-      // eslint-disable-next-line no-console
-      console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'info', event: 'send_verification_email_called', email: user.email }));
       await sendEmail(
         user.email,
         'Verify your email to start auditing',
