@@ -8,7 +8,6 @@ import { audit, organizationTable, type AuditStatus, AUDIT_STATUSES } from '@/li
 import { eq, desc, lt, count, and, isNotNull } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { scoreColorClass, relativeTime } from '@/lib/ui';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ScoreTrendChart } from '@/components/dashboard/ScoreTrendChart';
 
 export const metadata: Metadata = {
@@ -157,9 +156,6 @@ export default async function DashboardPage({
                 ? `Welcome back, ${firstName}. Your average score is up ${trendDelta} pts over your last 10 audits.`
                 : `Welcome back, ${firstName}. Here's an overview of your audit history and scores.`}
           </p>
-
-          {/* Quick-run bar */}
-          <DashboardHeader />
 
           {/* Stat strip */}
           {totalCount > 0 && (
