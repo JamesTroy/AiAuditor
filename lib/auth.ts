@@ -14,6 +14,9 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
+// eslint-disable-next-line no-console
+console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'info', event: 'auth_init', resendConfigured: !!resend, requireEmailVerification: process.env.NODE_ENV === 'production' ? !!process.env.RESEND_API_KEY : false }));
+
 const FROM_EMAIL = process.env.EMAIL_FROM ?? 'Claudit <noreply@claudit.consulting>';
 
 /** Escape HTML special characters to prevent injection in email templates. */
