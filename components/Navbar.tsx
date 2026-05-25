@@ -14,9 +14,10 @@ const PUBLIC_LINKS = [
   { href: '/pricing', label: 'Pricing', title: 'View pricing and plans' },
 ] as const;
 
-// Signed-in: task-focused
+// Signed-in: task-focused — no Pricing (irrelevant mid-task)
 const AUTH_LINKS = [
   { href: '/dashboard', label: 'Dashboard', title: 'View your audit history and scores' },
+  { href: '/audit', label: 'Audit', title: 'Run a new audit' },
 ] as const;
 
 export default function Navbar() {
@@ -63,7 +64,7 @@ export default function Navbar() {
 
   if (pathname === '/') return null;
 
-  const NAV_LINKS = session ? [...PUBLIC_LINKS, ...AUTH_LINKS] : PUBLIC_LINKS;
+  const NAV_LINKS = session ? AUTH_LINKS : PUBLIC_LINKS;
   const firstName = session?.user?.name?.split(' ')[0] ?? session?.user?.email?.split('@')[0];
 
   return (
@@ -119,25 +120,13 @@ export default function Navbar() {
 
               {/* Right section */}
               <div className="flex items-center gap-2">
-                {/* CTA button */}
-                {!pathname.startsWith('/audit') && (
+                {/* CTA — only for signed-out users */}
+                {!session && (
                   <Link
                     href="/audit"
-                    className={`hidden sm:inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold text-white transition-all duration-200 focus-ring whitespace-nowrap shadow-sm ${
-                      session
-                        ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 shadow-violet-600/25 hover:shadow-violet-500/40 hover:shadow-md active:scale-[0.97]'
-                        : 'bg-violet-600 hover:bg-violet-500 shadow-violet-600/20 active:scale-[0.97]'
-                    }`}
+                    className="hidden sm:inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 transition-all duration-200 focus-ring whitespace-nowrap shadow-sm shadow-violet-600/20 active:scale-[0.97]"
                   >
-                    {session ? (
-                      <>
-                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                          <line x1="6.5" y1="1" x2="6.5" y2="12" />
-                          <line x1="1" y1="6.5" x2="12" y2="6.5" />
-                        </svg>
-                        New Audit
-                      </>
-                    ) : 'Get Started Free'}
+                    Get Started Free
                   </Link>
                 )}
 
@@ -259,9 +248,6 @@ export default function Navbar() {
               </svg>
               {session ? 'New Audit' : 'Get Started Free'}
             </Link>
-            <p className="text-xs text-gray-400 dark:text-zinc-600 text-center">
-              Security · Performance · Accessibility
-            </p>
           </div>
         </div>
       </div>
