@@ -217,6 +217,11 @@ export const VALID_AGENT_TYPES = [
   'pci-dss',
   'hipaa-security',
   'soc2-controls',
+  // Gap Auditors — find what's *missing* from the submitted code,
+  // not what's wrong with what's there.
+  'security-gaps',
+  'resilience-gaps',
+  'coverage-gaps',
 ] as const;
 
 export type AgentTypeValue = (typeof VALID_AGENT_TYPES)[number];

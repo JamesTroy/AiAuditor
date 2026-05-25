@@ -8621,6 +8621,195 @@ Keep total under 30,000 characters.`,
 
 Keep total under 30,000 characters.`,
   }),
+  builtin({
+    id: 'security-gaps',
+    name: 'Security Gaps',
+    description: 'Finds MISSING security controls — unguarded routes, absent rate limits, no CSRF on state changes, missing audit logs. Tuned for low false positives by treating controls that may live in middleware as [POSSIBLE].',
+    category: 'Security & Privacy',
+    accentClass: 'text-red-400 hover:bg-red-500/10',
+    buttonClass: 'bg-red-700 hover:bg-red-600',
+    placeholder: 'Paste route handlers, middleware, auth wrappers, and any security-relevant code...',
+    systemPrompt: SYSTEM_PROMPTS['security-gaps'],
+    prepPrompt: `I'm preparing code for a **Security Gaps** audit — the auditor looks for security controls that *should* exist but don't (missing auth, missing rate limits, missing CSRF, missing audit logs).
+
+## Why this needs more files than a normal audit
+Gap audits have a hard failure mode: they flag a control as missing when the control actually lives in a file you didn't submit (middleware, auth wrapper, parent layout). To keep false positives low, include the files where controls conventionally live, even if they look "boring."
+
+## Project context (fill in)
+- Framework: [e.g. Next.js App Router, Express, FastAPI, Rails]
+- Auth pattern: [e.g. better-auth + middleware, NextAuth wrapper, requireAuth() helper, session cookies]
+- Deployment: [e.g. Vercel, Railway, AWS Lambda]
+- Known posture: [e.g. "no rate limiting anywhere yet", "we have auth on /api/* but not /admin", "first security pass"]
+
+## Files to gather
+
+### 1. The routes/endpoints being audited
+- Every route handler you want assessed — not just "risky" ones
+- Include all HTTP methods (POST/PUT/DELETE are highest priority for CSRF/auth gaps)
+
+### 2. Middleware and auth wrappers (CRITICAL — prevents false positives)
+- middleware.ts / middleware.js at project root
+- Any auth helper (requireAuth, withSession, getServerSession callsites)
+- Decorators or higher-order components that wrap routes
+- Layout files in Next.js App Router that apply auth (app/layout.tsx, app/(authenticated)/layout.tsx)
+
+### 3. Configuration that affects security
+- Headers config (next.config.js, vercel.json, _headers, nginx.conf)
+- CORS config
+- CSP / nonce setup if any
+- Environment variable validators (e.g. \`env.ts\`, \`config.ts\`)
+
+### 4. Existing security utilities
+- Any rate limit code (so the auditor doesn't flag "no rate limit" on routes that import it)
+- Validation helpers, sanitization wrappers
+- Audit log helpers
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- middleware.ts ---
+[contents]
+
+--- app/api/users/route.ts ---
+[contents]
+\`\`\`
+
+## Don't forget
+- [ ] Include middleware.ts even if it "only sets headers" — the auditor needs to see it to NOT flag missing auth
+- [ ] Include the file where auth helpers are defined, not just where they're called
+- [ ] If your framework adds defaults (Rails CSRF, Django middleware), mention that in the project context
+
+Keep total under 30,000 characters. Prioritize the route files + middleware + auth helpers.`,
+  }),
+  builtin({
+    id: 'resilience-gaps',
+    name: 'Resilience Gaps',
+    description: 'Finds MISSING reliability controls — no timeouts on external calls, no retries on retryable failures, no idempotency on mutations, no graceful shutdown, no observability. Tuned for low false positives.',
+    category: 'Infrastructure',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste route handlers, background jobs, queue consumers, HTTP clients, and platform config...',
+    systemPrompt: SYSTEM_PROMPTS['resilience-gaps'],
+    prepPrompt: `I'm preparing code for a **Resilience Gaps** audit — the auditor looks for reliability controls that *should* exist but don't (missing timeouts, no retries, no idempotency, no observability).
+
+## Why this needs more files than a normal audit
+Resilience controls often live in shared wrappers (an httpClient with timeouts baked in, a queue helper that handles retries). If you only submit the leaf code, the auditor will flag missing controls that actually exist in the wrapper. Include the wrappers.
+
+## Project context (fill in)
+- Runtime + framework: [e.g. Node.js 20 + Next.js 15, Python + FastAPI, Go + Echo]
+- Platform: [e.g. Vercel (300s default timeout), Railway, AWS Lambda (15min), k8s]
+- Observability stack: [e.g. Sentry + Vercel logs, Datadog APM, OpenTelemetry, "none yet"]
+- Queue / async infra: [e.g. SQS, BullMQ, Inngest, "none — sync only"]
+- Known concerns: [e.g. "fetch calls hang in prod", "double-charges after retries", "no logs on errors"]
+
+## Files to gather
+
+### 1. The code being audited
+- Route handlers, background jobs, queue consumers, CLI commands
+- Any long-lived processes
+
+### 2. HTTP / DB / cache client wrappers (CRITICAL — prevents false positives)
+- Your fetch wrapper if you have one (lib/http.ts, lib/api.ts)
+- DB client setup (drizzle config, prisma client, raw pg pool)
+- Cache client setup (Redis client, in-memory cache)
+- Queue producer / consumer setup
+
+### 3. Error handling infrastructure
+- Global error boundaries (app/error.tsx, app/global-error.tsx for Next.js)
+- Express error middleware
+- Sentry / observability init code
+- Process-level handlers (unhandledRejection, uncaughtException, SIGTERM)
+
+### 4. Platform / infrastructure config
+- vercel.json / vercel.ts (timeouts, regions)
+- next.config.js (output, caching)
+- Dockerfile + start script (signal handling)
+- Health check endpoints
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- lib/http.ts ---
+[contents]
+
+--- app/api/process/route.ts ---
+[contents]
+\`\`\`
+
+## Don't forget
+- [ ] Include your HTTP/DB/cache client wrappers even if they look "boring" — they're often where timeouts and retries live
+- [ ] Mention platform defaults (Vercel adds request timeout, service mesh adds retries) so the auditor doesn't double-flag
+- [ ] Include observability init even if you think it's complete — the auditor needs to see what spans/metrics exist
+
+Keep total under 30,000 characters. Prioritize the wrappers + the leaf code that uses them.`,
+  }),
+  builtin({
+    id: 'coverage-gaps',
+    name: 'Coverage Gaps',
+    description: 'Finds MISSING handlers, branches, validations, and tests — uncaught error paths, schemaless inputs, switches with no default, async with no rejection handler. Tuned for low false positives.',
+    category: 'Testing',
+    accentClass: 'text-emerald-400 hover:bg-emerald-500/10',
+    buttonClass: 'bg-emerald-700 hover:bg-emerald-600',
+    placeholder: 'Paste source files and any matching test files. Include the parent component or caller if relevant...',
+    systemPrompt: SYSTEM_PROMPTS['coverage-gaps'],
+    prepPrompt: `I'm preparing code for a **Coverage Gaps** audit — the auditor looks for handlers, branches, validations, and tests that *should* exist but don't.
+
+## Why this needs both source and tests
+A gap audit on source alone can't distinguish "no test for this" from "tests live in another file you didn't submit." Include tests if you want test-coverage findings. Without tests, the auditor will only flag branch and validation gaps, not test gaps.
+
+## Project context (fill in)
+- Language / framework: [e.g. TypeScript + React 19, Python + FastAPI, Go 1.22]
+- Test framework: [e.g. Vitest, Jest, Pytest, go test]
+- Validation library: [e.g. Zod, Joi, Pydantic, custom]
+- Error handling pattern: [e.g. "errors thrown to global boundary", "Result<T> pattern", "try/catch everywhere"]
+- Known concerns: [e.g. "lots of any types", "no schemas on API inputs", "happy-path tests only"]
+
+## Files to gather
+
+### 1. Source files to audit
+- The modules / routes / components you want assessed
+- Include their direct dependencies (helpers, utils they call)
+
+### 2. Test files (CRITICAL for test-coverage findings)
+- The matching test file(s) for each source file
+- Shared test fixtures and factories
+- If tests live in __tests__/ or tests/, include the relevant ones
+- If no tests exist, say so explicitly in the project context
+
+### 3. Validation schemas
+- Zod / Joi / Pydantic schemas if separate from the route files
+- TypeScript types/interfaces for inputs
+- Any custom validators or type guards
+
+### 4. Parent boundaries (prevents false positives on error handling)
+- app/error.tsx, app/global-error.tsx (Next.js error boundaries)
+- React ErrorBoundary components
+- Express error middleware
+- FastAPI exception handlers
+
+### 5. Callers (if helpful)
+- For pure functions, include 1-2 callsites so the auditor can see what inputs are passed
+
+## Formatting rules
+
+Format each file:
+\`\`\`
+--- src/checkout/calculateTotal.ts ---
+[contents]
+
+--- src/checkout/__tests__/calculateTotal.test.ts ---
+[contents]
+\`\`\`
+
+## Don't forget
+- [ ] If no test files exist, say "no tests yet" in project context so the auditor doesn't flag every source file
+- [ ] Include parent error boundaries so the auditor doesn't flag "missing try/catch" on every async function
+- [ ] Include the validation schema file if it's separate from the route handler
+
+Keep total under 30,000 characters. Prioritize: source + matching tests + validation schemas.`,
+  }),
 ];
 
 export function getAgent(id: string): AgentConfig {

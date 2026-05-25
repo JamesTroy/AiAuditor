@@ -134,6 +134,9 @@ const AGENT_DESCRIPTIONS: Record<string, string> = {
   'bundle-size': 'JavaScript bundle size optimization',
   'container-security': 'container hardening and supply chain security',
   'observability': 'logging, monitoring, and tracing',
+  'security-gaps': 'MISSING security controls (auth, rate limits, CSRF, audit logs)',
+  'resilience-gaps': 'MISSING reliability controls (timeouts, retries, idempotency, observability)',
+  'coverage-gaps': 'MISSING handlers, branches, validations, and tests',
 };
 
 /**
