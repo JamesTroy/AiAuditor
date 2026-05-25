@@ -23,19 +23,19 @@ function escapeHtml(s: string): string {
 
 async function sendEmail(to: string, subject: string, html: string) {
   if (!resend) {
-    if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.warn(`[email] To: ${to} | Subject: ${subject}`);
-      // eslint-disable-next-line no-console
-      console.warn(`[email] (No RESEND_API_KEY — email not sent)`);
-    }
+    // eslint-disable-next-line no-console
+    console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', event: 'email_skipped_no_resend_key', to, subject }));
     return;
   }
+  // eslint-disable-next-line no-console
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'info', event: 'email_sending', to, subject, from: FROM_EMAIL }));
   try {
-    await resend.emails.send({ from: FROM_EMAIL, to, subject, html });
+    const result = await resend.emails.send({ from: FROM_EMAIL, to, subject, html });
+    // eslint-disable-next-line no-console
+    console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'info', event: 'email_sent', to, subject, id: (result as { data?: { id?: string } }).data?.id }));
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error('[email] send failed:', err instanceof Error ? err.message : err);
+    console.error(JSON.stringify({ ts: new Date().toISOString(), level: 'error', event: 'email_send_failed', to, subject, error: err instanceof Error ? err.message : String(err) }));
   }
 }
 
