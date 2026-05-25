@@ -226,7 +226,7 @@ export default function Navbar() {
           <nav className="flex-1 overflow-y-auto px-3 py-3" aria-label="Mobile navigation">
             <ul className="flex flex-col gap-0.5">
               {NAV_LINKS.map((item) => {
-                const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+                const isActive = pathname.startsWith(item.href);
                 return (
                   <li key={item.href}>
                     <Link
