@@ -70,9 +70,11 @@ export default function Navbar() {
     <>
       <header className="sticky top-0 z-50">
         {/* Glass panel */}
-        <div className="relative bg-white/75 dark:bg-zinc-950/80 backdrop-blur-2xl">
-          {/* Gradient bottom border */}
-          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-gray-300/70 dark:via-zinc-700/70 to-transparent" />
+        <div className="relative bg-white/80 dark:bg-[#0a0a0f]/90 backdrop-blur-2xl">
+          {/* Top violet accent line */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-500/60 to-transparent" />
+          {/* Bottom border */}
+          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 dark:via-zinc-700/50 to-transparent" />
 
           <nav aria-label="Main navigation">
             <a
@@ -105,14 +107,11 @@ export default function Navbar() {
                       aria-current={isActive ? 'page' : undefined}
                       className={`relative text-sm px-3.5 py-1.5 rounded-lg font-medium transition-all duration-150 ${
                         isActive
-                          ? 'text-gray-900 dark:text-zinc-100 bg-gray-100 dark:bg-zinc-800/80'
-                          : 'text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-200 hover:bg-gray-100/60 dark:hover:bg-zinc-800/50'
+                          ? 'text-violet-600 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/10 ring-1 ring-violet-200 dark:ring-violet-500/20'
+                          : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100/60 dark:hover:bg-zinc-800/60'
                       }`}
                     >
                       {item.label}
-                      {isActive && (
-                        <span className="absolute inset-x-3 -bottom-[15px] h-0.5 rounded-full bg-violet-500/80" />
-                      )}
                     </Link>
                   );
                 })}
@@ -149,7 +148,7 @@ export default function Navbar() {
 
                 {/* Signed-in: first name + avatar */}
                 {!isPending && session && firstName && (
-                  <span className="hidden lg:block text-sm font-medium text-gray-600 dark:text-zinc-400 select-none">
+                  <span className="hidden lg:block text-sm font-semibold bg-gradient-to-r from-violet-500 to-indigo-400 bg-clip-text text-transparent select-none">
                     {firstName}
                   </span>
                 )}
