@@ -92,6 +92,8 @@ export const auth = betterAuth({
       ? !!process.env.RESEND_API_KEY
       : false,
     sendResetPassword: async ({ user, url }) => {
+      // eslint-disable-next-line no-console
+      console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'info', event: 'send_reset_password_called', email: user.email }));
       await sendEmail(
         user.email,
         'Reset your Claudit password',
@@ -105,6 +107,8 @@ export const auth = betterAuth({
 
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
+      // eslint-disable-next-line no-console
+      console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'info', event: 'send_verification_email_called', email: user.email }));
       await sendEmail(
         user.email,
         'Verify your email to start auditing',
