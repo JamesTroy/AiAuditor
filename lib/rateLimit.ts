@@ -9,9 +9,26 @@
 //   - Falls back to in-memory on Redis error or missing credentials.
 //   - A hard cap (`maxEntries`) prevents memory-DoS from unique IP floods.
 //   - `check()` is async to support the Redis path.
+//
+// Runtime: this module must run on the Node.js runtime, NOT Edge Runtime.
+// The in-memory fallback uses module-level singletons that are per-isolate in
+// Edge — counters would reset per request, silently disabling rate limiting
+// whenever Redis is unreachable. The Upstash Redis path itself is HTTP-based
+// and would work in Edge, but losing the safety net is not acceptable, so we
+// guard the whole module to nodejs. The assertion below converts a silent
+// foot-gun into a hard build-time error if a future edge route imports this.
 
 import { Ratelimit } from '@upstash/ratelimit';
 import { redis } from '@/lib/redis';
+
+// Build-time/load-time guard — Next.js sets process.env.NEXT_RUNTIME = 'edge'
+// when compiling for Edge Runtime; the `EdgeRuntime` global is also defined.
+declare const EdgeRuntime: string | undefined;
+if (typeof EdgeRuntime !== 'undefined' || process.env.NEXT_RUNTIME === 'edge') {
+  throw new Error(
+    "lib/rateLimit.ts must run on the Node.js runtime. Remove `export const runtime = 'edge'` from the importing route, or build a separate Redis-only edge limiter.",
+  );
+}
 
 export interface RateLimiterConfig {
   /** Length of the sliding window in milliseconds. */
