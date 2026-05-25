@@ -34,11 +34,17 @@ async function sendEmail(to: string, subject: string, html: string) {
   console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'info', event: 'email_sending', to, subject, from: FROM_EMAIL }));
   try {
     const result = await resend.emails.send({ from: FROM_EMAIL, to, subject, html });
-    // eslint-disable-next-line no-console
-    console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'info', event: 'email_sent', to, subject, id: (result as { data?: { id?: string } }).data?.id }));
+    // Resend SDK returns { data, error } — it does NOT throw on failure.
+    if (result.error) {
+      // eslint-disable-next-line no-console
+      console.error(JSON.stringify({ ts: new Date().toISOString(), level: 'error', event: 'email_send_failed', to, subject, error: result.error }));
+    } else {
+      // eslint-disable-next-line no-console
+      console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'info', event: 'email_sent', to, subject, id: result.data?.id }));
+    }
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error(JSON.stringify({ ts: new Date().toISOString(), level: 'error', event: 'email_send_failed', to, subject, error: err instanceof Error ? err.message : String(err) }));
+    console.error(JSON.stringify({ ts: new Date().toISOString(), level: 'error', event: 'email_send_exception', to, subject, error: err instanceof Error ? err.message : String(err) }));
   }
 }
 
