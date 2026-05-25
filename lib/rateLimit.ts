@@ -279,14 +279,6 @@ export const userDailyAuditLimiter = new RateLimiter({
   prefix: 'user-daily',
 });
 
-// SAFE-006: Per-IP concurrent audit fairness — max 150 audits per 2 min window.
-// Prevents a single user from monopolizing the global API quota while allowing full 132-agent runs.
-export const perIpConcurrencyLimiter = new RateLimiter({
-  windowMs: 120_000,
-  maxRequests: 150,
-  prefix: 'ip-concurrent',
-});
-
 /** Synthesis endpoint: 20 requests per minute per IP (lighter than audits). */
 export const synthesisLimiter = new RateLimiter({
   windowMs: 60_000,
