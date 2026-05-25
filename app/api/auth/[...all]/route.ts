@@ -1,6 +1,17 @@
 import { NextRequest } from 'next/server';
-import { createHash } from 'crypto';
+import { createHmac } from 'crypto';
 import { auth } from '@/lib/auth';
+
+// HMAC-SHA-256 keying — using BETTER_AUTH_SECRET as the HMAC key prevents
+// pre-computation attacks where an attacker who knows the email could probe
+// the limiter's state directly. The secret is already required and validated
+// (>= 32 chars) by lib/auth.ts at module init.
+const RL_EMAIL_KEY_SECRET = process.env.BETTER_AUTH_SECRET ?? '';
+function hashEmailForRateLimit(email: string): string {
+  return createHmac('sha256', RL_EMAIL_KEY_SECRET)
+    .update(email.toLowerCase().trim())
+    .digest('hex');
+}
 import { toNextJsHandler } from 'better-auth/next-js';
 import {
   RateLimiter,
@@ -61,10 +72,8 @@ export async function POST(req: NextRequest) {
       const clone = req.clone();
       const body = await clone.json();
       if (typeof body?.email === 'string' && body.email.length > 0) {
-        // Hash email to avoid storing PII in Redis.
-        const emailKey = createHash('sha256')
-          .update(body.email.toLowerCase().trim())
-          .digest('hex');
+        // HMAC-SHA-256 with server secret — see hashEmailForRateLimit() above.
+        const emailKey = hashEmailForRateLimit(body.email);
         const emailRl = await perEmailLoginLimiter.check(emailKey);
         if (!emailRl.allowed) {
           return new Response(

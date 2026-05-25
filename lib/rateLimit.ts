@@ -31,6 +31,14 @@ export interface RateLimiterConfig {
   cleanupIntervalMs?: number;
   /** Redis key prefix (e.g., 'audit', 'auth-login'). Required for Redis mode. */
   prefix?: string;
+  /**
+   * When true, a Redis failure causes check() to DENY the request rather than
+   * fall back to per-replica in-memory counting. Required for budget-sensitive
+   * GLOBAL counters (dailyAuditBudget, userDailyAuditLimiter) because the
+   * per-replica fallback effectively multiplies the budget by replica count.
+   * Default: false (fail-open to in-memory for per-IP/per-email limiters).
+   */
+  failClosedOnStoreError?: boolean;
 }
 
 export interface RateLimitResult {
@@ -64,6 +72,7 @@ export class RateLimiter {
   private readonly windowMs: number;
   readonly maxRequests: number;
   private readonly maxEntries: number;
+  private readonly failClosed: boolean;
   private readonly store = new Map<string, { timestamps: number[]; head: number }>();
   private readonly timer: ReturnType<typeof setInterval>;
   private readonly redisLimiter: Ratelimit | null;
@@ -72,6 +81,7 @@ export class RateLimiter {
     this.windowMs = config.windowMs;
     this.maxRequests = config.maxRequests;
     this.maxEntries = config.maxEntries ?? 10_000;
+    this.failClosed = config.failClosedOnStoreError ?? false;
 
     const cleanupMs = config.cleanupIntervalMs ?? config.windowMs;
     this.timer = setInterval(() => this.cleanup(), cleanupMs);
@@ -108,6 +118,25 @@ export class RateLimiter {
           headers: this.buildHeaders(result.success, result.remaining, result.reset),
         };
       } catch (err) {
+        // Fail-closed limiters (budgets) must NOT fall back to in-memory —
+        // per-replica counting would silently multiply the global budget.
+        if (this.failClosed) {
+          // eslint-disable-next-line no-console
+          console.error(JSON.stringify({
+            ts: new Date().toISOString(), level: 'error',
+            event: 'redis_ratelimit_fail_closed',
+            prefix: 'rl', // limiter prefix not stored; identify via call site
+            error: err instanceof Error ? err.message : String(err),
+          }));
+          const resetAt = Date.now() + this.windowMs;
+          return {
+            allowed: false,
+            remaining: 0,
+            resetAt,
+            headers: this.buildHeaders(false, 0, resetAt),
+          };
+        }
+        // Fail-open for per-IP/per-email limiters — in-memory fallback is safe.
         // eslint-disable-next-line no-console
         console.warn(JSON.stringify({
           ts: new Date().toISOString(), level: 'warn',
@@ -262,21 +291,27 @@ export const authGeneralLimiter = new RateLimiter({
 
 // RL-010: Global daily audit call budget — Redis-backed when available (cross-replica).
 // 2000/day supports ~16 full 125-agent runs across all users.
+// Fail-closed: a Redis outage must not let each replica think it has its own
+// 2000-request budget (that would silently multiply spend by replica count).
 export const dailyAuditBudget = new RateLimiter({
   windowMs: 24 * 60 * 60_000,
   maxRequests: 2000,
   maxEntries: 1, // single global key — this limiter tracks one counter for the entire service
   cleanupIntervalMs: 60 * 60_000,
   prefix: 'daily-budget',
+  failClosedOnStoreError: true,
 });
 
 // RL-011: Per-user daily audit limit — 500 audits per day per authenticated user.
 // Raised from 50 to support multi-agent runs (125 agents = 1 run; 500 = ~4 full runs/day).
+// Fail-closed: same reasoning as dailyAuditBudget — per-user counter must be
+// consistent across replicas to prevent N× budget when Redis is down.
 export const userDailyAuditLimiter = new RateLimiter({
   windowMs: 24 * 60 * 60_000,
   maxRequests: 500,
   cleanupIntervalMs: 60 * 60_000,
   prefix: 'user-daily',
+  failClosedOnStoreError: true,
 });
 
 // SAFE-006: Per-IP burst guard — max 150 audits per 2-min window.
