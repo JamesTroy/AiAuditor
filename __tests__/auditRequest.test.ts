@@ -88,6 +88,44 @@ describe('auditRequestSchema', () => {
     });
   });
 
+  describe('whitespace trimming', () => {
+    it('rejects whitespace-only input', () => {
+      const result = builtInAuditRequestSchema.safeParse({
+        agentType: 'security',
+        input: '   \n\t  \n',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('trims input before measuring against MAX_INPUT_CHARS', () => {
+      // 500_000 spaces + 1 char would fail without trim; with trim it's 1 char
+      const result = builtInAuditRequestSchema.safeParse({
+        agentType: 'security',
+        input: ' '.repeat(MAX_INPUT_CHARS) + 'x',
+      });
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.input).toBe('x');
+    });
+
+    it('rejects whitespace-only systemPrompt on custom requests', () => {
+      const result = customAuditRequestSchema.safeParse({
+        agentType: 'custom',
+        systemPrompt: '   \n  ',
+        input: 'some code',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects context file with whitespace-only content', () => {
+      const result = builtInAuditRequestSchema.safeParse({
+        agentType: 'security',
+        input: 'some code',
+        contextFiles: [{ name: 'middleware.ts', content: '  \n\t  ' }],
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
   describe('contextFiles and runtimeContext guards', () => {
     it('rejects context file with empty name', () => {
       const result = builtInAuditRequestSchema.safeParse({

@@ -226,8 +226,14 @@ export const VALID_AGENT_TYPES = [
 
 export type AgentTypeValue = (typeof VALID_AGENT_TYPES)[number];
 
+// .trim() runs before .min/.max so:
+//  - whitespace-only input is rejected as empty (instead of reaching the LLM
+//    as garbage)
+//  - trailing whitespace doesn't count toward the character ceiling, so users
+//    don't hit "too long" errors from invisible whitespace they didn't type
 const inputField = z
   .string()
+  .trim()
   .min(1, 'Input cannot be empty')
   .max(MAX_INPUT_CHARS, `Input too long (max ${MAX_INPUT_CHARS.toLocaleString()} characters)`);
 
@@ -235,9 +241,11 @@ const inputField = z
 // Accept both `undefined` (field omitted) and `null` (some HTTP clients
 // JSON.stringify omitted fields as null) so external API consumers don't get a
 // confusing type error. Normalize to undefined for downstream consumers — the
-// inferred output type stays `string | undefined`.
+// inferred output type stays `string | undefined`. Trim before max so trailing
+// whitespace doesn't push the value over the ceiling.
 const runtimeContextField = z
   .string()
+  .trim()
   .max(MAX_RUNTIME_CONTEXT_CHARS, `Runtime context too long (max ${MAX_RUNTIME_CONTEXT_CHARS.toLocaleString()} characters)`)
   .nullable()
   .optional()
@@ -247,18 +255,21 @@ const runtimeContextField = z
  * Related files that provide context for the audit but are NOT themselves being audited.
  * Examples: auth middleware, shared utilities, config files.
  */
-// `name` and `content` require .min(1): empty strings produce broken file-
-// boundary markers in the prompt (e.g. "--- ---" or a delimiter with no body),
-// which silently degrades chunking and wastes tokens.
+// `name` and `content` require .min(1) AFTER .trim(): empty/whitespace-only
+// values produce broken file-boundary markers in the prompt (e.g. "--- ---"
+// or a delimiter with no body), which silently degrades chunking and wastes
+// tokens.
 const contextFilesField = z
   .array(
     z.object({
       name: z
         .string()
+        .trim()
         .min(1, 'Context file name cannot be empty')
         .max(255, 'Context file name too long (max 255 characters)'),
       content: z
         .string()
+        .trim()
         .min(1, 'Context file content cannot be empty')
         .max(MAX_CONTEXT_FILE_CHARS, `Context file too long (max ${MAX_CONTEXT_FILE_CHARS.toLocaleString()} characters per file)`),
     }),
@@ -279,6 +290,7 @@ export const customAuditRequestSchema = z.object({
   agentType: z.literal('custom'),
   systemPrompt: z
     .string()
+    .trim()
     .min(1, 'System prompt cannot be empty')
     .max(
       MAX_SYSTEM_PROMPT_CHARS,
