@@ -165,18 +165,17 @@ export default async function DashboardPage({
                 label="Avg score"
                 value={avgScore != null ? `${avgScore}/100` : '\u2014'}
                 valueClass={avgScore != null ? scoreColorClass(avgScore) : ''}
-                sub={trendDelta != null ? (
-                  <span className={trendDelta > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'}>
-                    {trendDelta > 0 ? '+' : ''}{trendDelta} pts
-                  </span>
-                ) : undefined}
               />
               <StatCell
                 label="Best score"
                 value={bestScore != null ? `${bestScore}/100` : '\u2014'}
                 valueClass={bestScore != null ? scoreColorClass(bestScore) : ''}
               />
-              <StatCell label="Completed" value={completedCount} />
+              <StatCell
+                label="Trend"
+                value={trendDelta != null ? `${trendDelta > 0 ? '+' : ''}${trendDelta} pts` : '\u2014'}
+                valueClass={trendDelta != null ? (trendDelta > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500') : ''}
+              />
             </div>
           )}
         </div>
