@@ -1,5 +1,12 @@
 import { NextRequest } from 'next/server';
-import { auditLimiter, perIpConcurrencyLimiter } from '@/lib/rateLimit';
+import { headers as nextHeaders } from 'next/headers';
+import {
+  auditLimiter,
+  perIpConcurrencyLimiter,
+  dailyAuditBudget,
+  userDailyAuditLimiter,
+} from '@/lib/rateLimit';
+import { auth } from '@/lib/auth';
 import { anthropicProvider } from '@/lib/ai/anthropicProvider';
 import { STREAM_RESPONSE_HEADERS } from '@/lib/config/apiHeaders';
 import { escapeXml } from '@/lib/escapeXml';
@@ -46,6 +53,17 @@ export async function POST(req: NextRequest) {
     return new Response('Too many requests from this IP. Please slow down.', { status: 429, headers: ipBurst.headers });
   }
 
+  // Global daily Anthropic budget — shared with /api/audit since chat also
+  // spends model tokens. Prevents /api/chat from draining capacity that the
+  // audit budget guard would otherwise report as healthy.
+  const dailyBudget = await dailyAuditBudget.check('global');
+  if (!dailyBudget.allowed) {
+    return new Response('Daily AI limit reached. Please try again tomorrow.', {
+      status: 429,
+      headers: dailyBudget.headers,
+    });
+  }
+
   let rawBody: unknown;
   try {
     rawBody = await req.json();
@@ -61,6 +79,25 @@ export async function POST(req: NextRequest) {
   }
 
   const { messages, context } = parsed.data;
+
+  // Per-user daily cap — mirrors the audit route. Only applies to authenticated
+  // users; anonymous traffic is bounded by IP + global budget above.
+  let userId: string | null = null;
+  try {
+    const session = await auth.api.getSession({ headers: await nextHeaders() });
+    userId = session?.user?.id ?? null;
+  } catch {
+    // Best-effort session lookup — fall through and apply IP/global limits only.
+  }
+  if (userId) {
+    const userRl = await userDailyAuditLimiter.check(userId);
+    if (!userRl.allowed) {
+      return new Response('Daily AI limit reached for your account. Please try again tomorrow.', {
+        status: 429,
+        headers: userRl.headers,
+      });
+    }
+  }
 
   // Build system prompt with audit context
   const systemPrompt = context
