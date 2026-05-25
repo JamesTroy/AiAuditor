@@ -232,24 +232,41 @@ const inputField = z
   .max(MAX_INPUT_CHARS, `Input too long (max ${MAX_INPUT_CHARS.toLocaleString()} characters)`);
 
 /** Optional stack trace, error log, or runtime context to help the auditor understand runtime behaviour. */
+// Accept both `undefined` (field omitted) and `null` (some HTTP clients
+// JSON.stringify omitted fields as null) so external API consumers don't get a
+// confusing type error. Normalize to undefined for downstream consumers — the
+// inferred output type stays `string | undefined`.
 const runtimeContextField = z
   .string()
   .max(MAX_RUNTIME_CONTEXT_CHARS, `Runtime context too long (max ${MAX_RUNTIME_CONTEXT_CHARS.toLocaleString()} characters)`)
-  .optional();
+  .nullable()
+  .optional()
+  .transform((v) => v ?? undefined);
 
 /**
  * Related files that provide context for the audit but are NOT themselves being audited.
  * Examples: auth middleware, shared utilities, config files.
  */
+// `name` and `content` require .min(1): empty strings produce broken file-
+// boundary markers in the prompt (e.g. "--- ---" or a delimiter with no body),
+// which silently degrades chunking and wastes tokens.
 const contextFilesField = z
   .array(
     z.object({
-      name: z.string().max(255),
-      content: z.string().max(MAX_CONTEXT_FILE_CHARS, `Context file too long (max ${MAX_CONTEXT_FILE_CHARS.toLocaleString()} characters per file)`),
+      name: z
+        .string()
+        .min(1, 'Context file name cannot be empty')
+        .max(255, 'Context file name too long (max 255 characters)'),
+      content: z
+        .string()
+        .min(1, 'Context file content cannot be empty')
+        .max(MAX_CONTEXT_FILE_CHARS, `Context file too long (max ${MAX_CONTEXT_FILE_CHARS.toLocaleString()} characters per file)`),
     }),
   )
   .max(MAX_CONTEXT_FILES, `Too many context files (max ${MAX_CONTEXT_FILES})`)
-  .optional();
+  .nullable()
+  .optional()
+  .transform((v) => v ?? undefined);
 
 export const builtInAuditRequestSchema = z.object({
   agentType: z.enum(VALID_AGENT_TYPES).describe('Built-in agent type'),

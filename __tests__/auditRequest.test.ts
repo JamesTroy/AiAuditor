@@ -88,9 +88,49 @@ describe('auditRequestSchema', () => {
     });
   });
 
+  describe('contextFiles and runtimeContext guards', () => {
+    it('rejects context file with empty name', () => {
+      const result = builtInAuditRequestSchema.safeParse({
+        agentType: 'security',
+        input: 'some code',
+        contextFiles: [{ name: '', content: 'some content' }],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects context file with empty content', () => {
+      const result = builtInAuditRequestSchema.safeParse({
+        agentType: 'security',
+        input: 'some code',
+        contextFiles: [{ name: 'middleware.ts', content: '' }],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('accepts null for runtimeContext (normalized to undefined)', () => {
+      const result = builtInAuditRequestSchema.safeParse({
+        agentType: 'security',
+        input: 'some code',
+        runtimeContext: null,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.runtimeContext).toBeUndefined();
+    });
+
+    it('accepts null for contextFiles (normalized to undefined)', () => {
+      const result = builtInAuditRequestSchema.safeParse({
+        agentType: 'security',
+        input: 'some code',
+        contextFiles: null,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.contextFiles).toBeUndefined();
+    });
+  });
+
   describe('VALID_AGENT_TYPES', () => {
-    it('contains 190 agent types', () => {
-      expect(VALID_AGENT_TYPES.length).toBe(190);
+    it('contains 193 agent types', () => {
+      expect(VALID_AGENT_TYPES.length).toBe(193);
     });
 
     it('has no duplicates', () => {
