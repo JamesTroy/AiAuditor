@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Logo from '@/components/Logo';
+import AuthAnimatedShell from './AuthAnimatedShell';
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -16,19 +17,22 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* Grid pattern overlay */}
       <div className="absolute inset-0 bg-grid-pattern -z-10 opacity-30 pointer-events-none" />
 
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8 flex flex-col items-center">
-          <Logo size={36} className="mb-3 drop-shadow-[0_0_12px_rgba(139,92,246,0.3)]" />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-zinc-100">Claudit</h1>
-          <p className="text-sm text-gray-500 dark:text-zinc-500 mt-1">
-            Automated security, performance, and compliance audits
-          </p>
-          <p className="text-xs text-gray-400 dark:text-zinc-600 mt-2">
-            Create an account → Verify email → Run your first audit
-          </p>
-        </div>
+      <AuthAnimatedShell
+        title={
+          <>
+            <Logo size={36} className="mb-3 drop-shadow-[0_0_12px_rgba(139,92,246,0.3)]" />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-zinc-100">Claudit</h1>
+            <p className="text-sm text-gray-500 dark:text-zinc-500 mt-1">
+              Automated security, performance, and compliance audits
+            </p>
+            <p className="text-xs text-gray-400 dark:text-zinc-600 mt-2">
+              Create an account → Verify email → Run your first audit
+            </p>
+          </>
+        }
+      >
         {children}
-      </div>
+      </AuthAnimatedShell>
     </div>
   );
 }

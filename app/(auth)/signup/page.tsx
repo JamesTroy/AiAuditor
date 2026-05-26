@@ -60,7 +60,7 @@ export default function SignupPage() {
 
   if (verificationSent) {
     return (
-      <div className="bg-white/90 dark:bg-zinc-900/70 backdrop-blur-sm border border-gray-200 dark:border-zinc-800 rounded-2xl p-8 shadow-sm motion-safe:animate-fade-up text-center">
+      <div className="bg-white/90 dark:bg-zinc-900/70 backdrop-blur-sm border border-gray-200 dark:border-zinc-800 rounded-2xl p-8 shadow-sm text-center">
         <div className="flex justify-center mb-4">
           <svg className="w-10 h-10 text-violet-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <rect x="2" y="4" width="20" height="16" rx="2" />
@@ -86,7 +86,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="bg-white/90 dark:bg-zinc-900/70 backdrop-blur-sm border border-gray-200 dark:border-zinc-800 rounded-2xl p-8 shadow-sm motion-safe:animate-fade-up">
+    <div className="bg-white/90 dark:bg-zinc-900/70 backdrop-blur-sm border border-gray-200 dark:border-zinc-800 rounded-2xl p-8 shadow-sm">
       <h2 className="text-xl font-semibold text-gray-900 dark:text-zinc-100 mb-6">Create an account</h2>
 
       {error !== '' && (

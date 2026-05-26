@@ -49,7 +49,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-white/90 dark:bg-zinc-900/70 backdrop-blur-sm border border-gray-200 dark:border-zinc-800 rounded-2xl p-8 shadow-sm motion-safe:animate-fade-up">
+    <div className="bg-white/90 dark:bg-zinc-900/70 backdrop-blur-sm border border-gray-200 dark:border-zinc-800 rounded-2xl p-8 shadow-sm">
       <h2 className="text-xl font-semibold text-gray-900 dark:text-zinc-100 mb-6">Sign in</h2>
 
       {error && (
