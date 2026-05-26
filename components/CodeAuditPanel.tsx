@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { agents as allAgents } from '@/lib/agents/registry';
-import { detectAgents } from '@/lib/detectAgents';
+import { recommendAgents } from '@/lib/agents/agentRecommender';
 import SafeMarkdown from '@/components/markdownComponents';
 import { saveAudit } from '@/lib/history';
 import { friendlyError } from '@/lib/friendlyError';
@@ -50,7 +50,7 @@ export default async function handler(req, res) {
 
 /**
  * Default agent IDs — the most universally useful set for any code.
- * detectAgents() may add more based on what's in the paste.
+ * recommendAgents() may add more based on what's in the paste (top-N by relevance).
  */
 const SEED_IDS = new Set([
   'security',
@@ -289,15 +289,24 @@ export default function CodeAuditPanel() {
   }, []);
 
   // ---------- Auto-detect on paste ----------
+  // Use the ranked recommender (not the raw recommendedAgents list) so we only
+  // add agents that scored above a relevance threshold. The previous version
+  // added EVERY agent for EVERY matched tag, so a normal Next.js paste could
+  // dump 10+ agents into the selection (auth, concurrency, error-handling,
+  // forms, etc. all triggered by ubiquitous patterns like async/await, try/catch).
+  const AUTO_ADD_RELEVANCE_THRESHOLD = 40;
+  const AUTO_ADD_MAX = 3;
+
   const handleCodeChange = useCallback(
     (value: string) => {
       setCode(value);
       if (loading) return;
 
-      const detection = detectAgents(value);
-      const newIds = detection.recommendedAgents.filter(
-        (id) => allAgents.some((a) => a.id === id) && !selected.has(id),
-      );
+      const ranked = recommendAgents(value, AUTO_ADD_MAX);
+      const newIds = ranked.recommendations
+        .filter((r) => r.relevance >= AUTO_ADD_RELEVANCE_THRESHOLD)
+        .map((r) => r.agentId)
+        .filter((id) => allAgents.some((a) => a.id === id) && !selected.has(id));
 
       if (newIds.length > 0) {
         setSelected((prev) => {
@@ -307,22 +316,22 @@ export default function CodeAuditPanel() {
         });
       }
 
-      if (detection.language || detection.framework || newIds.length > 0) {
+      if (ranked.language || ranked.framework || newIds.length > 0) {
         setAutoDetectInfo({
-          language: detection.language,
-          framework: detection.framework,
+          language: ranked.language,
+          framework: ranked.framework,
           addedIds: newIds,
         });
         // Pick the most relevant category to highlight in the picker
-        const tag = detection.framework ?? detection.language;
+        const tag = ranked.framework ?? ranked.language;
         const cat =
           tag && ['react', 'nextjs', 'vue', 'angular', 'svelte', 'solidjs', 'astro', 'tailwind', 'remix'].includes(tag)
             ? 'Design'
             : tag && ['express', 'nestjs', 'fastify', 'hono', 'trpc', 'graphql', 'websocket'].includes(tag)
               ? 'Infrastructure'
-              : detection.patterns.includes('auth') || detection.patterns.includes('sql')
+              : ranked.detectedTags.includes('auth') || ranked.detectedTags.includes('sql')
                 ? 'Security & Privacy'
-                : detection.patterns.includes('testing')
+                : ranked.detectedTags.includes('testing')
                   ? 'Testing'
                   : 'Code Quality';
         setSuggestedCategory(cat);

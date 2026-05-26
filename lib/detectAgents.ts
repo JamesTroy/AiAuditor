@@ -19,8 +19,10 @@ const LANGUAGE_RULES: Rule[] = [
   { pattern: /:\s*(string|number|boolean|void|any|unknown)\b/, tags: ['typescript'] },
   { pattern: /\bdef\s+\w+\s*\(.*\)\s*(->\s*\w+)?:/, tags: ['python'] },
   { pattern: /\bfrom\s+\w+\s+import\b/, tags: ['python'] },
-  { pattern: /\bfunc\s+\w+\s*\(/, tags: ['go'] },
+  // Go — require Go-specific syntax (channels, goroutines, walrus, package main).
+  // The bare `func` rule matched Swift's `func` too; removed.
   { pattern: /\bpackage\s+main\b/, tags: ['go'] },
+  { pattern: /\b(go\s+func\s*\(|chan\s+\w+|<-\s*chan\b|^\s*\w+\s*:=\s)/m, tags: ['go'] },
   { pattern: /\bfn\s+\w+\s*\(/, tags: ['rust'] },
   { pattern: /\bpub\s+(fn|struct|enum|mod)\b/, tags: ['rust'] },
   { pattern: /\bpublic\s+(static\s+)?void\s+main\b/, tags: ['java'] },
@@ -28,17 +30,22 @@ const LANGUAGE_RULES: Rule[] = [
   { pattern: /<\?php\b/, tags: ['php'] },
   { pattern: /\bclass\s+\w+\s*<\s*ActiveRecord::Base\b/, tags: ['ruby'] },
   { pattern: /\bdo\s+\|.*\|\s*$/, tags: ['ruby'] },
-  // Kotlin
-  { pattern: /\bfun\s+\w+\s*\(.*\)\s*[:{]/, tags: ['kotlin'] },
-  { pattern: /\b(val|var)\s+\w+\s*[:=]/, tags: ['kotlin'] },
+  // Kotlin — require Kotlin-specific syntax (typed fun return, data class,
+  // companion object, Elvis operator). The old `val|var \w+ [:=]` rule
+  // matched plain JavaScript `var foo =` and JS template literals.
+  { pattern: /\bfun\s+\w+\s*\([^)]*\)\s*:\s*\w/, tags: ['kotlin'] },
   { pattern: /\bdata\s+class\b/, tags: ['kotlin'] },
+  { pattern: /\bcompanion\s+object\b/, tags: ['kotlin'] },
+  { pattern: /\?:\s\w/, tags: ['kotlin'] },              // Elvis operator (excludes regex `(?:`)
   // Swift
   { pattern: /\bimport\s+(Foundation|UIKit|SwiftUI)\b/, tags: ['swift'] },
   { pattern: /\bfunc\s+\w+\s*\(.*\)\s*->\s*\w+/, tags: ['swift'] },
   { pattern: /\bguard\s+let\b/, tags: ['swift'] },
-  // C#
-  { pattern: /\busing\s+System\b/, tags: ['csharp'] },
-  { pattern: /\bnamespace\s+\w+/, tags: ['csharp'] },
+  // C# — `using System.` and `async Task<` are distinctive. The bare
+  // `namespace \w+` rule matched TS namespaces too; tightened to require
+  // dotted C#-style namespace or class/interface/struct declaration.
+  { pattern: /\busing\s+System(?:\.\w+)+\s*;/, tags: ['csharp'] },
+  { pattern: /\bnamespace\s+\w+(?:\.\w+)+/, tags: ['csharp'] },
   { pattern: /\basync\s+Task</, tags: ['csharp'] },
   // Scala
   { pattern: /\b(object|trait)\s+\w+/, tags: ['scala'] },
@@ -83,26 +90,49 @@ const FRAMEWORK_RULES: Rule[] = [
 const PATTERN_RULES: Rule[] = [
   { pattern: /\b(SELECT|INSERT|UPDATE|DELETE|CREATE\s+TABLE)\b/i, tags: ['sql'] },
   { pattern: /\b(process\.env|import\.meta\.env|os\.environ)\b/, tags: ['env-config'] },
-  { pattern: /\b(fetch|axios|XMLHttpRequest|\.get\(|\.post\()\b/, tags: ['api'] },
-  { pattern: /\b(localStorage|sessionStorage|cookie|setCookie)\b/i, tags: ['client-storage'] },
-  { pattern: /\b(bcrypt|argon2|jwt|jsonwebtoken|passport|auth|login|signup)\b/i, tags: ['auth'] },
+  // api — was matching every `.get(` (Map.get, array.get, etc.). Tightened to
+  // HTTP client calls and Express/Fastify router method declarations only.
+  { pattern: /\b(fetch\(|axios\.(get|post|put|delete|patch|head)\(|XMLHttpRequest|(?:app|router)\.(get|post|put|delete|patch)\(['"`]\/)/, tags: ['api'] },
+  { pattern: /\b(localStorage|sessionStorage|document\.cookie|setCookie\()/, tags: ['client-storage'] },
+  // auth — was matching the literal word "auth" anywhere (Authorization
+  // header, useAuth hook, authorId). Tightened to actual auth implementation
+  // tokens. Drops /i — these are exact identifiers.
+  { pattern: /\b(bcrypt|argon2|jwt\.(sign|verify|decode)|jsonwebtoken|passport\.|next-auth|better-auth|getServerSession|signIn\(|signUp\(|signOut\(|authenticate\(|new\s+Strategy\()/, tags: ['auth'] },
   { pattern: /\b(test|describe|it|expect|jest|vitest|mocha|pytest)\b/, tags: ['testing'] },
   { pattern: /\b(console\.log|logger\.|winston|pino|log\.)\b/, tags: ['logging'] },
-  { pattern: /\b(cache|redis|memcache|lru|ttl)\b/i, tags: ['caching'] },
-  { pattern: /\b(Worker|Thread|spawn|fork|Promise\.all|async|await)\b/, tags: ['concurrency'] },
-  { pattern: /\b(regex|RegExp|\/.*\/[gim])\b/, tags: ['regex'] },
-  { pattern: /\b(aria-|role=|tabIndex|alt=|sr-only)\b/, tags: ['accessibility'] },
-  { pattern: /\b(@media|responsive|breakpoint|min-width|max-width)\b/, tags: ['responsive'] },
-  { pattern: /\b(dark:|prefers-color-scheme|theme)\b/, tags: ['dark-mode'] },
-  { pattern: /\b(i18n|intl|locale|t\(|useTranslation)\b/i, tags: ['i18n'] },
-  { pattern: /\b(form|input|validate|schema|zod|yup)\b/i, tags: ['forms'] },
+  // caching — was matching the word "cache" anywhere (Next.js `cache:` prop,
+  // any function named cache). Tightened to specific cache libs/idioms.
+  { pattern: /\b(redis|memcached?|LRUCache|lru-cache|node-cache|stale-while-revalidate|s-maxage|unstable_cache|revalidateTag|revalidatePath|cacheLife|cacheTag|'use cache')/i, tags: ['caching'] },
+  // concurrency — was matching `async/await`, which is in every modern JS
+  // file. Restricted to actual concurrency primitives.
+  { pattern: /\b(new\s+Worker\b|Worker\s*\(|child_process|Thread\b|spawn\(|fork\(|Promise\.(all|race|allSettled)\(|Mutex|Semaphore|atomics)/, tags: ['concurrency'] },
+  // regex — was matching the literal word "regex" in any comment. Tightened
+  // to actual regex syntax (constructor or anchored regex literal with flags).
+  { pattern: /(new\s+RegExp\(|\/(?:[^\/\\\n]|\\.)+\/[gimsuy]{1,6}[\s;,)\]}])/, tags: ['regex'] },
+  // accessibility — was matching `role=` and `tabIndex` in every JSX file.
+  // Tightened to specific ARIA attributes and known landmark roles.
+  { pattern: /\baria-(label|labelledby|describedby|hidden|live|expanded|controls|current|sort|invalid|busy|required|disabled|selected|checked|pressed)\b|role=["'](?:button|dialog|alert|alertdialog|menu|menuitem|menubar|tablist|tab|tabpanel|navigation|main|banner|contentinfo|search|complementary|region|status|switch|tree|treeitem|grid|gridcell|listbox|combobox)["']|\bsr-only\b|\bvisually-hidden\b/, tags: ['accessibility'] },
+  { pattern: /(@media\b|prefers-color-scheme|\bmin-width:\s|\bmax-width:\s|\bclamp\()/, tags: ['responsive'] },
+  { pattern: /(\bdark:[\w-]+|prefers-color-scheme|useTheme\(|\btoggleTheme\b)/, tags: ['dark-mode'] },
+  // i18n — was matching any `t(` call. Tightened to known i18n libs.
+  { pattern: /\b(i18next|next-i18next|next-intl|useTranslation\(|FormattedMessage|<Trans\b|Intl\.(NumberFormat|DateTimeFormat|Collator|PluralRules|RelativeTimeFormat))/, tags: ['i18n'] },
+  // forms — was matching every Zod schema or anything mentioning "form" or
+  // "input". Tightened to actual form libs and JSX form elements.
+  { pattern: /(<form\b|<input\b|react-hook-form|react-final-form|\bformik\b|\buseForm\(|\bFormData\b|<Form\b)/, tags: ['forms'] },
   { pattern: /\b(migration|migrate|alter\s+table|add\s+column)\b/i, tags: ['migrations'] },
-  { pattern: /\b(rate.?limit|throttle|debounce)\b/i, tags: ['rate-limiting'] },
-  { pattern: /\b(error|catch|throw|try|Error\b|exception)\b/i, tags: ['error-handling'] },
-  { pattern: /\b(paginate|pagination|offset|cursor|limit)\b/i, tags: ['pagination'] },
+  // rate-limiting — was matching UI debounce/throttle. Restricted to server
+  // rate-limit identifiers.
+  { pattern: /\b(rate.?limit(?:er)?|RateLimiter|@upstash\/ratelimit|express-rate-limit|next-rate-limit|slidingWindow|tokenBucket)\b/i, tags: ['rate-limiting'] },
+  // error-handling — was matching every try/catch (every backend file). Now
+  // matches explicit error-handling infrastructure only.
+  { pattern: /\b(ErrorBoundary|errorBoundary|onError\(|panic!\(|Result<|Either<|sentry|@sentry\/|rollbar|bugsnag|datadog\.error|setExceptionHandler|process\.on\(['"]uncaughtException)/, tags: ['error-handling'] },
+  // pagination — was matching every `.limit(10)`. Tightened to explicit
+  // pagination terminology.
+  { pattern: /\b(paginate\(|pagination|page_?[Ss]ize|nextCursor|next_cursor|hasNextPage|hasPreviousPage|cursor:\s|skip:\s*\d|page=\d)/, tags: ['pagination'] },
   { pattern: /\b(openapi|swagger|paths:|\/api\/)\b/i, tags: ['openapi'] },
   { pattern: /\b(state.?machine|xstate|transition|finite)\b/i, tags: ['state-machines'] },
-  { pattern: /\b(cors|Access-Control-Allow|origin)\b/i, tags: ['cors'] },
+  // cors — was matching every `Origin` header read. Tightened to CORS-specific.
+  { pattern: /(\bcors\(\)|app\.use\(\s*cors|Access-Control-Allow-(Origin|Methods|Headers|Credentials|Expose-Headers)|@CrossOrigin|fastify\.register\(cors)/i, tags: ['cors'] },
   { pattern: /\b(email|smtp|sendgrid|resend|nodemailer)\b/i, tags: ['email'] },
   { pattern: /\b(bundle|webpack|vite|rollup|esbuild|chunk)\b/i, tags: ['bundle'] },
   { pattern: /\b(monitor|metric|trace|opentelemetry|prometheus|grafana)\b/i, tags: ['observability'] },
@@ -148,8 +178,10 @@ const PATTERN_RULES: Rule[] = [
   { pattern: /ALLOWED_HOSTS\s*=\s*\[\s*['"]\*['"]/g, tags: ['django-antipattern'] },
 ];
 
-// Map detected tags to agent IDs
-const TAG_TO_AGENTS: Record<string, string[]> = {
+// Map detected tags to agent IDs.
+// Exported so agentRecommender.ts can compute matched-tag → agent reverse lookups
+// without maintaining a separate (and historically out-of-sync) duplicate.
+export const TAG_TO_AGENTS: Record<string, string[]> = {
   'typescript': ['typescript-strictness', 'code-quality'],
   'javascript': ['code-quality', 'frontend-performance'],
   'python': ['code-quality', 'performance'],
@@ -238,22 +270,33 @@ const TAG_TO_AGENTS: Record<string, string[]> = {
 // Always-relevant agents added when any code is detected
 const UNIVERSAL_AGENTS = ['security', 'code-quality'];
 
-// PERF-003: Truncate input before regex battery — most language signals appear
-// in imports/headers (first 1KB) or file-type markers (last 500B).
-const SAMPLE_HEAD = 1_000;
-const SAMPLE_TAIL = 500;
+// Truncate input before regex battery. Three slices (head/middle/tail) so that
+// patterns inside large multi-file pastes — which previously fell into the
+// 500-byte gap between the 1KB head and the 500B tail — still register.
+// Total scanned budget ~6KB; regex cost on this is sub-millisecond.
+const SAMPLE_HEAD = 3_000;
+const SAMPLE_MID = 2_000;
+const SAMPLE_TAIL = 1_000;
+const SAMPLE_TOTAL = SAMPLE_HEAD + SAMPLE_MID + SAMPLE_TAIL;
 
 function sampleInput(input: string): string {
-  if (input.length <= SAMPLE_HEAD + SAMPLE_TAIL) return input;
-  return input.slice(0, SAMPLE_HEAD) + input.slice(-SAMPLE_TAIL);
+  if (input.length <= SAMPLE_TOTAL) return input;
+  const midStart = Math.floor((input.length - SAMPLE_MID) / 2);
+  return (
+    input.slice(0, SAMPLE_HEAD) +
+    '\n' +
+    input.slice(midStart, midStart + SAMPLE_MID) +
+    '\n' +
+    input.slice(-SAMPLE_TAIL)
+  );
 }
 
 /**
  * Detect language, framework, and patterns from code input and recommend audit agents.
  *
- * **Performance note:** If ≥4 language/framework tags are detected early, the
- * more expensive PATTERN_RULES are skipped. This means pattern-based agents
- * (sql, auth, caching, etc.) may not be suggested for complex polyglot inputs.
+ * All three rule batteries always run. (An earlier "skip patterns at ≥4 tags"
+ * optimisation silently disabled SQL/auth/CORS detection for any input that
+ * had hit 4 language+framework tags — which is most polyglot inputs.)
  */
 export function detectAgents(input: string): Detection {
   if (input.length < 10) {
@@ -281,13 +324,10 @@ export function detectAgents(input: string): Detection {
     }
   }
 
-  // PERF-NEW-01: Skip expensive pattern rules if we already have a confident
-  // detection from language + framework rules (≥4 tags means strong signal).
-  if (detectedTags.size < 4) {
-    for (const rule of PATTERN_RULES) {
-      if (rule.pattern.test(sample)) {
-        for (const tag of rule.tags) detectedTags.add(tag);
-      }
+  // Pattern rules — always run.
+  for (const rule of PATTERN_RULES) {
+    if (rule.pattern.test(sample)) {
+      for (const tag of rule.tags) detectedTags.add(tag);
     }
   }
 

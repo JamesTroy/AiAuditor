@@ -3,7 +3,7 @@
 // recommended agent based on tag specificity and match count. Returns the
 // top 5 most-relevant agents with explanations.
 
-import { detectAgents } from '@/lib/detectAgents';
+import { detectAgents, TAG_TO_AGENTS } from '@/lib/detectAgents';
 
 export interface AgentRecommendation {
   agentId: string;
@@ -158,32 +158,12 @@ export function recommendAgents(
     };
   }
 
-  // Build a reverse mapping: agent → which tags caused its recommendation
-  // This requires reconstructing the tag-to-agent mapping
+  // Build a reverse mapping: agent → which tags caused its recommendation.
+  // Uses the canonical TAG_TO_AGENTS from detectAgents.ts (was previously a
+  // hand-maintained subset that left ~40 tags un-scored — agents recommended
+  // via those tags ended up with matchedTags=[] and relevance 0, producing
+  // an effectively random sort at the bottom of the list).
   const agentToTags = new Map<string, string[]>();
-  const TAG_TO_AGENTS: Record<string, string[]> = {
-    'typescript': ['typescript-strictness', 'code-quality'],
-    'javascript': ['code-quality', 'frontend-performance'],
-    'python': ['code-quality', 'performance'],
-    'react': ['react-patterns', 'frontend-performance', 'accessibility'],
-    'nextjs': ['react-patterns', 'seo-performance', 'frontend-performance', 'seo-technical'],
-    'express': ['api-design', 'security', 'rate-limiting', 'error-handling'],
-    'sql': ['sql', 'database-infra', 'data-security'],
-    'auth': ['auth-review', 'security', 'privacy'],
-    'testing': ['test-quality', 'code-quality'],
-    'caching': ['caching', 'performance'],
-    'api': ['api-design', 'cors-headers', 'security'],
-    'docker': ['devops', 'container-security', 'ci-cd'],
-    'accessibility': ['accessibility', 'ux-review'],
-    'graphql': ['graphql', 'api-design', 'security'],
-    'concurrency': ['concurrency', 'performance'],
-    'error-handling': ['error-handling', 'code-quality'],
-    'cors': ['cors-headers', 'security'],
-    'bundle': ['bundle-size', 'frontend-performance'],
-    'observability': ['observability', 'logging'],
-    'container': ['container-security', 'devops', 'cloud-infra'],
-    'bloat': ['code-bloat', 'code-quality'],
-  };
 
   for (const tag of detection.patterns) {
     const agents = TAG_TO_AGENTS[tag];
