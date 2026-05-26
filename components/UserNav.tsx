@@ -4,7 +4,9 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'motion/react';
 import { useSession, signOut, authClient } from '@/lib/auth-client';
+import { transitions, tapScale } from '@/lib/motion/variants';
 
 interface UserOrg {
   id: string;
@@ -124,12 +126,13 @@ export default function UserNav() {
 
   return (
     <div ref={menuRef} className="relative">
-      <button
+      <motion.button
         ref={triggerRef}
         onClick={() => setOpen(!open)}
         onKeyDown={(e) => {
           if (e.key === 'ArrowDown' && !open) { e.preventDefault(); setOpen(true); }
         }}
+        whileTap={tapScale}
         className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-full bg-violet-600 text-white text-xs font-bold flex items-center justify-center hover:bg-violet-500 transition-colors focus-ring"
         aria-label="User menu"
         aria-haspopup="menu"
@@ -140,10 +143,23 @@ export default function UserNav() {
         ) : (
           initials
         )}
-      </button>
+      </motion.button>
 
-      {open && (
-        <div role="menu" aria-label="User menu" onKeyDown={handleMenuKeyDown} className="absolute right-0 mt-2 w-56 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-gray-200 dark:border-zinc-800 rounded-xl shadow-lg py-1 z-50 motion-safe:animate-slide-in">
+      {/* Dropdown — Motion-driven enter/exit so close gesture actually plays.
+          transform-origin top-right keeps the menu visually "attached" to the
+          avatar as it scales open. */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="menu"
+            aria-label="User menu"
+            onKeyDown={handleMenuKeyDown}
+            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0, transition: transitions.springGentle }}
+            exit={{ opacity: 0, scale: 0.95, y: -4, transition: transitions.snappy }}
+            style={{ transformOrigin: 'top right' }}
+            className="absolute right-0 mt-2 w-56 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-gray-200 dark:border-zinc-800 rounded-xl shadow-lg py-1 z-50"
+          >
           <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-800">
             <p className="text-sm font-medium text-gray-900 dark:text-zinc-100 truncate">
               {session.user.name}
@@ -240,8 +256,9 @@ export default function UserNav() {
               Sign out
             </button>
           </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

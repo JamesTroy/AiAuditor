@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'motion/react';
 import { authClient } from '@/lib/auth-client';
+import { transitions, fadeOnly } from '@/lib/motion/variants';
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -208,12 +210,31 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
 
   // ─── Shared UI helpers ────────────────────────────────────────
 
-  const tabClass = (t: Tab) =>
-    `px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-      tab === t
-        ? 'bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-400'
-        : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
-    }`;
+  // Tab button — renders the layoutId pill behind the active tab so the
+  // highlight spring-slides between tabs instead of swapping classes.
+  function TabButton({ t, children }: { t: Tab; children: React.ReactNode }) {
+    const isActive = tab === t;
+    return (
+      <button
+        onClick={() => setTab(t)}
+        className={`relative px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+          isActive
+            ? 'text-violet-700 dark:text-violet-400'
+            : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
+        }`}
+      >
+        {isActive && (
+          <motion.span
+            layoutId="admin-tab-pill"
+            transition={transitions.springGentle}
+            className="absolute inset-0 -z-10 rounded-lg bg-violet-100 dark:bg-violet-950"
+            aria-hidden="true"
+          />
+        )}
+        <span className="relative z-10">{children}</span>
+      </button>
+    );
+  }
 
   const cardClass = 'bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl';
 
@@ -916,28 +937,34 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
           </p>
         </div>
 
-        {/* Tab nav */}
+        {/* Tab nav — layoutId pill spring-slides between tabs */}
         <div className="flex gap-2 mb-8 overflow-x-auto">
-          <button onClick={() => setTab('overview')} className={tabClass('overview')}>Overview</button>
-          <button onClick={() => setTab('users')} className={tabClass('users')}>
-            Users ({stats.totalUsers})
-          </button>
-          <button onClick={() => setTab('audits')} className={tabClass('audits')}>
-            Audits ({stats.totalAudits})
-          </button>
-          <button onClick={() => setTab('orgs')} className={tabClass('orgs')}>
-            Teams ({stats.totalOrgs})
-          </button>
-          <button onClick={() => setTab('agent-health')} className={tabClass('agent-health')}>
-            Agent Health
-          </button>
+          <TabButton t="overview">Overview</TabButton>
+          <TabButton t="users">Users ({stats.totalUsers})</TabButton>
+          <TabButton t="audits">Audits ({stats.totalAudits})</TabButton>
+          <TabButton t="orgs">Teams ({stats.totalOrgs})</TabButton>
+          <TabButton t="agent-health">Agent Health</TabButton>
         </div>
 
-        {tab === 'overview' && <OverviewTab />}
-        {tab === 'users' && <UsersTab />}
-        {tab === 'audits' && <AuditsTab />}
-        {tab === 'orgs' && <OrgsTab />}
-        {tab === 'agent-health' && <AgentHealthTab />}
+        {/* Tab content — crossfade on switch. `mode="wait"` ensures the
+            outgoing tab finishes its exit before the incoming one enters,
+            which avoids both rendering at the same time (the tabs are large
+            tables and overlap would look terrible). */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            variants={fadeOnly}
+            initial="hidden"
+            animate="visible"
+            exit={{ opacity: 0, transition: transitions.snappy }}
+          >
+            {tab === 'overview' && <OverviewTab />}
+            {tab === 'users' && <UsersTab />}
+            {tab === 'audits' && <AuditsTab />}
+            {tab === 'orgs' && <OrgsTab />}
+            {tab === 'agent-health' && <AgentHealthTab />}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       <ConfirmDialog />
