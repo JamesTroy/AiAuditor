@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
+import { MotionConfig } from 'motion/react';
 
 type Theme = 'dark' | 'light';
 
@@ -41,7 +42,12 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
 
   return (
     <ThemeContext.Provider value={{ theme, toggle }}>
-      {children}
+      {/* MotionConfig: reducedMotion="user" honors prefers-reduced-motion automatically;
+          every <motion.*> across the site collapses to no-op transforms when the user
+          has the OS setting on. */}
+      <MotionConfig reducedMotion="user">
+        {children}
+      </MotionConfig>
     </ThemeContext.Provider>
   );
 }

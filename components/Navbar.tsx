@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'motion/react';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
 import UserNav from '@/components/UserNav';
 import { useSession } from '@/lib/auth-client';
+import { transitions, fadeOnly } from '@/lib/motion/variants';
 
 // Signed-out: discovery-focused
 const PUBLIC_LINKS = [
@@ -106,13 +108,21 @@ export default function Navbar() {
                       href={item.href}
                       title={'title' in item ? item.title : ''}
                       aria-current={isActive ? 'page' : undefined}
-                      className={`relative text-sm px-3.5 py-1.5 rounded-lg font-medium transition-all duration-150 ${
+                      className={`relative text-sm px-3.5 py-1.5 rounded-lg font-medium transition-colors duration-150 ${
                         isActive
-                          ? 'text-violet-600 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/10 ring-1 ring-violet-200 dark:ring-violet-500/20'
-                          : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100/60 dark:hover:bg-zinc-800/60'
+                          ? 'text-violet-600 dark:text-violet-300'
+                          : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100'
                       }`}
                     >
-                      {item.label}
+                      {isActive && (
+                        <motion.span
+                          layoutId="nav-active-pill"
+                          transition={transitions.springGentle}
+                          className="absolute inset-0 -z-10 rounded-lg bg-violet-50 dark:bg-violet-500/10 ring-1 ring-violet-200 dark:ring-violet-500/20"
+                          aria-hidden="true"
+                        />
+                      )}
+                      <span className="relative z-10">{item.label}</span>
                     </Link>
                   );
                 })}
@@ -165,17 +175,31 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* Mobile drawer */}
-      <div id="mobile-nav" aria-hidden={!drawerOpen} className={`fixed inset-0 z-50 sm:hidden ${drawerOpen ? '' : 'hidden'}`}>
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={closeDrawer} aria-hidden="true" />
+      {/* Mobile drawer — Motion-driven enter/exit so the close animation actually plays. */}
+      <AnimatePresence>
+        {drawerOpen && (
+          <div id="mobile-nav" className="fixed inset-0 z-50 sm:hidden">
+            <motion.div
+              variants={fadeOnly}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={closeDrawer}
+              aria-hidden="true"
+            />
 
-        <div
-          ref={drawerRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Navigation menu"
-          className="absolute inset-y-0 left-0 w-72 max-w-[calc(100vw-3rem)] bg-white dark:bg-zinc-950 border-r border-gray-200 dark:border-zinc-800/80 shadow-2xl flex flex-col animate-drawer-in"
-        >
+            <motion.div
+              ref={drawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Navigation menu"
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={transitions.springGentle}
+              className="absolute inset-y-0 left-0 w-72 max-w-[calc(100vw-3rem)] bg-white dark:bg-zinc-950 border-r border-gray-200 dark:border-zinc-800/80 shadow-2xl flex flex-col"
+            >
           {/* Drawer header */}
           <div className="flex items-center justify-between px-5 h-14 border-b border-gray-100 dark:border-zinc-800/80 shrink-0">
             {session ? (
@@ -249,8 +273,10 @@ export default function Navbar() {
               {session ? 'New Audit' : 'Get Started Free'}
             </Link>
           </div>
-        </div>
-      </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
