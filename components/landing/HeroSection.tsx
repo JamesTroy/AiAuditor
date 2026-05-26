@@ -1,7 +1,11 @@
+'use client';
+
 import Link from 'next/link';
+import { motion } from 'motion/react';
+import { fadeUp, staggerContainer, staggerContainerSlow, transitions } from '@/lib/motion/variants';
 
 const FINDINGS = [
-  { sev: 'Critical', label: 'SQL injection \u2014 line 142', conf: '98%', confColor: 'text-green-400', sevClass: 'bg-red-950/60 text-red-400 border-red-900/50' },
+  { sev: 'Critical', label: 'SQL injection — line 142', conf: '98%', confColor: 'text-green-400', sevClass: 'bg-red-950/60 text-red-400 border-red-900/50' },
   { sev: 'High', label: 'Unsalted password hash', conf: '94%', confColor: 'text-green-400', sevClass: 'bg-amber-950/60 text-amber-400 border-amber-900/50' },
   { sev: 'Medium', label: 'Missing rate limiting', conf: '81%', confColor: 'text-amber-400', sevClass: 'bg-blue-950/60 text-blue-400 border-blue-900/50' },
   { sev: 'Low', label: 'Unused imports (4)', conf: '99%', confColor: 'text-green-400', sevClass: 'bg-zinc-800/80 text-zinc-400 border-zinc-700/50' },
@@ -10,31 +14,44 @@ const FINDINGS = [
 export function HeroSection({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
     <section className="max-w-6xl mx-auto px-6 pt-20 pb-16 grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-16 items-center">
-      {/* Left: copy */}
-      <div>
-        <div className="inline-flex items-center gap-2 bg-violet-950/60 text-violet-300 text-xs font-medium px-3 py-1.5 rounded-full border border-violet-800/50 mb-8 select-none">
+      {/* Left: copy — staggered reveal: badge -> headline -> subheadline -> CTAs -> microcopy */}
+      <motion.div
+        variants={staggerContainerSlow}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div
+          variants={fadeUp}
+          className="inline-flex items-center gap-2 bg-violet-950/60 text-violet-300 text-xs font-medium px-3 py-1.5 rounded-full border border-violet-800/50 mb-8 select-none"
+        >
           <span className="w-1.5 h-1.5 bg-violet-400 rounded-full motion-safe:animate-pulse" />
           Early Access &mdash; Free
-        </div>
+        </motion.div>
 
-        <h1 className="text-5xl lg:text-6xl font-bold leading-[1.07] tracking-tight text-white mb-6">
+        <motion.h1
+          variants={fadeUp}
+          className="text-5xl lg:text-6xl font-bold leading-[1.07] tracking-tight text-white mb-6"
+        >
           Find what your{' '}
           <span className="text-violet-400">code review</span>
           {' '}missed
-        </h1>
+        </motion.h1>
 
-        <p className="text-lg text-zinc-400 leading-relaxed font-light mb-10 max-w-lg">
-          Claudit runs <span className="text-zinc-200 font-medium">190 specialized auditors</span> in parallel &mdash;
+        <motion.p
+          variants={fadeUp}
+          className="text-lg text-zinc-400 leading-relaxed font-light mb-10 max-w-lg"
+        >
+          Claudit runs <span className="text-zinc-200 font-medium">193 specialized auditors</span> in parallel &mdash;
           catching security holes, performance issues, and bad patterns with exact fix guidance.
           No setup. Results in under 60 seconds.
-        </p>
+        </motion.p>
 
-        <div className="flex items-center gap-3 flex-wrap mb-5">
+        <motion.div variants={fadeUp} className="flex items-center gap-3 flex-wrap mb-5">
           <Link
             href={isLoggedIn ? '/audit' : '/signup'}
             className="px-7 py-3.5 text-base font-semibold text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-violet-900/40"
           >
-            {isLoggedIn ? 'Run an audit \u2192' : 'Audit your code free \u2192'}
+            {isLoggedIn ? 'Run an audit →' : 'Audit your code free →'}
           </Link>
           <Link
             href="/how-it-works"
@@ -42,16 +59,21 @@ export function HeroSection({ isLoggedIn }: { isLoggedIn: boolean }) {
           >
             See how it works
           </Link>
-        </div>
+        </motion.div>
 
-        <p className="text-xs text-zinc-500">
+        <motion.p variants={fadeUp} className="text-xs text-zinc-500">
           No account required &middot; paste code &middot; results stream live &middot;{' '}
           <span className="text-zinc-400">Anthropic&apos;s Claude API &mdash; your code is never trained on</span>
-        </p>
-      </div>
+        </motion.p>
+      </motion.div>
 
-      {/* Right: product mockup */}
-      <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden shadow-2xl shadow-black/40">
+      {/* Right: product mockup — slides in from the right with spring, then
+          findings stagger inside */}
+      <motion.div
+        initial={{ opacity: 0, x: 24 }}
+        animate={{ opacity: 1, x: 0, transition: { ...transitions.springGentle, delay: 0.2 } }}
+        className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden shadow-2xl shadow-black/40"
+      >
         <div className="bg-zinc-950 px-4 py-3 flex items-center gap-2 border-b border-zinc-800">
           <span className="w-2.5 h-2.5 bg-red-500/70 rounded-full" />
           <span className="w-2.5 h-2.5 bg-amber-500/70 rounded-full" />
@@ -72,27 +94,37 @@ export function HeroSection({ isLoggedIn }: { isLoggedIn: boolean }) {
             <span className="inline-block text-xs font-medium bg-green-950/60 text-green-400 border border-green-900/50 px-3 py-1 rounded-full">
               Strong
             </span>
-            <p className="text-xs text-zinc-600 mt-1.5">190 auditors checked</p>
+            <p className="text-xs text-zinc-600 mt-1.5">193 auditors checked</p>
           </div>
         </div>
 
-        <div className="px-5 pb-5 space-y-2">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          transition={{ delayChildren: 0.5 }}
+          className="px-5 pb-5 space-y-2"
+        >
           {FINDINGS.map((f) => (
-            <div key={f.label} className="flex items-center gap-3 px-3 py-2.5 bg-zinc-950/60 rounded-xl border border-zinc-800/60">
+            <motion.div
+              key={f.label}
+              variants={fadeUp}
+              className="flex items-center gap-3 px-3 py-2.5 bg-zinc-950/60 rounded-xl border border-zinc-800/60"
+            >
               <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border min-w-[54px] text-center flex-shrink-0 ${f.sevClass}`}>
                 {f.sev}
               </span>
               <span className="text-sm text-zinc-300 flex-1 truncate">{f.label}</span>
               <span className={`text-[11px] font-medium flex-shrink-0 ${f.confColor}`}>{f.conf}</span>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         <div className="border-t border-zinc-800 px-5 py-3 flex items-center justify-between bg-zinc-950/40">
           <p className="text-xs text-zinc-500">10 findings across 4 categories</p>
           <span className="text-xs font-medium text-violet-400">View all fixes &rarr;</span>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }

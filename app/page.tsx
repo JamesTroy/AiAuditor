@@ -8,12 +8,12 @@ import { ProofStrip, HowItWorks, Features, Testimonials } from '@/components/lan
 import { Pricing, CtaSection, LandingFooter } from '@/components/landing/PricingFooter';
 
 export const metadata: Metadata = {
-  title: 'Claudit \u2014 AI code auditor. 190 specialized auditors.',
+  title: 'Claudit \u2014 AI code auditor. 193 specialized auditors.',
   description:
-    'Find what your code review missed. 190 specialized AI auditors check your code for security holes, performance issues, and bad patterns \u2014 with exact fix guidance. Results in under 60 seconds.',
+    'Find what your code review missed. 193 specialized AI auditors check your code for security holes, performance issues, and bad patterns \u2014 with exact fix guidance. Results in under 60 seconds.',
   openGraph: {
     title: 'Claudit \u2014 Find what your code review missed',
-    description: '190 specialized AI auditors. Severity-ranked findings. Exact fix guidance. Under 60 seconds.',
+    description: '193 specialized AI auditors. Severity-ranked findings. Exact fix guidance. Under 60 seconds.',
     url: '/',
   },
 };
