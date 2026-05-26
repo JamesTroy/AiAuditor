@@ -27,8 +27,9 @@ const DAYS_PER_WEEK = 7;
 const TOTAL_CELLS = WEEKS_SHOWN * DAYS_PER_WEEK; // 91
 
 function intensityClass(count: number, max: number): string {
-  if (count === 0) return 'bg-gray-100 dark:bg-zinc-800/60';
-  if (max === 0) return 'bg-gray-100 dark:bg-zinc-800/60';
+  // Empty cells: deeper baseline so they read as a cell rather than blank space.
+  if (count === 0) return 'bg-gray-200 dark:bg-zinc-800';
+  if (max === 0) return 'bg-gray-200 dark:bg-zinc-800';
   const pct = count / max;
   if (pct < 0.25) return 'bg-violet-200 dark:bg-violet-900/40';
   if (pct < 0.5) return 'bg-violet-300 dark:bg-violet-800/60';
@@ -76,34 +77,36 @@ export function ActivityHeatmap({ days }: Props) {
         </p>
       </div>
 
-      {/* Fixed cell size keeps the heatmap compact regardless of container width. */}
+      {/* Flex columns of fixed-size cells. Plain CSS grid tracks didn't render
+          reliably for empty motion children — flex with explicit w/h does. */}
       <div
-        className="grid gap-[3px]"
-        style={{
-          gridTemplateColumns: `repeat(${WEEKS_SHOWN}, 12px)`,
-          gridTemplateRows: `repeat(${DAYS_PER_WEEK}, 12px)`,
-          gridAutoFlow: 'column',
-          width: 'max-content',
-        }}
+        className="flex gap-[3px]"
         role="img"
         aria-label={`Activity heatmap. ${totalAudits} audits across ${activeDays} days in the last 90 days.`}
       >
-        {cells.map((cell) => (
-          <motion.div
-            key={cell.date}
-            // Explicit w/h — empty motion divs don't reliably inherit grid track size.
-            className={`w-3 h-3 rounded-[2px] ${intensityClass(cell.count, max)} cursor-default`}
-            title={cell.count === 0
-              ? `${formatDateLabel(cell.date)} — no audits`
-              : `${formatDateLabel(cell.date)} — ${cell.count} audit${cell.count === 1 ? '' : 's'}`}
-            whileHover={{ scale: 1.4, transition: transitions.springGentle }}
-          />
+        {Array.from({ length: WEEKS_SHOWN }, (_, col) => (
+          <div key={col} className="flex flex-col gap-[3px]">
+            {Array.from({ length: DAYS_PER_WEEK }, (_, row) => {
+              const cell = cells[col * DAYS_PER_WEEK + row];
+              if (!cell) return null;
+              return (
+                <motion.div
+                  key={cell.date}
+                  className={`w-3 h-3 rounded-[2px] ${intensityClass(cell.count, max)} cursor-default`}
+                  title={cell.count === 0
+                    ? `${formatDateLabel(cell.date)} — no audits`
+                    : `${formatDateLabel(cell.date)} — ${cell.count} audit${cell.count === 1 ? '' : 's'}`}
+                  whileHover={{ scale: 1.4, transition: transitions.springGentle }}
+                />
+              );
+            })}
+          </div>
         ))}
       </div>
 
       <div className="flex items-center justify-end gap-1.5 mt-2.5 text-[11px] text-gray-400 dark:text-zinc-500">
         <span>Less</span>
-        <div className="w-2.5 h-2.5 rounded-sm bg-gray-100 dark:bg-zinc-800/60" />
+        <div className="w-2.5 h-2.5 rounded-sm bg-gray-200 dark:bg-zinc-800" />
         <div className="w-2.5 h-2.5 rounded-sm bg-violet-200 dark:bg-violet-900/40" />
         <div className="w-2.5 h-2.5 rounded-sm bg-violet-300 dark:bg-violet-800/60" />
         <div className="w-2.5 h-2.5 rounded-sm bg-violet-400 dark:bg-violet-700" />
