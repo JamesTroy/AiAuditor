@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { LandingNav } from '@/components/landing/LandingNav';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { ProofStrip, HowItWorks, Features, Testimonials } from '@/components/landing/Sections';
@@ -19,28 +19,18 @@ export const metadata: Metadata = {
 };
 
 export default async function LandingPage() {
+  // The landing page is for logged-out visitors only. Authenticated users go
+  // straight to their dashboard — the symmetric move to /dashboard redirecting
+  // unauthenticated visitors to /login.
   const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
-  const isLoggedIn = !!session;
-  const firstName = session?.user?.name?.split(' ')[0] ?? null;
+  if (session) redirect('/dashboard');
 
   return (
     <div className="bg-zinc-950 text-zinc-100">
-      <LandingNav isLoggedIn={isLoggedIn} />
-
-      {/* Logged-in welcome banner */}
-      {isLoggedIn && (
-        <div className="bg-violet-600 border-b border-violet-500/60 py-2.5 px-6 flex items-center justify-center gap-4">
-          <span className="text-sm text-violet-100">
-            Welcome back{firstName ? `, ${firstName}` : ''}.
-          </span>
-          <Link href="/dashboard" className="text-sm font-medium text-white underline underline-offset-2 hover:no-underline">
-            Go to your dashboard &rarr;
-          </Link>
-        </div>
-      )}
+      <LandingNav isLoggedIn={false} />
 
       <main>
-        <HeroSection isLoggedIn={isLoggedIn} />
+        <HeroSection isLoggedIn={false} />
         <ProofStrip />
         <HowItWorks />
         <Features />
