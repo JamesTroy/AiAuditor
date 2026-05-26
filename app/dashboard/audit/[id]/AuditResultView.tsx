@@ -3,11 +3,22 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'motion/react';
 import SafeMarkdown from '@/components/markdownComponents';
 import { setChainInput } from '@/lib/session';
 import { parseAuditResult, stripStructuredBlock, type Finding } from '@/lib/parseAuditResult';
 import { detectSnippet } from '@/lib/detectSnippet';
+import { fadeUp, staggerContainer, transitions } from '@/lib/motion/variants';
 import type { AgentFpRate } from '@/app/api/agents/fp-rates/route';
+
+// Reusable banner animation — fade + slight slide. Used by all three
+// status banners (snippet detected, high-FP, cold-start) so they enter and
+// exit consistently as conditions flip mid-stream.
+const bannerVariants = {
+  hidden: { opacity: 0, y: -6, height: 0, marginBottom: 0 },
+  visible: { opacity: 1, y: 0, height: 'auto', marginBottom: 16, transition: transitions.soft },
+  exit: { opacity: 0, y: -6, height: 0, marginBottom: 0, transition: transitions.snappy },
+} as const;
 
 interface Props {
   result: string | null;
@@ -211,35 +222,61 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
         </button>
       </div>
 
-      {/* Snippet scope warning — shown when the audited input looks like a fragment */}
-      {snippetDetection.isSnippet && (
-        <div className="mb-4 flex items-start gap-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 px-4 py-3 text-xs text-blue-800 dark:text-blue-300">
-          <span className="mt-0.5 flex-shrink-0">ℹ️</span>
-          <span>
-            <strong>Partial context detected</strong> — this audit was run on a code snippet ({snippetDetection.reason}). Findings that depend on imports, surrounding types, or module-level state may not apply to your actual codebase. Re-run with the full file for higher confidence results.
-          </span>
-        </div>
-      )}
+      {/* Conditional banners — wrapped in AnimatePresence so they slide in/out
+          smoothly as conditions flip mid-stream (e.g. FP-rates fetch resolves
+          after initial render). `mode="popLayout"` lets siblings shift up when
+          a banner exits without waiting for the exit animation to finish. */}
+      <AnimatePresence mode="popLayout">
+        {snippetDetection.isSnippet && (
+          <motion.div
+            key="snippet-banner"
+            variants={bannerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="flex items-start gap-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 px-4 py-3 text-xs text-blue-800 dark:text-blue-300 overflow-hidden"
+          >
+            <span className="mt-0.5 flex-shrink-0">ℹ️</span>
+            <span>
+              <strong>Partial context detected</strong> — this audit was run on a code snippet ({snippetDetection.reason}). Findings that depend on imports, surrounding types, or module-level state may not apply to your actual codebase. Re-run with the full file for higher confidence results.
+            </span>
+          </motion.div>
+        )}
 
-      {/* FP-RATE-UI: Banner shown when [LIKELY] findings are auto-hidden for a high-FP agent */}
-      {highFpLikely && (
-        <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-xs text-amber-800 dark:text-amber-300">
-          <span className="mt-0.5 flex-shrink-0">⚠️</span>
-          <span>
-            <strong>Some findings were filtered out</strong> — this auditor has a higher-than-usual false positive rate on &ldquo;likely&rdquo; findings, so those were automatically hidden to reduce noise. You&rsquo;re seeing only high-confidence results.
-          </span>
-        </div>
-      )}
+        {/* FP-RATE-UI: [LIKELY] findings auto-hidden for a high-FP agent */}
+        {highFpLikely && (
+          <motion.div
+            key="high-fp-banner"
+            variants={bannerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-xs text-amber-800 dark:text-amber-300 overflow-hidden"
+          >
+            <span className="mt-0.5 flex-shrink-0">⚠️</span>
+            <span>
+              <strong>Some findings were filtered out</strong> — this auditor has a higher-than-usual false positive rate on &ldquo;likely&rdquo; findings, so those were automatically hidden to reduce noise. You&rsquo;re seeing only high-confidence results.
+            </span>
+          </motion.div>
+        )}
 
-      {/* FP-COLD-START-UI: Banner shown when [LIKELY] findings are auto-hidden because the agent is too new to gauge yet */}
-      {coldStart && !highFpLikely && (
-        <div className="mb-4 flex items-start gap-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 px-4 py-3 text-xs text-blue-800 dark:text-blue-300">
-          <span className="mt-0.5 flex-shrink-0">🆕</span>
-          <span>
-            <strong>New auditor — &ldquo;likely&rdquo; findings hidden</strong> — this auditor hasn&rsquo;t run enough audits yet for us to gauge its accuracy, so lower-confidence findings are hidden by default to reduce noise. As more audits accumulate, this filter will lift automatically.
-          </span>
-        </div>
-      )}
+        {/* FP-COLD-START-UI: [LIKELY] findings hidden because the agent is too new */}
+        {coldStart && !highFpLikely && (
+          <motion.div
+            key="cold-start-banner"
+            variants={bannerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="flex items-start gap-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 px-4 py-3 text-xs text-blue-800 dark:text-blue-300 overflow-hidden"
+          >
+            <span className="mt-0.5 flex-shrink-0">🆕</span>
+            <span>
+              <strong>New auditor — &ldquo;likely&rdquo; findings hidden</strong> — this auditor hasn&rsquo;t run enough audits yet for us to gauge its accuracy, so lower-confidence findings are hidden by default to reduce noise. As more audits accumulate, this filter will lift automatically.
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* FP-UI: Review findings panel — dismiss false positives */}
       {metrics && metrics.findings.length > 0 && (
@@ -284,52 +321,66 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
             <span className="text-amber-700 dark:text-amber-400 font-medium">⚠ likely</span><span>= probable — verify before fixing</span>
             <span className="italic">Dismiss = not a real issue in your case (you can restore it)</span>
           </div>
-          <div className="divide-y divide-gray-100 dark:divide-zinc-800 max-h-80 overflow-y-auto">
-            {metrics.filteredFindings.map((finding: Finding) => {
-              const isDismissed = dismissed.has(finding.id);
-              if (isDismissed && !showDismissed) return null;
-              return (
-                <div
-                  key={finding.id}
-                  className={`flex items-center gap-3 px-4 py-2.5 text-sm ${isDismissed ? 'opacity-40' : ''}`}
-                >
-                  <span
-                    className={`flex-shrink-0 w-2 h-2 rounded-full ${
-                      finding.severity === 'critical' ? 'bg-red-500' :
-                      finding.severity === 'high' ? 'bg-orange-500' :
-                      finding.severity === 'medium' ? 'bg-amber-500' :
-                      finding.severity === 'low' ? 'bg-slate-400' :
-                      'bg-gray-300 dark:bg-zinc-600'
-                    }`}
-                  />
-                  <span className="flex-1 text-gray-700 dark:text-zinc-300 truncate" title={finding.title}>
-                    {finding.title}
-                  </span>
-                  {finding.confidence && (
-                    <span
-                      className={`flex-shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${
-                        finding.confidence === 'certain' ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400' :
-                        'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400'
-                      }`}
-                      title={
-                        finding.confidence === 'certain' ? 'Confirmed in submitted code — still verify before applying any fix' :
-                        'Probable issue — verify this applies to your full codebase before changing anything'
-                      }
-                    >
-                      {finding.confidence === 'likely' ? '⚠ likely' : finding.confidence}
-                    </span>
-                  )}
-                  <button
-                    onClick={() => isDismissed ? restoreFinding(finding.id) : dismissFinding(finding.id)}
-                    className="flex-shrink-0 text-xs text-gray-400 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 transition-colors focus-ring rounded px-1 min-h-[44px]"
-                    aria-label={isDismissed ? `Restore finding: ${finding.title}` : `Dismiss finding as false positive: ${finding.title}`}
+          {/* Findings list — stagger on initial render; AnimatePresence + layout
+              for smooth dismissal (the dismissed row fades out and survivors
+              slide up to fill the gap). */}
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="divide-y divide-gray-100 dark:divide-zinc-800 max-h-80 overflow-y-auto"
+          >
+            <AnimatePresence initial={false}>
+              {metrics.filteredFindings.map((finding: Finding) => {
+                const isDismissed = dismissed.has(finding.id);
+                if (isDismissed && !showDismissed) return null;
+                return (
+                  <motion.div
+                    key={finding.id}
+                    layout
+                    variants={fadeUp}
+                    exit={{ opacity: 0, x: 12, transition: transitions.snappy }}
+                    transition={transitions.springGentle}
+                    className={`flex items-center gap-3 px-4 py-2.5 text-sm ${isDismissed ? 'opacity-40' : ''}`}
                   >
-                    {isDismissed ? 'Restore' : 'Dismiss'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+                    <span
+                      className={`flex-shrink-0 w-2 h-2 rounded-full ${
+                        finding.severity === 'critical' ? 'bg-red-500' :
+                        finding.severity === 'high' ? 'bg-orange-500' :
+                        finding.severity === 'medium' ? 'bg-amber-500' :
+                        finding.severity === 'low' ? 'bg-slate-400' :
+                        'bg-gray-300 dark:bg-zinc-600'
+                      }`}
+                    />
+                    <span className="flex-1 text-gray-700 dark:text-zinc-300 truncate" title={finding.title}>
+                      {finding.title}
+                    </span>
+                    {finding.confidence && (
+                      <span
+                        className={`flex-shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${
+                          finding.confidence === 'certain' ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400' :
+                          'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400'
+                        }`}
+                        title={
+                          finding.confidence === 'certain' ? 'Confirmed in submitted code — still verify before applying any fix' :
+                          'Probable issue — verify this applies to your full codebase before changing anything'
+                        }
+                      >
+                        {finding.confidence === 'likely' ? '⚠ likely' : finding.confidence}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => isDismissed ? restoreFinding(finding.id) : dismissFinding(finding.id)}
+                      className="flex-shrink-0 text-xs text-gray-400 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 transition-colors focus-ring rounded px-1 min-h-[44px]"
+                      aria-label={isDismissed ? `Restore finding: ${finding.title}` : `Dismiss finding as false positive: ${finding.title}`}
+                    >
+                      {isDismissed ? 'Restore' : 'Dismiss'}
+                    </button>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
         </div>
       )}
 
