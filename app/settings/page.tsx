@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'motion/react';
 import { useSession, authClient } from '@/lib/auth-client';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
 import ActiveSessions from '@/components/ActiveSessions';
+import { fadeUp, staggerContainer, transitions } from '@/lib/motion/variants';
 // SM-004: Discriminated form status replaces saving + saved booleans.
 type FormStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -145,16 +147,21 @@ export default function SettingsPage() {
 
   return (
     <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="max-w-2xl mx-auto"
+      >
+        <motion.div variants={fadeUp} className="mb-8">
           <h1 className="text-2xl font-bold">Settings</h1>
           <p className="text-sm text-gray-500 dark:text-zinc-500 mt-1">
             Manage your profile, security, and account preferences.
           </p>
-        </div>
+        </motion.div>
 
         {/* Profile */}
-        <section className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">
+        <motion.section variants={fadeUp} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">Profile</h2>
           <form onSubmit={handleUpdateProfile} className="space-y-4">
             <div>
@@ -197,10 +204,10 @@ export default function SettingsPage() {
               )}
             </div>
           </form>
-        </section>
+        </motion.section>
 
         {/* Change password */}
-        <section className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">
+        <motion.section variants={fadeUp} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">Change password</h2>
 
           {passwordError && (
@@ -255,7 +262,7 @@ export default function SettingsPage() {
               )}
             </div>
           </form>
-        </section>
+        </motion.section>
 
         {/* Two-factor authentication */}
         <TwoFactorSettings twoFactorEnabled={session.user.twoFactorEnabled ?? false} />
@@ -264,7 +271,7 @@ export default function SettingsPage() {
         <ActiveSessions />
 
         {/* Workspace Context */}
-        <section className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">
+        <motion.section variants={fadeUp} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold mb-1">Workspace context <span className="text-xs font-normal text-gray-400 dark:text-zinc-500 ml-1">(optional)</span></h2>
           <p className="text-sm text-gray-500 dark:text-zinc-500 mb-4">
             Tell the auditors about your project — your tech stack, any rules you follow, or things to watch out for. Automatically included with every audit so findings are relevant to your setup. Leave blank if you&apos;re just getting started.
@@ -300,10 +307,10 @@ export default function SettingsPage() {
               <span className="text-xs text-gray-400 dark:text-zinc-600">{workspaceContext.length}/2000</span>
             </div>
           </form>
-        </section>
+        </motion.section>
 
         {/* Danger zone — CRED-002: Requires password re-entry */}
-        <section className="bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900/50 rounded-xl p-6">
+        <motion.section variants={fadeUp} className="bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900/50 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">Delete account</h2>
           <p className="text-sm text-gray-500 dark:text-zinc-500 mb-4">
             Permanently delete your account and all associated data. This action cannot be undone.
@@ -379,8 +386,8 @@ export default function SettingsPage() {
               </div>
             </form>
           )}
-        </section>
-      </div>
+        </motion.section>
+      </motion.div>
     </div>
   );
 }
