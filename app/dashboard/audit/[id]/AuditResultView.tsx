@@ -384,15 +384,30 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
         </div>
       )}
 
-      <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-xs text-amber-800 dark:text-amber-300">
+      {/* Persistent warning — always shown; fades up with the rest of the
+          page content. Distinct from the three conditional banners above
+          (snippet/high-FP/cold-start) which use AnimatePresence to
+          enter/exit as conditions change. */}
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-xs text-amber-800 dark:text-amber-300"
+      >
         <span className="mt-0.5 flex-shrink-0">⚠️</span>
         <span>
           <strong>Review before applying.</strong> Code snippets in this report are illustrative — they are based only on the code you submitted and cannot account for your full codebase. Verify every finding in context before making any changes.
         </span>
-      </div>
+      </motion.div>
 
       {/* Severity legend — helps vibe coders decode the report without Googling */}
-      <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-500 dark:text-zinc-500 px-1">
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        transition={{ delay: 0.05 }}
+        className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-500 dark:text-zinc-500 px-1"
+      >
         <span className="font-medium text-gray-600 dark:text-zinc-400">Severity:</span>
         <span><span className="text-red-500 font-medium">Critical</span> = fix now</span>
         <span><span className="text-orange-500 font-medium">High</span> = fix soon</span>
@@ -402,7 +417,7 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
         <span><span className="font-medium">Vulnerability</span> = exploitable bug</span>
         <span><span className="font-medium">Deficiency</span> = gap from best practice</span>
         <span><span className="font-medium">Suggestion</span> = optional improvement</span>
-      </div>
+      </motion.div>
 
       <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 prose prose-sm dark:prose-invert max-w-prose">
         <SafeMarkdown>{stripStructuredBlock(result)}</SafeMarkdown>
