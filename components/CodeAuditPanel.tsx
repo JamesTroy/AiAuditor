@@ -577,11 +577,36 @@ export default function CodeAuditPanel() {
   );
 
   return (
-    <div className="text-gray-900 dark:text-zinc-100 px-6 pb-12">
+    <div className="relative text-gray-900 dark:text-zinc-100 px-6 pb-16">
+      {/* Ambient glow orb — purely decorative */}
+      <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-120px] -translate-x-1/2 -z-10 h-[400px] w-[700px] rounded-full bg-violet-600/[0.08] blur-[100px] motion-safe:animate-[aurora_10s_ease-in-out_infinite]" />
       <div className="max-w-4xl mx-auto">
+
+        {/* Hero heading — visible only in idle state */}
+        {!loading && !result && !code && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0, transition: transitions.soft }}
+            className="text-center pt-8 mb-8"
+          >
+            <div className="inline-flex items-center gap-2 bg-violet-950/60 text-violet-300 text-xs font-medium px-3 py-1.5 rounded-full border border-violet-800/50 mb-6 select-none">
+              <span className="w-1.5 h-1.5 bg-violet-400 rounded-full motion-safe:animate-pulse" />
+              {allAgents.length} specialized auditors ready
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white mb-3">
+              Audit your{' '}
+              <span className="text-violet-400">code</span>
+            </h1>
+            <p className="text-base text-zinc-400 font-light max-w-md mx-auto">
+              Paste any language. Auditors auto-select. Results stream live.
+            </p>
+          </motion.div>
+        )}
 
         {/* Code Input */}
         <div className="mb-1.5">
+          <div className="relative group">
+            <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-violet-600/30 via-violet-600/5 to-indigo-600/20 opacity-0 group-focus-within:opacity-100 pointer-events-none transition-opacity duration-500" />
           <textarea
             id="code-input"
             value={code}
@@ -594,9 +619,10 @@ export default function CodeAuditPanel() {
             placeholder={`Paste your code here…\n\nAny language: TypeScript, Python, Go, SQL, Rust, Java…\nAny size: a single file, a module, or a whole feature.\n\nAuditors auto-select based on what you paste. Press ⌘↵ to run.`}
             disabled={loading}
             rows={12}
-            className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-5 py-4 text-sm font-mono text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 resize-y min-h-[180px] disabled:bg-zinc-100 dark:disabled:bg-zinc-800 disabled:text-zinc-400 dark:disabled:text-zinc-600 disabled:cursor-not-allowed"
+            className="w-full bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-2xl px-5 py-4 text-sm font-mono text-gray-900 dark:text-zinc-200 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-violet-500/60 dark:focus:border-violet-500/60 focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-offset-0 resize-y min-h-[210px] transition-[border-color,box-shadow] duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Code to audit"
           />
+          </div>
           {/* Privacy line — inline footer instead of its own row. */}
           <p className="mt-1 text-[11px] text-gray-400 dark:text-zinc-500 flex items-center gap-1">
             <svg className="w-3 h-3 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -632,6 +658,54 @@ export default function CodeAuditPanel() {
               {[autoDetectInfo.language, autoDetectInfo.framework].filter(Boolean).join(' + ') || 'Code'} detected
               {autoDetectInfo.addedIds.length > 0 && ` — ${autoDetectInfo.addedIds.length} auditors auto-added`}
             </span>
+          </div>
+        )}
+
+        {/* Feature benefit cards — shown in idle state before code is pasted */}
+        {!loading && !result && !code && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+            {[
+              {
+                iconBg: 'bg-red-950/60 border-red-900/40 text-red-400',
+                icon: (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                ),
+                title: 'Severity-rated findings',
+                desc: 'Critical to Low — fix what matters first',
+              },
+              {
+                iconBg: 'bg-blue-950/60 border-blue-900/40 text-blue-400',
+                icon: (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                  </svg>
+                ),
+                title: 'Line-level references',
+                desc: 'Exact file and line numbers cited',
+              },
+              {
+                iconBg: 'bg-emerald-950/60 border-emerald-900/40 text-emerald-400',
+                icon: (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ),
+                title: 'Fix suggestions',
+                desc: 'Concrete code changes, not vague advice',
+              },
+            ].map((card) => (
+              <div key={card.title} className="flex items-start gap-3 p-4 rounded-xl bg-zinc-900/60 dark:bg-zinc-900/60 border border-zinc-800/60 dark:border-zinc-800">
+                <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${card.iconBg}`}>
+                  {card.icon}
+                </div>
+                <div>
+                  <p className="text-sm font-medium dark:text-zinc-200 text-gray-700">{card.title}</p>
+                  <p className="text-xs dark:text-zinc-500 text-gray-400 mt-0.5 leading-relaxed">{card.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -675,7 +749,7 @@ export default function CodeAuditPanel() {
                 exit={{ opacity: 0, height: 0, transition: transitions.snappy }}
                 style={{ overflow: 'hidden' }}
               >
-                <div className="mt-2 p-3 rounded-xl bg-gray-50 dark:bg-zinc-900/60 border border-gray-200 dark:border-zinc-800 space-y-3">
+                <div className="mt-2 p-3 rounded-xl bg-gray-50 dark:bg-zinc-950/90 border border-gray-200 dark:border-zinc-800 space-y-3">
 
                   {/* GitHub source — its own nested toggle (PR / repo / compare / commit). */}
                   <GitHubSourcePicker onSource={handleGitHubSource} disabled={loading} />
@@ -775,7 +849,7 @@ export default function CodeAuditPanel() {
             onClick={runCodeAudit}
             disabled={loading || !code.trim() || selected.size === 0}
             whileTap={tapScale}
-            className="flex-1 sm:flex-none px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors disabled:bg-zinc-100 dark:disabled:bg-zinc-800 disabled:text-zinc-400 dark:disabled:text-zinc-600 disabled:cursor-not-allowed focus-ring whitespace-nowrap"
+            className="flex-1 sm:flex-none px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-violet-900/40 active:translate-y-0 transition-all duration-150 disabled:bg-gradient-to-r disabled:from-zinc-700 disabled:to-zinc-700 dark:disabled:from-zinc-800 dark:disabled:to-zinc-800 disabled:text-zinc-400 dark:disabled:text-zinc-500 disabled:shadow-none disabled:translate-y-0 disabled:cursor-not-allowed focus-ring whitespace-nowrap"
           >
             {loading
               ? `Auditing… ${completedIndices.size}/${selectedAgents.length} complete`
@@ -804,7 +878,7 @@ export default function CodeAuditPanel() {
           <div id="agent-picker" className="mb-5">
             <button
               onClick={() => setPickerOpen(!pickerOpen)}
-              className="flex items-center justify-between w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 transition-colors mb-2 group"
+              className="flex items-center justify-between w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-900 transition-colors mb-2 group"
               aria-expanded={pickerOpen}
             >
               <span className="flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-300 min-w-0">
@@ -863,7 +937,7 @@ export default function CodeAuditPanel() {
                 exit={{ opacity: 0, height: 0, transition: transitions.snappy }}
                 style={{ overflow: 'hidden' }}
               >
-              <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4">
+              <div className="bg-gray-50 dark:bg-zinc-950/90 border border-gray-200 dark:border-zinc-800 rounded-xl p-4">
                 {/* Global controls */}
                 <div className="flex flex-wrap gap-2 mb-3 pb-2.5 border-b border-gray-200 dark:border-zinc-800">
                   <button
@@ -978,7 +1052,7 @@ export default function CodeAuditPanel() {
 
         {/* Progress bar — sticky during run, always compact (progress bar only, no badge list) */}
         {loading && selectedAgents.length > 0 && (
-          <div className="mb-3 sticky top-0 z-10 bg-gray-50/95 dark:bg-zinc-950/95 backdrop-blur-sm py-3 -mx-6 px-6">
+          <div className="mb-3 sticky top-0 z-10 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-transparent dark:border-zinc-900 py-3 -mx-6 px-6">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-medium text-gray-600 dark:text-zinc-400">
                 {completedIndices.size === selectedAgents.length
@@ -1109,7 +1183,7 @@ export default function CodeAuditPanel() {
 
         {/* Results panel */}
         {(result || loading) && (
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 border-t-2 border-t-violet-500/50 rounded-lg overflow-hidden">
+          <div className="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 border-t-2 border-t-violet-500/60 rounded-xl overflow-hidden shadow-xl dark:shadow-black/30">
             <div className="flex items-center justify-between flex-wrap gap-2 px-4 py-2 border-b border-gray-200 dark:border-zinc-800">
               <span className="text-xs font-mono uppercase tracking-widest">
                 {loading ? (
@@ -1274,7 +1348,7 @@ export default function CodeAuditPanel() {
             )}
 
             {(synthesis || synthStatus === 'loading') && (
-              <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 border-t-2 border-t-indigo-500/50 rounded-lg overflow-hidden mt-3">
+              <div className="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 border-t-2 border-t-indigo-500/60 rounded-xl overflow-hidden mt-3 shadow-xl dark:shadow-black/30">
                 <div className="px-4 py-2 border-b border-gray-200 dark:border-zinc-800">
                   <span className="text-xs font-mono uppercase tracking-widest">
                     {synthStatus === 'loading' ? (
