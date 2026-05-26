@@ -215,3 +215,48 @@ export const findingDismissals = pgTable('finding_dismissals', {
   index('idx_fd_auditId_finding').on(t.auditId, t.findingId),
   index('idx_fd_createdAt').on(t.createdAt),
 ]);
+
+// ─── Scheduled audits ────────────────────────────────────────────
+// Periodic audit runs against a connected GitHub repo.
+// The cron runner (POST /api/cron/scheduled-audits) processes due rows
+// and emails the owner when the score drops below threshold or by 5+ pts.
+
+export const scheduledAudits = pgTable('scheduled_audits', {
+  id:           text('id').primaryKey(),
+  userId:       text('userId').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  name:         text('name').notNull(),
+  repoUrl:      text('repoUrl').notNull(),
+  githubToken:  encryptedText('githubToken'),
+  branch:       text('branch').notNull().default('main'),
+  schedule:     text('schedule', { enum: ['daily', 'weekly'] }).notNull().default('daily'),
+  threshold:    integer('threshold').notNull().default(70),
+  lastScore:    integer('lastScore'),
+  lastRunAt:    timestamp('lastRunAt', { withTimezone: true }),
+  lastAuditId:  text('lastAuditId'),
+  enabled:      boolean('enabled').notNull().default(true),
+  createdAt:    timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:    timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('idx_sa_userId').on(t.userId),
+  index('idx_sa_enabled_schedule').on(t.enabled, t.schedule),
+]);
+
+// ─── Webhook configurations ──────────────────────────────────────
+// Pre-deploy gates: a POST to /api/webhooks/pre-deploy with the right
+// apiKey runs an audit and returns 200 (pass) or 422 (fail).
+// Intended for GitHub Actions CI steps that block deploys on low scores.
+
+export const webhookConfigs = pgTable('webhook_configs', {
+  id:            text('id').primaryKey(),
+  userId:        text('userId').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  name:          text('name').notNull(),
+  apiKeyHash:    text('apiKeyHash').notNull().unique(),
+  apiKeyPreview: text('apiKeyPreview').notNull(),
+  threshold:     integer('threshold').notNull().default(70),
+  enabled:       boolean('enabled').notNull().default(true),
+  lastUsedAt:    timestamp('lastUsedAt', { withTimezone: true }),
+  createdAt:     timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('idx_wc_userId').on(t.userId),
+  uniqueIndex('idx_wc_apiKeyHash').on(t.apiKeyHash),
+]);
