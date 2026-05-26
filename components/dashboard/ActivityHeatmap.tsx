@@ -91,7 +91,8 @@ export function ActivityHeatmap({ days }: Props) {
         {cells.map((cell) => (
           <motion.div
             key={cell.date}
-            className={`rounded-[2px] ${intensityClass(cell.count, max)} cursor-default`}
+            // Explicit w/h — empty motion divs don't reliably inherit grid track size.
+            className={`w-3 h-3 rounded-[2px] ${intensityClass(cell.count, max)} cursor-default`}
             title={cell.count === 0
               ? `${formatDateLabel(cell.date)} — no audits`
               : `${formatDateLabel(cell.date)} — ${cell.count} audit${cell.count === 1 ? '' : 's'}`}
