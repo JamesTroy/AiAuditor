@@ -31,6 +31,25 @@ html { scroll-behavior: smooth; }
 }
 
 /* ─── Focus utility ──────────────────────────────────────────── */
+/* Smooth focus rings on form inputs across the site. Without this the
+   Tailwind focus:ring-* utility (which is a box-shadow under the hood)
+   snaps in on focus — fine, but feels unfinished next to the Motion-driven
+   interactions in the rest of the app. transition-property: box-shadow
+   adds the missing easing without touching any per-instance markup.
+   Honors prefers-reduced-motion automatically since reduced-motion users
+   get instant transitions via the @media block at the bottom of this file
+   (or browser defaults). */
+@media (prefers-reduced-motion: no-preference) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  textarea,
+  select,
+  button {
+    transition-property: box-shadow, border-color, background-color, color;
+    transition-duration: 180ms;
+    transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  }
+}
+
 @layer utilities {
   .focus-ring {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950;
