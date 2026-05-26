@@ -11,6 +11,8 @@ import { useSession } from '@/lib/auth-client';
 import { parseAuditResult, stripStructuredBlock } from '@/lib/parseAuditResult';
 import { deduplicateFindings, type DeduplicationResult } from '@/lib/deduplicateFindings';
 import { transitions, tapScale } from '@/lib/motion/variants';
+import GitHubSourcePicker from '@/components/GitHubSourcePicker';
+import { MAX_CONTEXT_FILES } from '@/lib/schemas/auditRequest';
 
 // ---------- Constants ----------
 
@@ -142,7 +144,7 @@ export default function CodeAuditPanel() {
       }),
     );
     Promise.all(readers).then((newFiles) => {
-      setContextFiles((prev) => [...prev, ...newFiles].slice(0, 5));
+      setContextFiles((prev) => [...prev, ...newFiles].slice(0, MAX_CONTEXT_FILES));
     });
     e.target.value = '';
   }
@@ -562,9 +564,22 @@ export default function CodeAuditPanel() {
   }, [result, synthStatus]);
 
   // ---------- Render ----------
+  // Receives source content fetched from GitHub via GitHubSourcePicker.
+  // Replaces the textarea contents so the audit flow stays identical to a paste.
+  const handleGitHubSource = useCallback(
+    (result: { content: string; summary: string }) => {
+      if (loading) return;
+      handleCodeChange(result.content);
+    },
+    [loading, handleCodeChange],
+  );
+
   return (
     <div className="text-gray-900 dark:text-zinc-100 px-6 pb-12">
       <div className="max-w-4xl mx-auto">
+
+        {/* GitHub source picker — import a PR, full repo, branch comparison, or commit diff */}
+        <GitHubSourcePicker onSource={handleGitHubSource} disabled={loading} />
 
         {/* Code Input */}
         <div className="mb-3">
@@ -623,14 +638,14 @@ export default function CodeAuditPanel() {
             <button
               type="button"
               onClick={() => contextFileInputRef.current?.click()}
-              disabled={loading || contextFiles.length >= 5}
+              disabled={loading || contextFiles.length >= MAX_CONTEXT_FILES}
               title="Attach related files (middleware, auth config, shared utilities) so auditors know what the primary code depends on — these files are not audited themselves"
               className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors disabled:bg-zinc-100 dark:disabled:bg-zinc-800 disabled:text-zinc-400 dark:disabled:text-zinc-600 disabled:cursor-not-allowed"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
               </svg>
-              Attach context files{contextFiles.length > 0 ? ` (${contextFiles.length}/5)` : ''}
+              Attach context files{contextFiles.length > 0 ? ` (${contextFiles.length}/${MAX_CONTEXT_FILES})` : ''}
             </button>
             <input
               ref={contextFileInputRef}

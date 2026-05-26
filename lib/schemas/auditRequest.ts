@@ -13,7 +13,10 @@ export const MAX_INPUT_CHARS = 500_000;
 export const MAX_SYSTEM_PROMPT_CHARS = 10_000;
 export const MAX_RUNTIME_CONTEXT_CHARS = 15_000;
 export const MAX_CONTEXT_FILE_CHARS = 20_000;
-export const MAX_CONTEXT_FILES = 5;
+// Raised from 5 → 20 to support multi-file workspace audits.
+// 20 × 20k = 400KB max context, comfortably under MAX_INPUT_CHARS so the
+// primary input still has room for the file being audited.
+export const MAX_CONTEXT_FILES = 20;
 
 export const VALID_AGENT_TYPES = [
   'code-quality',
