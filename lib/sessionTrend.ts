@@ -15,7 +15,12 @@ export const SESSION_BUCKET_MS = 5 * 60 * 1000;
 
 export interface AuditPoint {
   score: number;
-  createdAt: Date;
+  /**
+   * Date object or an ISO string. unstable_cache JSON-serialises its payload,
+   * so a `Date` from drizzle round-trips as a string after caching — accept
+   * both rather than forcing every caller to remember the conversion.
+   */
+  createdAt: Date | string;
   /** Stable hash of the audit input (md5 of the first ~4KB, computed in SQL). */
   sessionKey: string;
 }
@@ -43,15 +48,16 @@ export function groupAuditSessions(rows: AuditPoint[], limit = 10): SessionPoint
   const groups = new Map<string, { sum: number; count: number; earliest: Date }>();
 
   for (const row of rows) {
-    const bucket = Math.floor(row.createdAt.getTime() / SESSION_BUCKET_MS);
+    const when = row.createdAt instanceof Date ? row.createdAt : new Date(row.createdAt);
+    const bucket = Math.floor(when.getTime() / SESSION_BUCKET_MS);
     const key = `${row.sessionKey}:${bucket}`;
     const existing = groups.get(key);
     if (existing) {
       existing.sum += row.score;
       existing.count += 1;
-      if (row.createdAt < existing.earliest) existing.earliest = row.createdAt;
+      if (when < existing.earliest) existing.earliest = when;
     } else {
-      groups.set(key, { sum: row.score, count: 1, earliest: row.createdAt });
+      groups.set(key, { sum: row.score, count: 1, earliest: when });
     }
   }
 

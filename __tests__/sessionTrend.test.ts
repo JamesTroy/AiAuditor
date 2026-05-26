@@ -84,6 +84,20 @@ describe('groupAuditSessions', () => {
   it('SESSION_BUCKET_MS is the documented 5 minutes', () => {
     expect(SESSION_BUCKET_MS).toBe(5 * 60_000);
   });
+
+  it('accepts ISO-string createdAt (unstable_cache round-trips Date → string)', () => {
+    // Simulate what unstable_cache returns: Date → ISO string after JSON.stringify.
+    const rows = [
+      { score: 70, createdAt: '2026-01-01T10:00:00.000Z', sessionKey: 'A' },
+      { score: 90, createdAt: '2026-01-01T10:00:30.000Z', sessionKey: 'A' },
+      { score: 80, createdAt: '2026-01-01T10:30:00.000Z', sessionKey: 'A' },
+    ];
+    const sessions = groupAuditSessions(rows);
+    expect(sessions).toHaveLength(2);
+    expect(sessions[0].score).toBe(80); // avg(70,90)
+    expect(sessions[1].score).toBe(80); // single point
+    expect(sessions[0].createdAt).toBeInstanceOf(Date);
+  });
 });
 
 describe('sessionTrendDelta', () => {
