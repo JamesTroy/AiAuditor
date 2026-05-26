@@ -65,47 +65,45 @@ export function ActivityHeatmap({ days }: Props) {
       variants={fadeOnly}
       initial="hidden"
       animate="visible"
-      className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl p-4"
+      className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl p-5"
     >
-      <div className="flex items-baseline justify-between mb-3 gap-3 flex-wrap">
-        <p className="text-[11px] font-medium text-gray-400 dark:text-zinc-500 uppercase tracking-widest">
+      <div className="flex items-baseline justify-between mb-4 gap-3 flex-wrap">
+        <p className="text-xs font-medium text-gray-400 dark:text-zinc-500 uppercase tracking-widest">
           Activity — last 90 days
         </p>
-        <p className="text-[11px] text-gray-500 dark:text-zinc-500 tabular-nums">
+        <p className="text-xs text-gray-500 dark:text-zinc-500 tabular-nums">
           <span className="font-medium text-gray-700 dark:text-zinc-300">{totalAudits}</span> audits ·{' '}
           <span className="font-medium text-gray-700 dark:text-zinc-300">{activeDays}</span> active days
         </p>
       </div>
 
-      {/* Flex columns of fixed-size cells, centred in the card so the grid
-          doesn't look stranded at the left edge of a wide container. */}
+      {/* 1fr columns + fixed row height: cells fill the card width like the
+          original, but a capped row height keeps the section from becoming a
+          ~500px slab on wide screens. Cells render via w-full h-full so they
+          inherit the grid track. */}
       <div
-        className="flex gap-1 justify-center py-1"
+        className="grid gap-1.5"
+        style={{
+          gridTemplateColumns: `repeat(${WEEKS_SHOWN}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${DAYS_PER_WEEK}, 26px)`,
+          gridAutoFlow: 'column',
+        }}
         role="img"
         aria-label={`Activity heatmap. ${totalAudits} audits across ${activeDays} days in the last 90 days.`}
       >
-        {Array.from({ length: WEEKS_SHOWN }, (_, col) => (
-          <div key={col} className="flex flex-col gap-1">
-            {Array.from({ length: DAYS_PER_WEEK }, (_, row) => {
-              const cell = cells[col * DAYS_PER_WEEK + row];
-              if (!cell) return null;
-              return (
-                <motion.div
-                  key={cell.date}
-                  // ~18px cells: small enough to feel compact, big enough to read.
-                  className={`w-[18px] h-[18px] rounded-[3px] ${intensityClass(cell.count, max)} cursor-default`}
-                  title={cell.count === 0
-                    ? `${formatDateLabel(cell.date)} — no audits`
-                    : `${formatDateLabel(cell.date)} — ${cell.count} audit${cell.count === 1 ? '' : 's'}`}
-                  whileHover={{ scale: 1.4, transition: transitions.springGentle }}
-                />
-              );
-            })}
-          </div>
+        {cells.map((cell) => (
+          <motion.div
+            key={cell.date}
+            className={`w-full h-full rounded-[4px] ${intensityClass(cell.count, max)} cursor-default`}
+            title={cell.count === 0
+              ? `${formatDateLabel(cell.date)} — no audits`
+              : `${formatDateLabel(cell.date)} — ${cell.count} audit${cell.count === 1 ? '' : 's'}`}
+            whileHover={{ scale: 1.15, transition: transitions.springGentle }}
+          />
         ))}
       </div>
 
-      <div className="flex items-center justify-end gap-1.5 mt-2.5 text-[11px] text-gray-400 dark:text-zinc-500">
+      <div className="flex items-center justify-end gap-1.5 mt-3 text-xs text-gray-400 dark:text-zinc-500">
         <span>Less</span>
         <div className="w-2.5 h-2.5 rounded-sm bg-gray-200 dark:bg-zinc-800" />
         <div className="w-2.5 h-2.5 rounded-sm bg-violet-200 dark:bg-violet-900/40" />
