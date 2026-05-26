@@ -64,24 +64,26 @@ export function ActivityHeatmap({ days }: Props) {
       variants={fadeOnly}
       initial="hidden"
       animate="visible"
-      className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl p-5"
+      className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl p-4"
     >
-      <div className="flex items-baseline justify-between mb-4">
-        <p className="text-xs font-medium text-gray-400 dark:text-zinc-500 uppercase tracking-widest">
+      <div className="flex items-baseline justify-between mb-3 gap-3 flex-wrap">
+        <p className="text-[11px] font-medium text-gray-400 dark:text-zinc-500 uppercase tracking-widest">
           Activity — last 90 days
         </p>
-        <p className="text-xs text-gray-500 dark:text-zinc-500 tabular-nums">
+        <p className="text-[11px] text-gray-500 dark:text-zinc-500 tabular-nums">
           <span className="font-medium text-gray-700 dark:text-zinc-300">{totalAudits}</span> audits ·{' '}
           <span className="font-medium text-gray-700 dark:text-zinc-300">{activeDays}</span> active days
         </p>
       </div>
 
+      {/* Fixed cell size keeps the heatmap compact regardless of container width. */}
       <div
-        className="grid gap-1"
+        className="grid gap-[3px]"
         style={{
-          gridTemplateColumns: `repeat(${WEEKS_SHOWN}, minmax(0, 1fr))`,
-          gridTemplateRows: `repeat(${DAYS_PER_WEEK}, minmax(0, 1fr))`,
+          gridTemplateColumns: `repeat(${WEEKS_SHOWN}, 12px)`,
+          gridTemplateRows: `repeat(${DAYS_PER_WEEK}, 12px)`,
           gridAutoFlow: 'column',
+          width: 'max-content',
         }}
         role="img"
         aria-label={`Activity heatmap. ${totalAudits} audits across ${activeDays} days in the last 90 days.`}
@@ -89,7 +91,7 @@ export function ActivityHeatmap({ days }: Props) {
         {cells.map((cell) => (
           <motion.div
             key={cell.date}
-            className={`aspect-square rounded-sm ${intensityClass(cell.count, max)} cursor-default`}
+            className={`rounded-[2px] ${intensityClass(cell.count, max)} cursor-default`}
             title={cell.count === 0
               ? `${formatDateLabel(cell.date)} — no audits`
               : `${formatDateLabel(cell.date)} — ${cell.count} audit${cell.count === 1 ? '' : 's'}`}
@@ -98,7 +100,7 @@ export function ActivityHeatmap({ days }: Props) {
         ))}
       </div>
 
-      <div className="flex items-center justify-end gap-1.5 mt-3 text-xs text-gray-400 dark:text-zinc-500">
+      <div className="flex items-center justify-end gap-1.5 mt-2.5 text-[11px] text-gray-400 dark:text-zinc-500">
         <span>Less</span>
         <div className="w-2.5 h-2.5 rounded-sm bg-gray-100 dark:bg-zinc-800/60" />
         <div className="w-2.5 h-2.5 rounded-sm bg-violet-200 dark:bg-violet-900/40" />
