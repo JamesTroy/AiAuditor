@@ -63,9 +63,16 @@ export async function POST(req: NextRequest) {
       .limit(BATCH_SIZE);
     dueRows = rows;
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    log('cron_query_failed', { error: message });
-    return NextResponse.json({ error: message }, { status: 500 });
+    const e = err as Record<string, unknown>;
+    const detail = {
+      message: e.message ?? String(err),
+      code:    e.code,
+      detail:  e.detail,
+      hint:    e.hint,
+      cause:   e.cause instanceof Error ? e.cause.message : e.cause,
+    };
+    log('cron_query_failed', detail);
+    return NextResponse.json(detail, { status: 500 });
   }
 
   const results: Array<{ id: string; score?: number; error?: string }> = [];
