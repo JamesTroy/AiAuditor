@@ -4,21 +4,11 @@ import { db } from '@/lib/db';
 import { agentDismissalStats, audit as auditTable } from '@/lib/auth-schema';
 import { fpRatesLimiter } from '@/lib/rateLimit';
 import { VALID_AGENT_TYPES } from '@/lib/schemas/auditRequest';
-
-// Minimum [LIKELY] dismissals before we trust the signal.
-// Below this sample size the rate is too noisy to act on.
-const MIN_LIKELY_DISMISSALS = 5;
-
-// Fraction of total dismissals that must be [LIKELY] for an agent to be
-// considered high-FP on [LIKELY] findings.
-const LIKELY_FP_RATE_THRESHOLD = 0.40;
-
-// FP-COLD-START: Agents below this audit count are treated as "no data yet"
-// and have their [LIKELY] findings hidden by default — same effect as a
-// high-FP agent, but the reason is "we don't know yet" rather than
-// "we know this agent is noisy." Once the agent crosses this threshold the
-// real dismissal-rate logic above takes over.
-const MIN_AUDITS_FOR_TRUST = 20;
+import {
+  MIN_LIKELY_DISMISSALS,
+  LIKELY_FP_RATE_THRESHOLD,
+  MIN_AUDITS_FOR_TRUST,
+} from '@/lib/config/fpThresholds';
 
 export interface AgentFpRate {
   agentId: string;

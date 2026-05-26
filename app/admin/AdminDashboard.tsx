@@ -70,6 +70,11 @@ interface DismissalStatRow {
   updatedAt: Date;
 }
 
+interface AgentAuditCount {
+  agentId: string;
+  auditCount: number;
+}
+
 interface Props {
   stats: Stats;
   users: UserRow[];
@@ -78,13 +83,14 @@ interface Props {
   topUsers: TopUser[];
   currentUserId: string;
   dismissalStats: DismissalStatRow[];
+  agentAuditCounts: AgentAuditCount[];
 }
 
 type Tab = 'overview' | 'users' | 'audits' | 'orgs' | 'agent-health';
 
 // ─── Component ──────────────────────────────────────────────────
 
-export default function AdminDashboard({ stats, users, audits, orgs, topUsers, currentUserId, dismissalStats }: Props) {
+export default function AdminDashboard({ stats, users, audits, orgs, topUsers, currentUserId, dismissalStats, agentAuditCounts }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('overview');
   const [search, setSearch] = useState('');
@@ -716,6 +722,57 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
 
   function AgentHealthTab() {
     const maxDismissals = dismissalStats[0]?.dismissals ?? 1;
+
+    // FP-thresholds — must match lib/config/fpThresholds.ts. Duplicated as
+    // client-readable consts because lib/config isn't safe to import on the
+    // client (no actual leak risk here, but keeps the boundary clean).
+    const MIN_LIKELY_DISMISSALS = 5;
+    const LIKELY_FP_RATE_THRESHOLD = 0.40;
+    const MIN_AUDITS_FOR_TRUST = 20;
+
+    const auditCountMap = new Map<string, number>(
+      agentAuditCounts.map((r) => [r.agentId, r.auditCount]),
+    );
+
+    function classifyAgent(row: DismissalStatRow): {
+      label: string;
+      tone: 'red' | 'blue' | 'green' | 'gray';
+      reason: string;
+      fpRate: number | null;
+    } {
+      const audits = auditCountMap.get(row.agentId) ?? 0;
+      const fpRate = row.dismissals > 0 ? row.dismissalsLikely / row.dismissals : null;
+
+      // High-FP filter takes priority (we have data and it shows noise)
+      if (
+        row.dismissalsLikely >= MIN_LIKELY_DISMISSALS &&
+        fpRate !== null &&
+        fpRate >= LIKELY_FP_RATE_THRESHOLD
+      ) {
+        return {
+          label: 'Filtered (high FP)',
+          tone: 'red',
+          reason: '[LIKELY] findings auto-hidden; users dismiss too many of them',
+          fpRate,
+        };
+      }
+      // Cold-start: too few audits to trust the signal yet
+      if (audits < MIN_AUDITS_FOR_TRUST) {
+        return {
+          label: 'Cold-start',
+          tone: 'blue',
+          reason: `${audits}/${MIN_AUDITS_FOR_TRUST} audits — [LIKELY] hidden until threshold`,
+          fpRate,
+        };
+      }
+      return {
+        label: 'Trusted',
+        tone: 'green',
+        reason: 'Enough data to trust [LIKELY] findings from this agent',
+        fpRate,
+      };
+    }
+
     return (
       <div>
         <div className="mb-6">
@@ -727,6 +784,11 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
               [CERTAIN] dismissals are the most critical signal
             </span>{' '}
             — the AI was confident but users disagreed.
+          </p>
+          <p className="text-xs text-gray-400 dark:text-zinc-500 mt-2">
+            Status legend: <span className="text-green-600 dark:text-green-400">Trusted</span> = enough audits + acceptable FP rate ·{' '}
+            <span className="text-blue-600 dark:text-blue-400">Cold-start</span> = &lt;{MIN_AUDITS_FOR_TRUST} audits, [LIKELY] hidden until data accumulates ·{' '}
+            <span className="text-red-600 dark:text-red-400">Filtered (high FP)</span> = [LIKELY] FP rate ≥{Math.round(LIKELY_FP_RATE_THRESHOLD * 100)}%, [LIKELY] auto-hidden from users
           </p>
         </div>
 
@@ -740,6 +802,9 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
               <thead>
                 <tr className="border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900">
                   <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-zinc-400">Agent</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-zinc-400" title="Whether the FP-defense layers are currently hiding [LIKELY] findings from this agent">Status</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-zinc-400" title="Total audits this agent has run — drives cold-start status">Audits</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-zinc-400" title="Likely dismissals ÷ total dismissals — the [LIKELY] false-positive rate">FP Rate</th>
                   <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-zinc-400">Dismissals</th>
                   <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-zinc-400">Restorations</th>
                   <th className="px-4 py-3 text-right font-medium text-red-500 dark:text-red-400" title="[CERTAIN] findings dismissed — highest-signal false positives">Certain FP</th>
@@ -752,11 +817,36 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
                 {dismissalStats.map((row) => {
                   const pct = maxDismissals > 0 ? Math.round((row.dismissals / maxDismissals) * 100) : 0;
                   const netDismissals = Math.max(0, row.dismissals - row.restorations);
+                  const classification = classifyAgent(row);
+                  const audits = auditCountMap.get(row.agentId) ?? 0;
+                  const toneClass = {
+                    red: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400',
+                    blue: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400',
+                    green: 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400',
+                    gray: 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400',
+                  }[classification.tone];
                   return (
                     <tr key={row.agentId} className="hover:bg-gray-50 dark:hover:bg-zinc-900/50">
                       <td className="px-4 py-3">
                         <div className="font-medium text-gray-900 dark:text-zinc-100">{row.agentName}</div>
                         <div className="text-xs text-gray-400 dark:text-zinc-500 font-mono">{row.agentId}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${toneClass}`} title={classification.reason}>
+                          {classification.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums text-gray-600 dark:text-zinc-400">
+                        {audits.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {classification.fpRate !== null ? (
+                          <span className={classification.fpRate >= LIKELY_FP_RATE_THRESHOLD ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-700 dark:text-zinc-300'}>
+                            {Math.round(classification.fpRate * 100)}%
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 dark:text-zinc-600">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums">
                         <span className={`font-semibold ${row.dismissals > 20 ? 'text-red-600 dark:text-red-400' : row.dismissals > 5 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-700 dark:text-zinc-300'}`}>

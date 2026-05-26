@@ -38,6 +38,7 @@ export default async function AdminPage() {
     orgsWithMembers,
     topUsers,
     dismissalStats,
+    agentAuditCounts,
   ] = await Promise.all([
     db.select({ value: count() }).from(user),
     db.select({ value: count() }).from(audit),
@@ -96,6 +97,16 @@ export default async function AdminPage() {
       .orderBy(desc(count(audit.id)))
       .limit(10),
     db.select().from(agentDismissalStats).orderBy(desc(agentDismissalStats.dismissals)).limit(50),
+    // FP-COLD-START: per-agent audit count for the admin "Status" column
+    // — distinguishes cold-start (no data yet) from trusted (enough audits
+    // have run that we believe the dismissal signal).
+    db
+      .select({
+        agentId: audit.agentId,
+        auditCount: count(audit.id),
+      })
+      .from(audit)
+      .groupBy(audit.agentId),
   ]);
 
   const totalUsers = usersResult[0]?.value ?? 0;
@@ -126,6 +137,7 @@ export default async function AdminPage() {
       topUsers={topUsers}
       currentUserId={s.user.id}
       dismissalStats={dismissalStats}
+      agentAuditCounts={agentAuditCounts}
     />
   );
 }
