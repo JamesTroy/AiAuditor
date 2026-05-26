@@ -47,23 +47,32 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
   const [dismissed, setDismissed] = useState<Set<string>>(() => loadDismissed(auditId));
   const [showDismissed, setShowDismissed] = useState(false);
   const [highFpLikely, setHighFpLikely] = useState(false);
+  // FP-COLD-START: agent has too few audits run for the FP signal to be
+  // trustworthy yet. Same effect on filteredFindings as highFpLikely, but a
+  // different banner so the user knows why findings are hidden.
+  const [coldStart, setColdStart] = useState(false);
 
   // FP-RATE: Fetch per-agent [LIKELY] false-positive rates and downgrade
   // [LIKELY] findings to [POSSIBLE] for agents that cross the threshold.
+  // Also flag cold-start agents (no usage data yet) for the same treatment.
   useEffect(() => {
     fetch('/api/agents/fp-rates')
-      .then((r) => r.ok ? r.json() : { rates: [] })
-      .then(({ rates }: { rates: AgentFpRate[] }) => {
+      .then((r) => r.ok ? r.json() : { rates: [], coldStartAgentIds: [] })
+      .then(({ rates, coldStartAgentIds }: { rates: AgentFpRate[]; coldStartAgentIds?: string[] }) => {
         const match = rates.find((r) => r.agentId === agentId);
         if (match?.highLikelyFpRate) setHighFpLikely(true);
+        if (coldStartAgentIds?.includes(agentId)) setColdStart(true);
       })
       .catch(() => { /* degrade gracefully — don't affect the render */ });
   }, [agentId]);
 
   const metrics = useMemo(() => {
     if (!result) return null;
-    return parseAuditResult(result, { downgradeHighFpLikely: highFpLikely });
-  }, [result, highFpLikely]);
+    return parseAuditResult(result, {
+      downgradeHighFpLikely: highFpLikely,
+      coldStart,
+    });
+  }, [result, highFpLikely, coldStart]);
 
   const snippetDetection = useMemo(() => detectSnippet(input), [input]);
 
@@ -218,6 +227,16 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
           <span className="mt-0.5 flex-shrink-0">⚠️</span>
           <span>
             <strong>Some findings were filtered out</strong> — this auditor has a higher-than-usual false positive rate on &ldquo;likely&rdquo; findings, so those were automatically hidden to reduce noise. You&rsquo;re seeing only high-confidence results.
+          </span>
+        </div>
+      )}
+
+      {/* FP-COLD-START-UI: Banner shown when [LIKELY] findings are auto-hidden because the agent is too new to gauge yet */}
+      {coldStart && !highFpLikely && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 px-4 py-3 text-xs text-blue-800 dark:text-blue-300">
+          <span className="mt-0.5 flex-shrink-0">🆕</span>
+          <span>
+            <strong>New auditor — &ldquo;likely&rdquo; findings hidden</strong> — this auditor hasn&rsquo;t run enough audits yet for us to gauge its accuracy, so lower-confidence findings are hidden by default to reduce noise. As more audits accumulate, this filter will lift automatically.
           </span>
         </div>
       )}

@@ -81,6 +81,13 @@ export interface ParseOptions {
    * used for agents whose dismissal analytics show a high [LIKELY] FP rate.
    */
   downgradeHighFpLikely?: boolean;
+  /**
+   * FP-COLD-START: When true, [LIKELY] findings are excluded because the
+   * agent has not yet accumulated enough audits (MIN_AUDITS_FOR_TRUST) to
+   * gauge accuracy. Same filter behaviour as downgradeHighFpLikely but the
+   * UI surfaces a different banner — "no data yet" vs "known noisy."
+   */
+  coldStart?: boolean;
 }
 
 // STRUCT-001: Extract embedded structured findings from result text.
@@ -167,7 +174,7 @@ function parseFromStructured(
   const filteredFindings = findings.filter((f) => {
     if (f.confidence === 'possible') return false;
     if (f.classification === 'suggestion') return false;
-    if (options.downgradeHighFpLikely && f.confidence === 'likely') return false;
+    if ((options.downgradeHighFpLikely || options.coldStart) && f.confidence === 'likely') return false;
     return true;
   });
 
@@ -253,8 +260,9 @@ function parseFromMarkdown(markdown: string, options: ParseOptions): AuditMetric
     if (f.confidence === 'possible') return false;
     // Filter out [SUGGESTION] classification — not a defect
     if (f.classification === 'suggestion') return false;
-    // For agents with a high [LIKELY] dismissal rate, treat [LIKELY] as [POSSIBLE]
-    if (options.downgradeHighFpLikely && f.confidence === 'likely') return false;
+    // For agents with a high [LIKELY] dismissal rate OR cold-start agents
+    // (insufficient data to trust), treat [LIKELY] as [POSSIBLE].
+    if ((options.downgradeHighFpLikely || options.coldStart) && f.confidence === 'likely') return false;
     return true;
   });
 
