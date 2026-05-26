@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { agents as allAgents } from '@/lib/agents/registry';
 import { detectAgents } from '@/lib/detectAgents';
 import SafeMarkdown from '@/components/markdownComponents';
@@ -9,6 +10,7 @@ import { friendlyError } from '@/lib/friendlyError';
 import { useSession } from '@/lib/auth-client';
 import { parseAuditResult, stripStructuredBlock } from '@/lib/parseAuditResult';
 import { deduplicateFindings, type DeduplicationResult } from '@/lib/deduplicateFindings';
+import { transitions, tapScale } from '@/lib/motion/variants';
 
 // ---------- Constants ----------
 
@@ -712,10 +714,11 @@ export default function CodeAuditPanel() {
 
         {/* Action Row */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <button
+          <motion.button
             id="run-audit-btn"
             onClick={runCodeAudit}
             disabled={loading || !code.trim() || selected.size === 0}
+            whileTap={tapScale}
             className="flex-1 sm:flex-none px-8 py-3.5 rounded-xl font-semibold text-base text-white bg-violet-600 hover:bg-violet-500 transition-colors disabled:bg-zinc-100 dark:disabled:bg-zinc-800 disabled:text-zinc-400 dark:disabled:text-zinc-600 disabled:cursor-not-allowed focus-ring whitespace-nowrap"
           >
             {loading
@@ -723,15 +726,21 @@ export default function CodeAuditPanel() {
               : selected.size === 1
                 ? 'Run 1 Audit'
                 : `Run ${selected.size} Audits`}
-          </button>
-          {loading && (
-            <button
-              onClick={handleStop}
-              className="px-6 py-3.5 rounded-xl text-base text-gray-600 dark:text-zinc-400 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors focus-ring"
-            >
-              Stop
-            </button>
-          )}
+          </motion.button>
+          <AnimatePresence>
+            {loading && (
+              <motion.button
+                onClick={handleStop}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0, transition: transitions.springGentle }}
+                exit={{ opacity: 0, x: -8, transition: transitions.snappy }}
+                whileTap={tapScale}
+                className="px-6 py-3.5 rounded-xl text-base text-gray-600 dark:text-zinc-400 border border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors focus-ring"
+              >
+                Stop
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Agent Picker */}
@@ -754,15 +763,33 @@ export default function CodeAuditPanel() {
                 </span>
                 {!pickerOpen && selectedAgents.length > 0 && (
                   <span className="hidden sm:flex items-center gap-1 min-w-0 overflow-hidden">
-                    {selectedAgents.slice(0, 4).map((a) => (
-                      <span key={a.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-200 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 shrink-0">
-                        <span className={`w-1.5 h-1.5 rounded-full ${dotColor(a.accentClass)}`} />
-                        {a.name}
-                      </span>
-                    ))}
-                    {selectedAgents.length > 4 && (
-                      <span className="text-xs text-gray-400 dark:text-zinc-500 shrink-0">+{selectedAgents.length - 4} more</span>
-                    )}
+                    <AnimatePresence initial={false} mode="popLayout">
+                      {selectedAgents.slice(0, 4).map((a) => (
+                        <motion.span
+                          key={a.id}
+                          layout
+                          initial={{ opacity: 0, scale: 0.85 }}
+                          animate={{ opacity: 1, scale: 1, transition: transitions.springGentle }}
+                          exit={{ opacity: 0, scale: 0.85, transition: transitions.snappy }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-200 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 shrink-0"
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${dotColor(a.accentClass)}`} />
+                          {a.name}
+                        </motion.span>
+                      ))}
+                      {selectedAgents.length > 4 && (
+                        <motion.span
+                          key="more-count"
+                          layout
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="text-xs text-gray-400 dark:text-zinc-500 shrink-0"
+                        >
+                          +{selectedAgents.length - 4} more
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
                   </span>
                 )}
               </span>
@@ -771,7 +798,15 @@ export default function CodeAuditPanel() {
               </span>
             </button>
 
+            <AnimatePresence initial={false}>
             {pickerOpen && (
+              <motion.div
+                key="picker-content"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto', transition: transitions.soft }}
+                exit={{ opacity: 0, height: 0, transition: transitions.snappy }}
+                style={{ overflow: 'hidden' }}
+              >
               <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4">
                 {/* Global controls */}
                 <div className="flex flex-wrap gap-2 mb-4 pb-3 border-b border-gray-200 dark:border-zinc-800">
@@ -808,7 +843,8 @@ export default function CodeAuditPanel() {
                   </div>
                 )}
 
-                {/* Category sections */}
+                {/* Category sections — `layout` on each block so re-ordering by
+                    smart-suggestion highlight animates smoothly. */}
                 <div className="space-y-4">
                   {Array.from(grouped.entries()).map(([cat, catAgents]) => {
                     if (catAgents.length === 0) return null;
@@ -816,7 +852,12 @@ export default function CodeAuditPanel() {
                     const someSelected = catAgents.some((a) => selected.has(a.id));
                     const isHighlighted = suggestedCategory === cat;
                     return (
-                      <div key={cat} className={isHighlighted ? 'rounded-lg ring-1 ring-violet-400/40 dark:ring-violet-600/40 bg-violet-50/40 dark:bg-violet-950/20 p-2 -mx-2' : ''}>
+                      <motion.div
+                        key={cat}
+                        layout
+                        transition={transitions.springGentle}
+                        className={isHighlighted ? 'rounded-lg ring-1 ring-violet-400/40 dark:ring-violet-600/40 bg-violet-50/40 dark:bg-violet-950/20 p-2 -mx-2' : ''}
+                      >
                         <div className="flex items-center justify-between mb-2">
                           <button
                             onClick={() => selectCategory(cat, !allSelected)}
@@ -868,12 +909,14 @@ export default function CodeAuditPanel() {
                             );
                           })}
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
               </div>
+              </motion.div>
             )}
+            </AnimatePresence>
           </div>
         )}
 
