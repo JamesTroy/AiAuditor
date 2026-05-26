@@ -8810,6 +8810,1004 @@ Format each file:
 
 Keep total under 30,000 characters. Prioritize: source + matching tests + validation schemas.`,
   }),
+  builtin({
+    id: 'unit-testing',
+    name: 'Unit Testing',
+    description: 'Reviews unit test quality: coverage gaps, assertion strength, test isolation, edge case coverage, mocking discipline, and test design patterns.',
+    category: 'Testing',
+    accentClass: 'text-lime-400 hover:bg-lime-500/10',
+    buttonClass: 'bg-lime-700 hover:bg-lime-600',
+    placeholder: 'Paste your source files and their unit test files together...',
+    systemPrompt: SYSTEM_PROMPTS['unit-testing'],
+    prepPrompt: `I'm preparing code for a **Unit Testing** audit.
+
+## What to include
+- Source file(s) being tested
+- Matching unit test file(s) — or note "no tests yet"
+- Shared test utilities / factories if used
+- Framework config (jest.config.ts, vitest.config.ts)
+
+Format files with separators:
+\`\`\`
+--- src/utils/pricing.ts ---
+[contents]
+
+--- src/utils/__tests__/pricing.test.ts ---
+[contents]
+\`\`\`
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'mutation-testing',
+    name: 'Mutation Testing',
+    description: 'Identifies test suite weaknesses by finding code patterns that would survive mutation: weak assertions, missing boundary checks, uncovered boolean branches.',
+    category: 'Testing',
+    accentClass: 'text-lime-400 hover:bg-lime-500/10',
+    buttonClass: 'bg-lime-700 hover:bg-lime-600',
+    placeholder: 'Paste source and test files. The auditor will identify which mutations your tests would miss...',
+    systemPrompt: SYSTEM_PROMPTS['mutation-testing'],
+    prepPrompt: `I'm preparing code for a **Mutation Testing** audit — the auditor identifies patterns that would survive code mutations (off-by-one, negation, operator changes) without test failures.
+
+## What to include
+- Source file(s) with the logic under test
+- All unit test files for that source
+- Test configuration (jest/vitest config)
+
+Format each file with \`--- path ---\` separators.
+
+Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'snapshot-testing',
+    name: 'Snapshot Testing',
+    description: 'Reviews snapshot test quality: brittle snapshots, oversized snapshots, missing interaction states, update discipline, and visual regression gaps.',
+    category: 'Testing',
+    accentClass: 'text-lime-400 hover:bg-lime-500/10',
+    buttonClass: 'bg-lime-700 hover:bg-lime-600',
+    placeholder: 'Paste component files and their snapshot test files...',
+    systemPrompt: SYSTEM_PROMPTS['snapshot-testing'],
+    prepPrompt: `I'm preparing code for a **Snapshot Testing** audit.
+
+## What to include
+- Component source files
+- Snapshot test files (.test.tsx, .stories.tsx)
+- Existing snapshots (__snapshots__/) if relevant
+- Test framework config
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'test-data-management',
+    name: 'Test Data Management',
+    description: 'Reviews how tests create and manage data: factory patterns, fixture quality, database isolation, sensitive data in tests, and environment parity.',
+    category: 'Testing',
+    accentClass: 'text-lime-400 hover:bg-lime-500/10',
+    buttonClass: 'bg-lime-700 hover:bg-lime-600',
+    placeholder: 'Paste test files, fixture files, factories, seed scripts, and database config...',
+    systemPrompt: SYSTEM_PROMPTS['test-data-management'],
+    prepPrompt: `I'm preparing code for a **Test Data Management** audit.
+
+## What to include
+- Test fixture files / factories
+- Database seed scripts
+- Test setup/teardown code (beforeEach, afterAll)
+- Test configuration (db connection, isolation strategy)
+- Sample test files showing data creation
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'flaky-tests',
+    name: 'Flaky Tests',
+    description: 'Detects sources of test flakiness: timing issues, async races, order dependencies, external calls, environment sensitivity, and non-deterministic behaviour.',
+    category: 'Testing',
+    accentClass: 'text-lime-400 hover:bg-lime-500/10',
+    buttonClass: 'bg-lime-700 hover:bg-lime-600',
+    placeholder: 'Paste test files suspected of being flaky, plus CI config...',
+    systemPrompt: SYSTEM_PROMPTS['flaky-tests'],
+    prepPrompt: `I'm preparing code for a **Flaky Tests** audit.
+
+## What to include
+- Test files (especially ones that fail intermittently)
+- Test setup files (jest.setup.ts, global fixtures)
+- CI configuration (GitHub Actions workflow, etc.)
+- Any known flaky test list if you have one
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'integration-testing',
+    name: 'Integration Testing',
+    description: 'Reviews integration test coverage: untested service boundaries, missing contract tests, error path integration, transaction handling, and test environment quality.',
+    category: 'Testing',
+    accentClass: 'text-lime-400 hover:bg-lime-500/10',
+    buttonClass: 'bg-lime-700 hover:bg-lime-600',
+    placeholder: 'Paste integration test files, service boundary code, DB config, and docker-compose if relevant...',
+    systemPrompt: SYSTEM_PROMPTS['integration-testing'],
+    prepPrompt: `I'm preparing code for an **Integration Testing** audit.
+
+## What to include
+- Integration test files
+- Service boundary code (API routes, DB queries, external clients)
+- Test environment config (docker-compose.test.yml, test DB setup)
+- Mocking strategy (which services are mocked vs real)
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'api-testing',
+    name: 'API Testing',
+    description: 'Reviews API test coverage: missing endpoint tests, status code gaps, request validation testing, auth coverage, and response shape verification.',
+    category: 'Testing',
+    accentClass: 'text-lime-400 hover:bg-lime-500/10',
+    buttonClass: 'bg-lime-700 hover:bg-lime-600',
+    placeholder: 'Paste API route files and their test files, plus OpenAPI spec if available...',
+    systemPrompt: SYSTEM_PROMPTS['api-testing'],
+    prepPrompt: `I'm preparing code for an **API Testing** audit.
+
+## What to include
+- API route handlers / controllers
+- API test files (supertest, httpx, etc.)
+- OpenAPI/Swagger spec if available
+- Auth middleware
+- Validation schemas
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'security-testing',
+    name: 'Security Testing',
+    description: 'Reviews security test coverage: missing auth tests, injection testing gaps, IDOR coverage, cryptography tests, and CI security scanning integration.',
+    category: 'Testing',
+    accentClass: 'text-lime-400 hover:bg-lime-500/10',
+    buttonClass: 'bg-lime-700 hover:bg-lime-600',
+    placeholder: 'Paste security-related test files, auth code, CI pipeline config, and API routes...',
+    systemPrompt: SYSTEM_PROMPTS['security-testing'],
+    prepPrompt: `I'm preparing code for a **Security Testing** audit.
+
+## What to include
+- Security-focused test files
+- Authentication and authorization code
+- Input validation code
+- CI pipeline config (especially security scan steps)
+- API routes handling sensitive operations
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'performance-testing',
+    name: 'Performance Testing',
+    description: 'Reviews load and performance test quality: scenario coverage, realistic profiles, SLO thresholds, baseline detection, and CI integration.',
+    category: 'Testing',
+    accentClass: 'text-lime-400 hover:bg-lime-500/10',
+    buttonClass: 'bg-lime-700 hover:bg-lime-600',
+    placeholder: 'Paste k6/Gatling/Locust scripts, CI pipeline config, and any SLO definitions...',
+    systemPrompt: SYSTEM_PROMPTS['performance-testing'],
+    prepPrompt: `I'm preparing code for a **Performance Testing** audit.
+
+## What to include
+- Load test scripts (k6, Gatling, Locust, JMeter)
+- CI pipeline config showing when tests run
+- SLO definitions or performance budgets
+- Environment config (target URLs, regions)
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'react-native',
+    name: 'React Native',
+    description: 'Reviews React Native / Expo code quality: architecture, navigation, performance, platform parity, native module safety, bundle size, and security.',
+    category: 'Mobile',
+    accentClass: 'text-sky-400 hover:bg-sky-500/10',
+    buttonClass: 'bg-sky-700 hover:bg-sky-600',
+    placeholder: 'Paste React Native / Expo source files, navigation setup, and app.json / package.json...',
+    systemPrompt: SYSTEM_PROMPTS['react-native'],
+    prepPrompt: `I'm preparing code for a **React Native** audit.
+
+## What to include
+- Screen and component files
+- Navigation setup (react-navigation config)
+- app.json / app.config.js (Expo config)
+- package.json (dependency list)
+- Native module usage files
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'ios-swift',
+    name: 'iOS / Swift',
+    description: 'Reviews Swift / SwiftUI code: memory management, Swift Concurrency correctness, SwiftUI performance, security, and App Store compliance.',
+    category: 'Mobile',
+    accentClass: 'text-sky-400 hover:bg-sky-500/10',
+    buttonClass: 'bg-sky-700 hover:bg-sky-600',
+    placeholder: 'Paste Swift source files, SwiftUI views, Info.plist, and entitlements...',
+    systemPrompt: SYSTEM_PROMPTS['ios-swift'],
+    prepPrompt: `I'm preparing code for an **iOS / Swift** audit.
+
+## What to include
+- Swift source files (Views, ViewModels, Services)
+- Info.plist
+- Entitlements file
+- Package.swift / Podfile (dependency list)
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'android-kotlin',
+    name: 'Android / Kotlin',
+    description: 'Reviews Android / Kotlin code: architecture, coroutine safety, Compose performance, security, memory leaks, and Google Play compliance.',
+    category: 'Mobile',
+    accentClass: 'text-sky-400 hover:bg-sky-500/10',
+    buttonClass: 'bg-sky-700 hover:bg-sky-600',
+    placeholder: 'Paste Kotlin source files, Composables, AndroidManifest.xml, and build.gradle...',
+    systemPrompt: SYSTEM_PROMPTS['android-kotlin'],
+    prepPrompt: `I'm preparing code for an **Android / Kotlin** audit.
+
+## What to include
+- Kotlin source files (Activities, ViewModels, Composables)
+- AndroidManifest.xml
+- build.gradle / build.gradle.kts
+- Proguard rules if applicable
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'mobile-security',
+    name: 'Mobile Security',
+    description: 'OWASP MASVS audit for iOS and Android: data storage, cryptography, authentication, network security, and binary protection.',
+    category: 'Mobile',
+    accentClass: 'text-sky-400 hover:bg-sky-500/10',
+    buttonClass: 'bg-sky-700 hover:bg-sky-600',
+    placeholder: 'Paste mobile source files, manifest/plist, network config, and any crypto/auth code...',
+    systemPrompt: SYSTEM_PROMPTS['mobile-security'],
+    prepPrompt: `I'm preparing code for a **Mobile Security** (OWASP MASVS) audit.
+
+## What to include
+- Authentication and session management code
+- Crypto / key management code
+- Network layer code (certificate pinning, HTTPS config)
+- Local storage code (Keychain, Keystore, SharedPreferences, UserDefaults)
+- Info.plist / AndroidManifest.xml
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'mobile-performance',
+    name: 'Mobile Performance',
+    description: 'Reviews mobile app performance: startup time, rendering, memory leaks, battery efficiency, and network optimisation for iOS and Android.',
+    category: 'Mobile',
+    accentClass: 'text-sky-400 hover:bg-sky-500/10',
+    buttonClass: 'bg-sky-700 hover:bg-sky-600',
+    placeholder: 'Paste screen files, list components, image loading code, and network layer...',
+    systemPrompt: SYSTEM_PROMPTS['mobile-performance'],
+    prepPrompt: `I'm preparing code for a **Mobile Performance** audit.
+
+## What to include
+- Screen / View files (especially ones with lists or heavy rendering)
+- Image loading / caching code
+- Network layer
+- App startup code (AppDelegate, Application class)
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'app-store-compliance',
+    name: 'App Store Compliance',
+    description: 'Reviews Apple App Store and Google Play compliance: privacy manifest, IAP requirements, content policy, metadata, and technical requirements.',
+    category: 'Mobile',
+    accentClass: 'text-sky-400 hover:bg-sky-500/10',
+    buttonClass: 'bg-sky-700 hover:bg-sky-600',
+    placeholder: 'Paste Info.plist, AndroidManifest.xml, app.json, purchase code, and app metadata...',
+    systemPrompt: SYSTEM_PROMPTS['app-store-compliance'],
+    prepPrompt: `I'm preparing code for an **App Store Compliance** audit.
+
+## What to include
+- Info.plist (iOS)
+- AndroidManifest.xml (Android)
+- app.json / app.config.js (Expo)
+- In-app purchase code
+- Privacy-related permissions and usage descriptions
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'deep-linking',
+    name: 'Deep Linking',
+    description: 'Reviews Universal Links, App Links, and custom URL scheme security: parameter injection risks, configuration correctness, and missing fallbacks.',
+    category: 'Mobile',
+    accentClass: 'text-sky-400 hover:bg-sky-500/10',
+    buttonClass: 'bg-sky-700 hover:bg-sky-600',
+    placeholder: 'Paste deep link handling code, apple-app-site-association, assetlinks.json, and navigation code...',
+    systemPrompt: SYSTEM_PROMPTS['deep-linking'],
+    prepPrompt: `I'm preparing code for a **Deep Linking** audit.
+
+## What to include
+- Deep link handler code
+- apple-app-site-association file (iOS)
+- assetlinks.json (Android)
+- Navigation code that handles deep link params
+- URL scheme declarations
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'mobile-offline',
+    name: 'Mobile Offline Support',
+    description: 'Reviews offline-first architecture: local persistence, sync reliability, conflict resolution, data integrity, and queue-based action handling.',
+    category: 'Mobile',
+    accentClass: 'text-sky-400 hover:bg-sky-500/10',
+    buttonClass: 'bg-sky-700 hover:bg-sky-600',
+    placeholder: 'Paste local DB code, sync logic, network state handling, and action queue code...',
+    systemPrompt: SYSTEM_PROMPTS['mobile-offline'],
+    prepPrompt: `I'm preparing code for a **Mobile Offline Support** audit.
+
+## What to include
+- Local persistence code (SQLite, Core Data, Room, MMKV)
+- Network state detection code
+- Sync / replication code
+- Action queue / optimistic update code
+- Conflict resolution logic
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'push-notifications',
+    name: 'Push Notifications',
+    description: 'Reviews push notification architecture: token management, payload security, permission flow, notification handling, and APNs/FCM configuration.',
+    category: 'Mobile',
+    accentClass: 'text-sky-400 hover:bg-sky-500/10',
+    buttonClass: 'bg-sky-700 hover:bg-sky-600',
+    placeholder: 'Paste push registration code, notification handler, server-side push logic, and permission request code...',
+    systemPrompt: SYSTEM_PROMPTS['push-notifications'],
+    prepPrompt: `I'm preparing code for a **Push Notifications** audit.
+
+## What to include
+- Push token registration code (client side)
+- Notification handler (tap/foreground/background)
+- Server-side push dispatch code
+- Permission request UI code
+- APNs / FCM configuration
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'mobile-accessibility',
+    name: 'Mobile Accessibility',
+    description: 'WCAG 2.2 audit for iOS/Android: VoiceOver/TalkBack support, touch targets, colour contrast, focus management, and dynamic type support.',
+    category: 'Mobile',
+    accentClass: 'text-sky-400 hover:bg-sky-500/10',
+    buttonClass: 'bg-sky-700 hover:bg-sky-600',
+    placeholder: 'Paste screen and component files — include accessibility labels, colours, and layout code...',
+    systemPrompt: SYSTEM_PROMPTS['mobile-accessibility'],
+    prepPrompt: `I'm preparing code for a **Mobile Accessibility** audit.
+
+## What to include
+- Screen and component source files
+- Colour and theme definitions
+- Custom interactive components
+- Navigation code (focus management)
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'local-dev-setup',
+    name: 'Local Dev Setup',
+    description: 'Reviews local development environment quality: setup automation, dependency management, service orchestration, secrets handling, and time-to-first-run friction.',
+    category: 'Developer Experience',
+    accentClass: 'text-teal-400 hover:bg-teal-500/10',
+    buttonClass: 'bg-teal-700 hover:bg-teal-600',
+    placeholder: 'Paste README, Makefile, docker-compose.yml, .env.example, and setup scripts...',
+    systemPrompt: SYSTEM_PROMPTS['local-dev-setup'],
+    prepPrompt: `I'm preparing config for a **Local Dev Setup** audit.
+
+## What to include
+- README (setup section)
+- Makefile / scripts/setup.sh
+- docker-compose.yml / docker-compose.dev.yml
+- .env.example
+- .nvmrc / .tool-versions
+- package.json (scripts section)
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'developer-onboarding',
+    name: 'Developer Onboarding',
+    description: 'Reviews engineering onboarding quality: getting started docs, architecture documentation, decision records, tribal knowledge risk, and contribution workflow.',
+    category: 'Developer Experience',
+    accentClass: 'text-teal-400 hover:bg-teal-500/10',
+    buttonClass: 'bg-teal-700 hover:bg-teal-600',
+    placeholder: 'Paste README, CONTRIBUTING.md, architecture docs, ADRs, and any wiki content...',
+    systemPrompt: SYSTEM_PROMPTS['developer-onboarding'],
+    prepPrompt: `I'm preparing docs for a **Developer Onboarding** audit.
+
+## What to include
+- README.md
+- CONTRIBUTING.md
+- Architecture decision records (docs/adr/)
+- Any architecture diagrams or wiki pages (paste content)
+- CODEOWNERS file
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'code-review-standards',
+    name: 'Code Review Standards',
+    description: 'Reviews PR process quality: PR templates, branch protection rules, automation gaps, review guidelines, and merge strategy discipline.',
+    category: 'Developer Experience',
+    accentClass: 'text-teal-400 hover:bg-teal-500/10',
+    buttonClass: 'bg-teal-700 hover:bg-teal-600',
+    placeholder: 'Paste PR template, branch protection config, GitHub Actions CI workflow, and CONTRIBUTING.md...',
+    systemPrompt: SYSTEM_PROMPTS['code-review-standards'],
+    prepPrompt: `I'm preparing config for a **Code Review Standards** audit.
+
+## What to include
+- .github/pull_request_template.md
+- Branch protection rules (describe if you can't export)
+- GitHub Actions CI workflow(s)
+- CONTRIBUTING.md
+- CODEOWNERS
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'changelog-management',
+    name: 'Changelog Management',
+    description: 'Reviews changelog quality and versioning discipline: format consistency, automation setup, breaking change communication, and release workflow.',
+    category: 'Developer Experience',
+    accentClass: 'text-teal-400 hover:bg-teal-500/10',
+    buttonClass: 'bg-teal-700 hover:bg-teal-600',
+    placeholder: 'Paste CHANGELOG.md, release-it / semantic-release config, and recent git log...',
+    systemPrompt: SYSTEM_PROMPTS['changelog-management'],
+    prepPrompt: `I'm preparing docs for a **Changelog Management** audit.
+
+## What to include
+- CHANGELOG.md (or equivalent)
+- release-it.json / .releaserc / semantic-release config
+- package.json (version + release scripts)
+- Recent git log (last 20 commits): run \`git log --oneline -20\`
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'monorepo-tooling',
+    name: 'Monorepo Tooling',
+    description: 'Reviews monorepo tooling health: build pipeline, task caching, circular dependencies, version strategy, and CI efficiency.',
+    category: 'Developer Experience',
+    accentClass: 'text-teal-400 hover:bg-teal-500/10',
+    buttonClass: 'bg-teal-700 hover:bg-teal-600',
+    placeholder: 'Paste turbo.json / nx.json, pnpm-workspace.yaml, package.json files, and CI workflow...',
+    systemPrompt: SYSTEM_PROMPTS['monorepo-tooling'],
+    prepPrompt: `I'm preparing config for a **Monorepo Tooling** audit.
+
+## What to include
+- turbo.json or nx.json
+- pnpm-workspace.yaml / lerna.json
+- Root package.json and 2-3 package-level package.json files
+- CI pipeline config
+- tsconfig.json (root and one package-level)
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'package-publishing',
+    name: 'Package Publishing',
+    description: 'Reviews npm/PyPI package publish pipeline: security, package contents, versioning automation, provenance attestation, and dependency hygiene.',
+    category: 'Developer Experience',
+    accentClass: 'text-teal-400 hover:bg-teal-500/10',
+    buttonClass: 'bg-teal-700 hover:bg-teal-600',
+    placeholder: 'Paste package.json, .npmignore, publish CI workflow, and release config...',
+    systemPrompt: SYSTEM_PROMPTS['package-publishing'],
+    prepPrompt: `I'm preparing config for a **Package Publishing** audit.
+
+## What to include
+- package.json (including files, main, exports fields)
+- .npmignore or .gitignore
+- CI publish workflow (GitHub Actions)
+- release-it / semantic-release config
+- README (user-facing install instructions)
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'debugging-practices',
+    name: 'Debugging Practices',
+    description: 'Reviews debugging infrastructure quality: console pollution, error information quality, source maps, debugger config, and diagnostic endpoint coverage.',
+    category: 'Developer Experience',
+    accentClass: 'text-teal-400 hover:bg-teal-500/10',
+    buttonClass: 'bg-teal-700 hover:bg-teal-600',
+    placeholder: 'Paste source files, logger setup, error handling code, and VS Code launch.json...',
+    systemPrompt: SYSTEM_PROMPTS['debugging-practices'],
+    prepPrompt: `I'm preparing code for a **Debugging Practices** audit.
+
+## What to include
+- Logger / error reporting setup (Sentry init, pino config)
+- Error handling middleware / boundaries
+- VS Code launch.json (if present)
+- Build config (webpack/vite — sourcemap settings)
+- A sample source file showing typical logging patterns
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'pipeline-orchestration',
+    name: 'Pipeline Orchestration',
+    description: 'Reviews data pipeline quality: DAG design, failure handling, idempotency, performance, and security for Airflow, Prefect, Dagster, and dbt.',
+    category: 'Data Engineering',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-700 hover:bg-orange-600',
+    placeholder: 'Paste DAG/flow files, task definitions, orchestrator config, and alert setup...',
+    systemPrompt: SYSTEM_PROMPTS['pipeline-orchestration'],
+    prepPrompt: `I'm preparing code for a **Pipeline Orchestration** audit.
+
+## What to include
+- DAG / flow definition files
+- Task / operator code
+- Orchestrator config (airflow.cfg, prefect.yaml)
+- Alert / notification setup
+- Connection / secrets config
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'streaming-data',
+    name: 'Streaming Data',
+    description: 'Reviews streaming architecture quality: ordering guarantees, consumer group management, exactly-once semantics, backpressure, and schema evolution.',
+    category: 'Data Engineering',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-700 hover:bg-orange-600',
+    placeholder: 'Paste Kafka/Kinesis producer and consumer code, topic config, schema registry setup...',
+    systemPrompt: SYSTEM_PROMPTS['streaming-data'],
+    prepPrompt: `I'm preparing code for a **Streaming Data** audit.
+
+## What to include
+- Producer and consumer code
+- Topic / stream configuration
+- Schema registry config / Avro/Protobuf schemas
+- Consumer group configuration
+- Error / DLQ handling code
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'data-observability',
+    name: 'Data Observability',
+    description: 'Reviews data quality monitoring: freshness checks, null/uniqueness tests, volume anomaly detection, schema change alerts, and lineage documentation.',
+    category: 'Data Engineering',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-700 hover:bg-orange-600',
+    placeholder: 'Paste dbt test files, Great Expectations suites, Soda checks, and monitoring config...',
+    systemPrompt: SYSTEM_PROMPTS['data-observability'],
+    prepPrompt: `I'm preparing config for a **Data Observability** audit.
+
+## What to include
+- dbt schema.yml files (with tests)
+- Great Expectations / Soda check files
+- Data monitoring configuration
+- dbt source.yml (freshness config)
+- Any custom data quality scripts
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'analytics-engineering',
+    name: 'Analytics Engineering',
+    description: 'Reviews dbt / analytics engineering quality: model design, test coverage, documentation, performance optimisation, and metric consistency.',
+    category: 'Data Engineering',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-700 hover:bg-orange-600',
+    placeholder: 'Paste dbt model SQL files, schema.yml, sources.yml, and dbt_project.yml...',
+    systemPrompt: SYSTEM_PROMPTS['analytics-engineering'],
+    prepPrompt: `I'm preparing code for an **Analytics Engineering** audit.
+
+## What to include
+- dbt model SQL files (staging, intermediate, mart)
+- schema.yml and sources.yml
+- dbt_project.yml
+- Any macro or test definitions
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'data-warehouse',
+    name: 'Data Warehouse Design',
+    description: 'Reviews data warehouse quality: schema design, query performance, cost optimisation, access control, and data retention for Snowflake, BigQuery, and Redshift.',
+    category: 'Data Engineering',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-700 hover:bg-orange-600',
+    placeholder: 'Paste DDL statements, SQL queries, warehouse config, and role/permission definitions...',
+    systemPrompt: SYSTEM_PROMPTS['data-warehouse'],
+    prepPrompt: `I'm preparing SQL/config for a **Data Warehouse Design** audit.
+
+## What to include
+- Table DDL (CREATE TABLE statements)
+- Key SQL queries / transformations
+- Warehouse / cluster configuration
+- Role and permission definitions
+- Retention / lifecycle policies
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'change-data-capture',
+    name: 'Change Data Capture',
+    description: 'Reviews CDC architecture: replication reliability, schema evolution handling, security, consumer lag monitoring, and initial snapshot strategy.',
+    category: 'Data Engineering',
+    accentClass: 'text-orange-400 hover:bg-orange-500/10',
+    buttonClass: 'bg-orange-700 hover:bg-orange-600',
+    placeholder: 'Paste Debezium config, connector JSON, replication user SQL, and consumer code...',
+    systemPrompt: SYSTEM_PROMPTS['change-data-capture'],
+    prepPrompt: `I'm preparing config for a **Change Data Capture** audit.
+
+## What to include
+- Connector configuration (Debezium JSON, DMS task config)
+- Replication user SQL grants
+- Consumer / sink code
+- Monitoring setup
+- Schema registry config
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'hallucination-mitigation',
+    name: 'Hallucination Mitigation',
+    description: 'Reviews LLM application grounding strategy: RAG quality, prompt design, output validation, confidence signalling, and hallucination risk vectors.',
+    category: 'AI / LLM',
+    accentClass: 'text-purple-400 hover:bg-purple-500/10',
+    buttonClass: 'bg-purple-700 hover:bg-purple-600',
+    placeholder: 'Paste LLM prompt templates, RAG pipeline code, output parsing code, and UI confidence display...',
+    systemPrompt: SYSTEM_PROMPTS['hallucination-mitigation'],
+    prepPrompt: `I'm preparing code for a **Hallucination Mitigation** audit.
+
+## What to include
+- System prompt / prompt templates
+- RAG retrieval and context injection code
+- LLM call code and output parsing
+- Output validation logic
+- UI code showing confidence / source attribution
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'ai-compliance',
+    name: 'AI Compliance',
+    description: 'Reviews AI governance: EU AI Act risk classification, model documentation, bias and fairness evaluation, transparency, and human oversight controls.',
+    category: 'AI / LLM',
+    accentClass: 'text-purple-400 hover:bg-purple-500/10',
+    buttonClass: 'bg-purple-700 hover:bg-purple-600',
+    placeholder: 'Paste model cards, training pipeline code, inference code, UI disclosures, and audit logs...',
+    systemPrompt: SYSTEM_PROMPTS['ai-compliance'],
+    prepPrompt: `I'm preparing code/docs for an **AI Compliance** audit.
+
+## What to include
+- Model card or documentation
+- Training / fine-tuning pipeline code
+- Inference / serving code
+- UI disclosure text
+- Human review / override code
+- Audit logging code
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'fine-tuning',
+    name: 'Fine-Tuning Quality',
+    description: 'Reviews LLM fine-tuning pipeline: training data quality, configuration correctness, evaluation rigour, safety evaluation, and deployment strategy.',
+    category: 'AI / LLM',
+    accentClass: 'text-purple-400 hover:bg-purple-500/10',
+    buttonClass: 'bg-purple-700 hover:bg-purple-600',
+    placeholder: 'Paste training scripts, dataset preparation code, evaluation scripts, and model config...',
+    systemPrompt: SYSTEM_PROMPTS['fine-tuning'],
+    prepPrompt: `I'm preparing code for a **Fine-Tuning Quality** audit.
+
+## What to include
+- Training script (train.py, run_clm.py)
+- Dataset preparation / preprocessing code
+- Evaluation script
+- Model config (LoRA config, training arguments)
+- Sample training data rows (anonymized)
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'multimodal-ai',
+    name: 'Multimodal AI',
+    description: 'Reviews multimodal AI pipeline quality: input preprocessing, cross-modal alignment, content safety, latency/cost efficiency, and evaluation strategy.',
+    category: 'AI / LLM',
+    accentClass: 'text-purple-400 hover:bg-purple-500/10',
+    buttonClass: 'bg-purple-700 hover:bg-purple-600',
+    placeholder: 'Paste image/audio preprocessing code, model inference code, content safety code, and prompt templates...',
+    systemPrompt: SYSTEM_PROMPTS['multimodal-ai'],
+    prepPrompt: `I'm preparing code for a **Multimodal AI** audit.
+
+## What to include
+- Input preprocessing code (image resize, audio tokenisation)
+- Model inference / API call code
+- Content safety / moderation code
+- Prompt templates with media tokens
+- Evaluation code
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'cloud-cost',
+    name: 'Cloud Cost Optimisation',
+    description: 'Reviews cloud spend efficiency: compute rightsizing, storage lifecycle, data transfer costs, reserved capacity, and cost allocation tagging.',
+    category: 'Infrastructure',
+    accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
+    placeholder: 'Paste Terraform/CloudFormation/CDK code, instance configs, storage definitions, and tagging policies...',
+    systemPrompt: SYSTEM_PROMPTS['cloud-cost'],
+    prepPrompt: `I'm preparing config for a **Cloud Cost Optimisation** audit.
+
+## What to include
+- IaC files (Terraform, CDK, CloudFormation)
+- Instance / service size configurations
+- Storage and lifecycle configurations
+- Auto-scaling configurations
+- Tagging policies
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'event-driven',
+    name: 'Event-Driven Architecture',
+    description: 'Reviews event-driven system quality: event design, delivery guarantees, idempotency, ordering, schema evolution, and observability.',
+    category: 'Infrastructure',
+    accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
+    placeholder: 'Paste event definitions, producer/consumer code, broker config, and DLQ setup...',
+    systemPrompt: SYSTEM_PROMPTS['event-driven'],
+    prepPrompt: `I'm preparing code for an **Event-Driven Architecture** audit.
+
+## What to include
+- Event definition / schema files
+- Producer code
+- Consumer / handler code
+- Message broker configuration
+- Dead-letter queue setup
+- Schema registry config
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'multi-region',
+    name: 'Multi-Region Architecture',
+    description: 'Reviews multi-region deployment quality: data consistency, failover automation, data residency, latency routing, and cross-region costs.',
+    category: 'Infrastructure',
+    accentClass: 'text-cyan-400 hover:bg-cyan-500/10',
+    buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
+    placeholder: 'Paste IaC, DNS config, DB replication setup, failover config, and load balancer rules...',
+    systemPrompt: SYSTEM_PROMPTS['multi-region'],
+    prepPrompt: `I'm preparing config for a **Multi-Region Architecture** audit.
+
+## What to include
+- IaC files defining regional resources
+- DNS / load balancer configuration
+- Database replication configuration
+- Failover / health check configuration
+- Data residency / compliance config
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'dead-code',
+    name: 'Dead Code Detection',
+    description: 'Identifies unused exports, unreachable branches, commented-out code, unused dependencies, and orphaned files that can be safely removed.',
+    category: 'Code Quality',
+    accentClass: 'text-blue-400 hover:bg-blue-500/10',
+    buttonClass: 'bg-blue-700 hover:bg-blue-600',
+    placeholder: 'Paste source files, barrel exports (index.ts), and package.json to detect dead code and unused deps...',
+    systemPrompt: SYSTEM_PROMPTS['dead-code'],
+    prepPrompt: `I'm preparing code for a **Dead Code Detection** audit.
+
+## What to include
+- Source files you want scanned
+- Index / barrel export files (index.ts, index.js)
+- package.json (for unused dependency detection)
+- Entry point files to help trace the import graph
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'circular-dependencies',
+    name: 'Circular Dependencies',
+    description: 'Detects circular import cycles, layer violations, god modules, and barrel export issues that block tree-shaking and cause initialisation bugs.',
+    category: 'Code Quality',
+    accentClass: 'text-blue-400 hover:bg-blue-500/10',
+    buttonClass: 'bg-blue-700 hover:bg-blue-600',
+    placeholder: 'Paste source files with their imports — include the full module graph if possible...',
+    systemPrompt: SYSTEM_PROMPTS['circular-dependencies'],
+    prepPrompt: `I'm preparing code for a **Circular Dependencies** audit.
+
+## What to include
+- Source files across all layers (api, domain, db, utils)
+- Index / barrel files
+- Key import chains you suspect are circular
+
+Tip: run \`npx madge --circular src/\` and paste the output as a code block alongside the source files.
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'technical-debt',
+    name: 'Technical Debt',
+    description: 'Catalogues and prioritises technical debt: architectural debt, code quality debt, dependency debt, test debt, and documentation debt with a remediation roadmap.',
+    category: 'Code Quality',
+    accentClass: 'text-blue-400 hover:bg-blue-500/10',
+    buttonClass: 'bg-blue-700 hover:bg-blue-600',
+    placeholder: 'Paste the files or modules you want assessed — include context about known pain points...',
+    systemPrompt: SYSTEM_PROMPTS['technical-debt'],
+    prepPrompt: `I'm preparing code for a **Technical Debt** audit.
+
+## What to include
+- The modules / files with the most known pain
+- package.json (for dependency age assessment)
+- Any TODO/FIXME comments (or run: \`grep -r "TODO\|FIXME\|HACK\|XXX" src/\`)
+- Brief description of known pain points in project context
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'opentelemetry',
+    name: 'OpenTelemetry',
+    description: 'Reviews OTel instrumentation: trace coverage, metrics RED signals, log correlation, collector configuration, semantic convention compliance, and sampling strategy.',
+    category: 'Observability / SRE',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste OTel SDK init code, instrumented service code, collector config, and exporter setup...',
+    systemPrompt: SYSTEM_PROMPTS['opentelemetry'],
+    prepPrompt: `I'm preparing code for an **OpenTelemetry** audit.
+
+## What to include
+- OTel SDK initialisation code
+- Key service files (HTTP handlers, DB queries, queue consumers)
+- OTel Collector configuration (otel-collector-config.yaml)
+- Exporter configuration
+- Sampling configuration
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'slo-design',
+    name: 'SLO Design',
+    description: 'Reviews SLO quality: SLI definition clarity, measurement methodology, error budget policy, burn rate alerting, and user journey coverage.',
+    category: 'Observability / SRE',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste SLO definitions, alert rules, error budget policy docs, and monitoring config...',
+    systemPrompt: SYSTEM_PROMPTS['slo-design'],
+    prepPrompt: `I'm preparing config for an **SLO Design** audit.
+
+## What to include
+- SLO definitions (YAML, Terraform, or docs)
+- Alert rules tied to SLOs (Prometheus alerting rules, Datadog monitors)
+- Error budget policy document
+- Service dependency map if available
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'distributed-tracing',
+    name: 'Distributed Tracing',
+    description: 'Reviews distributed trace quality: context propagation, span attributes, cross-service coverage, database instrumentation, and sampling strategy.',
+    category: 'Observability / SRE',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste traced service code, HTTP client setup, DB query code, and tracing config...',
+    systemPrompt: SYSTEM_PROMPTS['distributed-tracing'],
+    prepPrompt: `I'm preparing code for a **Distributed Tracing** audit.
+
+## What to include
+- Tracing SDK initialisation
+- HTTP server handler code
+- HTTP client code (outgoing requests)
+- Database / cache query code
+- Async task / queue consumer code
+- Sampling configuration
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'log-aggregation',
+    name: 'Log Aggregation',
+    description: 'Reviews logging quality: structured logging, PII/secrets in logs, log levels, correlation IDs, and pipeline reliability.',
+    category: 'Observability / SRE',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste logger setup, application code showing logging patterns, log shipper config, and middleware...',
+    systemPrompt: SYSTEM_PROMPTS['log-aggregation'],
+    prepPrompt: `I'm preparing code for a **Log Aggregation** audit.
+
+## What to include
+- Logger initialisation code (pino, winston, structlog)
+- Request middleware / HTTP logging code
+- Error handler / Sentry init
+- Log shipper / agent config (Fluent Bit, Vector, Logstash)
+- Sample service file showing logging patterns
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'metrics-dashboards',
+    name: 'Metrics & Dashboards',
+    description: 'Reviews metrics coverage and dashboard quality: RED metrics, cardinality, dashboard usability, alerting alignment, and business metrics.',
+    category: 'Observability / SRE',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste Prometheus config, Grafana dashboard JSON, metric definitions, and instrumented service code...',
+    systemPrompt: SYSTEM_PROMPTS['metrics-dashboards'],
+    prepPrompt: `I'm preparing config for a **Metrics & Dashboards** audit.
+
+## What to include
+- Prometheus scrape config / metric definitions
+- Grafana dashboard JSON (or describe panels)
+- Instrumented service code showing metric recording
+- Alert rules
+- Custom metric registration code
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'alerting-strategy',
+    name: 'Alerting Strategy',
+    description: 'Reviews alert quality: fatigue reduction, actionability, coverage gaps, severity classification, and alert lifecycle management.',
+    category: 'Observability / SRE',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste Prometheus alerting rules, PagerDuty/OpsGenie config, runbook links, and on-call policy...',
+    systemPrompt: SYSTEM_PROMPTS['alerting-strategy'],
+    prepPrompt: `I'm preparing config for an **Alerting Strategy** audit.
+
+## What to include
+- Alerting rule files (Prometheus rules YAML, Datadog monitors)
+- PagerDuty / OpsGenie escalation policy
+- On-call rotation config
+- Runbook links (or list of alerts without runbooks)
+- Recent alert history summary if available
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'chaos-engineering',
+    name: 'Chaos Engineering',
+    description: 'Reviews chaos engineering maturity: experiment coverage, steady-state definitions, blast radius controls, observability, and circuit breaker validation.',
+    category: 'Observability / SRE',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste chaos experiment definitions, Gremlin/Litmus/ChaosMesh config, circuit breaker code, and gameday docs...',
+    systemPrompt: SYSTEM_PROMPTS['chaos-engineering'],
+    prepPrompt: `I'm preparing config for a **Chaos Engineering** audit.
+
+## What to include
+- Chaos experiment definitions (Gremlin, Litmus, ChaosMesh YAML)
+- Circuit breaker / retry configuration
+- Timeout configuration
+- Observability setup (how you monitor during chaos)
+- Gameday / incident runbook if available
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
+  builtin({
+    id: 'runbook-quality',
+    name: 'Runbook Quality',
+    description: 'Reviews on-call runbook completeness: coverage gaps, content quality, freshness, discoverability, and automation opportunities.',
+    category: 'Observability / SRE',
+    accentClass: 'text-amber-400 hover:bg-amber-500/10',
+    buttonClass: 'bg-amber-700 hover:bg-amber-600',
+    placeholder: 'Paste runbook markdown files, alert definitions they map to, and any on-call docs...',
+    systemPrompt: SYSTEM_PROMPTS['runbook-quality'],
+    prepPrompt: `I'm preparing docs for a **Runbook Quality** audit.
+
+## What to include
+- Runbook files (markdown docs for each alert/incident type)
+- Alert rule definitions (to check runbook link coverage)
+- On-call policy
+- List of services with no runbook (if known)
+
+Format each file with \`--- path ---\` separators. Keep total under 30,000 characters.`,
+  }),
 ];
 
 export function getAgent(id: string): AgentConfig {
