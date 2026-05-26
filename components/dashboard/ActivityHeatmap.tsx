@@ -77,22 +77,23 @@ export function ActivityHeatmap({ days }: Props) {
         </p>
       </div>
 
-      {/* Flex columns of fixed-size cells. Plain CSS grid tracks didn't render
-          reliably for empty motion children — flex with explicit w/h does. */}
+      {/* Flex columns of fixed-size cells, centred in the card so the grid
+          doesn't look stranded at the left edge of a wide container. */}
       <div
-        className="flex gap-[3px]"
+        className="flex gap-1 justify-center py-1"
         role="img"
         aria-label={`Activity heatmap. ${totalAudits} audits across ${activeDays} days in the last 90 days.`}
       >
         {Array.from({ length: WEEKS_SHOWN }, (_, col) => (
-          <div key={col} className="flex flex-col gap-[3px]">
+          <div key={col} className="flex flex-col gap-1">
             {Array.from({ length: DAYS_PER_WEEK }, (_, row) => {
               const cell = cells[col * DAYS_PER_WEEK + row];
               if (!cell) return null;
               return (
                 <motion.div
                   key={cell.date}
-                  className={`w-3 h-3 rounded-[2px] ${intensityClass(cell.count, max)} cursor-default`}
+                  // ~18px cells: small enough to feel compact, big enough to read.
+                  className={`w-[18px] h-[18px] rounded-[3px] ${intensityClass(cell.count, max)} cursor-default`}
                   title={cell.count === 0
                     ? `${formatDateLabel(cell.date)} — no audits`
                     : `${formatDateLabel(cell.date)} — ${cell.count} audit${cell.count === 1 ? '' : 's'}`}
