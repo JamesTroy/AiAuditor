@@ -118,6 +118,55 @@ function dotColor(accentClass: string): string {
   );
 }
 
+// ---------- Helpers ----------
+
+function buildCombinedPrepPrompt(agents: typeof allAgents): string {
+  if (agents.length === 0) return '';
+  if (agents.length === 1) return agents[0].prepPrompt ?? '';
+
+  const agentList = agents.map((a) => `- **${a.name}** (${a.category})`).join('\n');
+
+  // Extract each agent's file-gathering section
+  const sections: string[] = [];
+  for (const agent of agents) {
+    if (!agent.prepPrompt) continue;
+    // Handle both "What to include" and "Files to gather" section headings
+    const sectionMatch = agent.prepPrompt.match(
+      /##\s+(?:What to include|Files to gather)([\s\S]*?)(?=\n##\s+(?:Formatting|Format\s|Don't|Keep|Tip|Run)|$)/,
+    );
+    if (sectionMatch) {
+      sections.push(`### ${agent.name}\n${sectionMatch[1].trim()}`);
+    }
+  }
+
+  return `I'm preparing code for a multi-agent audit using ${agents.length} auditors:
+
+${agentList}
+
+Please gather the files below and format them for the audit tool.
+
+## Files to gather
+
+${sections.join('\n\n')}
+
+## Formatting rules
+
+Format each file with \`--- path ---\` separators:
+\`\`\`
+--- src/path/to/file.ts ---
+[file contents]
+
+--- src/path/to/other.ts ---
+[file contents]
+\`\`\`
+
+Add a brief comment above any file whose role isn't obvious from its name.
+If no test files exist, note "# No tests yet" in your response.
+
+**Keep total under 30,000 characters.** When trimming for space, prioritise:
+security/auth → business logic → validation schemas → tests → config.`;
+}
+
 // ---------- Panel ----------
 
 export default function CodeAuditPanel() {
@@ -177,6 +226,8 @@ export default function CodeAuditPanel() {
   const [error, setError] = useState('');
   const [elapsed, setElapsed] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [prepCopied, setPrepCopied] = useState(false);
+  const [prepOpen, setPrepOpen] = useState(false);
   const [runningIndices, setRunningIndices] = useState<Set<number>>(new Set());
   const [completedIndices, setCompletedIndices] = useState<Set<number>>(new Set());
 
@@ -219,6 +270,12 @@ export default function CodeAuditPanel() {
     if (agentSets.length < 2) return null;
     return deduplicateFindings(agentSets);
   }, [loading, agentStreamingTexts, selectedAgents]);
+
+  // Combined prep prompt for all selected agents
+  const combinedPrepPrompt = useMemo(
+    () => buildCombinedPrepPrompt(selectedAgents),
+    [selectedAgents],
+  );
 
   // Group all agents by category for the picker
   const grouped = useMemo(() => {
@@ -873,8 +930,9 @@ export default function CodeAuditPanel() {
           </AnimatePresence>
         </div>
 
-        {/* Agent Picker */}
+        {/* Agent Picker + Prep Prompt */}
         {!loading && !result && (
+          <>
           <div id="agent-picker" className="mb-5">
             <button
               onClick={() => setPickerOpen(!pickerOpen)}
@@ -1048,6 +1106,68 @@ export default function CodeAuditPanel() {
             )}
             </AnimatePresence>
           </div>
+
+          {/* Prep Prompt — appears after agent picker when agents are selected */}
+          {selectedAgents.length > 0 && combinedPrepPrompt && (
+            <div className="mt-3 rounded-xl border border-violet-200 dark:border-violet-900/60 bg-violet-50 dark:bg-violet-950/30 overflow-hidden">
+              <div className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <svg className="w-4 h-4 shrink-0 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-violet-700 dark:text-violet-300 leading-tight">
+                      Code prep prompt
+                    </p>
+                    <p className="text-xs text-violet-500 dark:text-violet-400 leading-tight mt-0.5 hidden sm:block">
+                      {selectedAgents.length === 1
+                        ? `Paste into Claude or Cursor — tells it exactly what files ${selectedAgents[0].name} needs`
+                        : `Paste into Claude or Cursor to gather the right files for all ${selectedAgents.length} auditors`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(combinedPrepPrompt);
+                      setPrepCopied(true);
+                      setTimeout(() => setPrepCopied(false), 2000);
+                    }}
+                    className="text-xs font-medium px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white transition-colors focus-ring"
+                  >
+                    {prepCopied ? '✓ Copied' : 'Copy prompt'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPrepOpen((o) => !o)}
+                    className="text-xs text-violet-500 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors focus-ring px-1"
+                    aria-label={prepOpen ? 'Hide preview' : 'Preview prompt'}
+                  >
+                    <svg className={`w-4 h-4 transition-transform ${prepOpen ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <AnimatePresence initial={false}>
+                {prepOpen && (
+                  <motion.div
+                    key="prep-preview"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto', transition: transitions.soft }}
+                    exit={{ opacity: 0, height: 0, transition: transitions.snappy }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    <pre className="px-4 py-3 text-xs font-mono text-violet-700 dark:text-violet-300 whitespace-pre-wrap leading-relaxed border-t border-violet-200 dark:border-violet-900/60 bg-violet-50/50 dark:bg-violet-950/20 max-h-96 overflow-y-auto">
+                      {combinedPrepPrompt}
+                    </pre>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+          </>
         )}
 
         {/* Progress bar — sticky during run, always compact (progress bar only, no badge list) */}
