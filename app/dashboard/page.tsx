@@ -7,6 +7,7 @@ import { audit, organizationTable, type AuditStatus, AUDIT_STATUSES } from '@/li
 import { eq, desc, lt, count, and, isNotNull, gte, sql } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import DashboardView from './DashboardView';
+import { groupAuditSessions, sessionTrendDelta } from '@/lib/sessionTrend';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -64,8 +65,15 @@ export default async function DashboardPage({
 
       const [totalResult, allScoredAudits, dailyActivityRows] = await Promise.all([
         db.select({ value: count() }).from(audit).where(ownerFilter),
+        // TREND-002: include a SQL-computed input hash so we can group multi-agent
+        // sessions into a single trend point client-side without shipping full
+        // input text. md5 of the first 4KB is collision-safe at this volume.
         db
-          .select({ score: audit.score, createdAt: audit.createdAt })
+          .select({
+            score: audit.score,
+            createdAt: audit.createdAt,
+            sessionKey: sql<string>`md5(substring(${audit.input} from 1 for 4000))`.as('session_key'),
+          })
           .from(audit)
           .where(and(ownerFilter, eq(audit.status, 'completed'), isNotNull(audit.score)))
           .orderBy(desc(audit.createdAt))
@@ -83,7 +91,7 @@ export default async function DashboardPage({
       ]);
       return { totalResult, allScoredAudits, dailyActivityRows };
     },
-    ['dashboard-stats-v2'], // bump cache key — query shape changed (added dailyActivityRows)
+    ['dashboard-stats-v3'], // bump cache key — query shape changed (added sessionKey for trend grouping)
     { revalidate: 60, tags: [cacheTag] },
   );
 
@@ -120,16 +128,15 @@ export default async function DashboardPage({
       : null;
   const bestScore = allScores.length > 0 ? Math.max(...allScores) : null;
 
-  // TREND-001: Last 10 scored audits for chart.
-  const trendScores = allScoredAudits
-    .slice(0, 10)
-    .map((a) => a.score!)
-    .reverse();
-
-  const trendDelta =
-    trendScores.length >= 2
-      ? trendScores[trendScores.length - 1] - trendScores[0]
-      : null;
+  // TREND-002: Group audit rows into sessions so the trend chart shows one
+  // point per user action (multi-agent runs collapse to a single averaged
+  // point) rather than per-agent variance within a single click.
+  const trendSessions = groupAuditSessions(
+    allScoredAudits.map((a) => ({ score: a.score!, createdAt: a.createdAt, sessionKey: a.sessionKey })),
+    10,
+  );
+  const trendScores = trendSessions.map((s) => s.score);
+  const trendDelta = sessionTrendDelta(trendSessions);
 
   const hasMore = rawAudits.length > PAGE_SIZE;
   const audits = hasMore ? rawAudits.slice(0, PAGE_SIZE) : rawAudits;

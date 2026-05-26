@@ -98,7 +98,7 @@ export default function DashboardView({
             {totalCount === 0
               ? `Welcome, ${firstName}. Run your first audit to see findings, scores, and trends here.`
               : trendDelta != null && trendDelta > 0
-                ? `Welcome back, ${firstName}. Your average score is up ${trendDelta} pts over your last 10 audits.`
+                ? `Welcome back, ${firstName}. Your average score is up ${trendDelta} pts over your last ${trendScores.length} audits.`
                 : `Welcome back, ${firstName}. Here's an overview of your audit history and scores.`}
           </p>
 

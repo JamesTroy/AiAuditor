@@ -16,6 +16,7 @@ import { eq, desc, lt, count, avg, max, and, isNotNull, sql } from 'drizzle-orm'
 import { unstable_cache } from 'next/cache';
 import { scoreColorClass, relativeTime } from '@/lib/ui';
 import { ScoreTrendChart } from '@/components/dashboard/ScoreTrendChart';
+import { groupAuditSessions, sessionTrendDelta } from '@/lib/sessionTrend';
 
 export const metadata: Metadata = {
   title: 'Team overview',
@@ -68,8 +69,14 @@ export default async function TeamOverviewPage({
       const [totalResult, allScoredAudits, openCriticalResult, membersWithUsers, perMemberStats] =
         await Promise.all([
           db.select({ value: count() }).from(audit).where(orgFilter),
+          // TREND-002: include sessionKey so the team trend chart groups
+          // multi-agent runs into a single averaged point.
           db
-            .select({ score: audit.score, createdAt: audit.createdAt })
+            .select({
+              score: audit.score,
+              createdAt: audit.createdAt,
+              sessionKey: sql<string>`md5(substring(${audit.input} from 1 for 4000))`.as('session_key'),
+            })
             .from(audit)
             .where(completedFilter)
             .orderBy(desc(audit.createdAt))
@@ -106,7 +113,7 @@ export default async function TeamOverviewPage({
 
       return { totalResult, allScoredAudits, openCritical: openCriticalResult[0]?.value ?? 0, membersWithUsers, perMemberStats };
     },
-    ['team-stats'],
+    ['team-stats-v2'], // bump cache key — query shape changed (added sessionKey)
     { revalidate: 60, tags: [cacheTag] },
   );
 
@@ -134,8 +141,14 @@ export default async function TeamOverviewPage({
   const allScores = allScoredAudits.map((a) => a.score!);
   const avgScore = allScores.length > 0 ? Math.round(allScores.reduce((s, v) => s + v, 0) / allScores.length) : null;
   const bestScore = allScores.length > 0 ? Math.max(...allScores) : null;
-  const trendScores = allScoredAudits.slice(0, 10).map((a) => a.score!).reverse();
-  const trendDelta = trendScores.length >= 2 ? trendScores[trendScores.length - 1] - trendScores[0] : null;
+  // TREND-002: Session-grouped trend so a multi-agent run reads as one data
+  // point rather than per-agent variance from a single click.
+  const trendSessions = groupAuditSessions(
+    allScoredAudits.map((a) => ({ score: a.score!, createdAt: a.createdAt, sessionKey: a.sessionKey })),
+    10,
+  );
+  const trendScores = trendSessions.map((s) => s.score);
+  const trendDelta = sessionTrendDelta(trendSessions);
 
   // Member leaderboard
   const memberStatsMap = new Map(
@@ -180,9 +193,9 @@ export default async function TeamOverviewPage({
 
           <p className="text-sm text-gray-500 dark:text-zinc-400 mb-5">
             {trendDelta != null && trendDelta > 0
-              ? `Team average is up ${trendDelta} pts over the last 10 audits.`
+              ? `Team average is up ${trendDelta} pts over the last ${trendScores.length} audits.`
               : trendDelta != null && trendDelta < 0
-                ? `Team average is down ${Math.abs(trendDelta)} pts over the last 10 audits \u2014 check the findings below.`
+                ? `Team average is down ${Math.abs(trendDelta)} pts over the last ${trendScores.length} audits \u2014 check the findings below.`
                 : `Org-wide audit scores, member activity, and recent findings for ${orgName}.`}
           </p>
 
