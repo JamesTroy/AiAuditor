@@ -36,6 +36,7 @@ import { revalidateTag } from 'next/cache';
 import { escapeXml } from '@/lib/escapeXml';
 import { STRUCTURED_OUTPUT_INSTRUCTION } from '@/lib/ai/findingSchema';
 import { validateFindings, validationStats } from '@/lib/validateFindings';
+import { critiqueFindings } from '@/lib/ai/adversarialCritic';
 import type { ToolCapture } from '@/lib/ai/provider';
 
 // STALE-001: Mark 'running' audits older than 30 min as 'failed'.
@@ -210,14 +211,28 @@ function makeStream(
               ...stats,
             });
 
+            // FP-CRITIC-001: Adversarial review of [CERTAIN] findings. Catches
+            // the "real snippet, wrong interpretation" FP class that
+            // validateFindings can't (validateFindings only verifies that the
+            // quoted code exists in the source — not whether the conclusion
+            // about it is correct). Fails open: any error returns the
+            // original `validated` list unchanged.
+            const critique = await critiqueFindings(sourceCode, validated);
+            log('info', 'finding_critique', {
+              requestId: logMeta.requestId,
+              auditId: auditRecord.id,
+              ...critique.stats,
+            });
+            const postCritique = critique.findings;
+
             // RULE-010: Reconcile agent score against deterministic formula.
-            score = reconcileScore(rawAgentScore, validated, (event, data) =>
+            score = reconcileScore(rawAgentScore, postCritique, (event, data) =>
               log('warn', event, { requestId: logMeta.requestId, auditId: auditRecord.id, ...data }),
             );
 
             // WORKFLOW-4: Prioritize findings.
-            const prioritized = prioritizeFindings(validated);
-            const findingsJson = JSON.stringify(validated);
+            const prioritized = prioritizeFindings(postCritique);
+            const findingsJson = JSON.stringify(postCritique);
             const prioritizedJson = JSON.stringify({
               tierCounts: prioritized.tierCounts,
               findings: prioritized.findings.map((f) => ({
