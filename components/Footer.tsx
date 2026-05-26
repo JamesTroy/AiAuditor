@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion } from 'motion/react';
 import Logo from '@/components/Logo';
+import { fadeUp, staggerContainer } from '@/lib/motion/variants';
 
 const PRODUCT_LINKS = [
   { href: '/audit', label: 'Audit' },
@@ -36,8 +38,14 @@ export default function Footer() {
 
   return (
     <footer className="border-t border-gray-200/50 dark:border-zinc-800/50 mt-auto">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-8 sm:gap-6">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-40px' }}
+        className="max-w-5xl mx-auto px-4 sm:px-6 py-10"
+      >
+        <motion.div variants={fadeUp} className="grid grid-cols-1 sm:grid-cols-4 gap-8 sm:gap-6">
           {/* Brand column */}
           <div className="sm:col-span-2 space-y-3">
             <Link href="/" className="inline-flex items-center gap-2 p-2 -m-2 min-h-[44px] min-w-[44px] text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors focus-ring rounded-lg">
@@ -71,8 +79,8 @@ export default function Footer() {
               <Link key={href} href={href} className={linkClass(href)}>{label}</Link>
             ))}
           </nav>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Copyright */}
       <div className="border-t border-gray-200/50 dark:border-zinc-800/50 py-4">

@@ -295,8 +295,20 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
     if (!l) return null;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-        <div className={`${cardClass} p-6 max-w-sm mx-4 shadow-xl`}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1, transition: transitions.snappy }}
+        exit={{ opacity: 0, transition: transitions.snappy }}
+        onClick={() => setConfirmAction(null)}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0, transition: transitions.springGentle }}
+          exit={{ opacity: 0, scale: 0.95, y: 12, transition: transitions.snappy }}
+          onClick={(e) => e.stopPropagation()}
+          className={`${cardClass} p-6 max-w-sm mx-4 shadow-xl`}
+        >
           <h3 className="text-lg font-semibold mb-2">{l.title}</h3>
           <p className="text-sm text-gray-600 dark:text-zinc-400 mb-6">{l.desc}</p>
           <div className="flex gap-3 justify-end">
@@ -318,8 +330,8 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
               {loading === u.id ? 'Processing…' : l.btn}
             </button>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     );
   }
 
@@ -967,7 +979,7 @@ export default function AdminDashboard({ stats, users, audits, orgs, topUsers, c
         </AnimatePresence>
       </div>
 
-      <ConfirmDialog />
+      <AnimatePresence>{confirmAction && <ConfirmDialog />}</AnimatePresence>
     </div>
   );
 }
