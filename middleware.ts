@@ -32,8 +32,17 @@ const CSP_SCRIPT_POST = [
   hasPlausible ? ' https://plausible.io' : '',
 ].join('');
 const CSP_STYLE_PRE = "; style-src 'self' 'nonce-";
+// CSP-002: style-src-attr governs inline style="..." attributes (CSP Level 3).
+// Nonces only attach to <style> elements, never to style attributes, so any
+// React `style={{}}` prop (used heavily by Motion, Chart.js, and inline grid
+// templates) was being blocked. Allow 'unsafe-inline' for attributes only —
+// <style> blocks still require the per-request nonce, scripts are unaffected.
+// Inline style attributes have a narrow XSS surface (no JS execution in
+// modern browsers); the data-exfil vector via url() is bounded by img-src /
+// connect-src, which remain strict.
 const CSP_TAIL = [
   "'",
+  "; style-src-attr 'unsafe-inline'",
   "; font-src 'self'",
   "; img-src 'self' data: blob: https://avatars.githubusercontent.com https://lh3.googleusercontent.com",
   `; connect-src 'self'${hasPlausible ? ' https://plausible.io' : ''}`,
