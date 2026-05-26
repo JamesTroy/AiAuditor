@@ -127,6 +127,8 @@ export default function CodeAuditPanel() {
   const [code, setCode] = useState('');
   const [runtimeContext, setRuntimeContext] = useState('');
   const [runtimeContextOpen, setRuntimeContextOpen] = useState(false);
+  // Single "Add context" wrapper — replaces the previous three stacked toggles.
+  const [contextOpen, setContextOpen] = useState(false);
 
   // --- Context files ---
   interface ContextFile { name: string; content: string; }
@@ -578,11 +580,8 @@ export default function CodeAuditPanel() {
     <div className="text-gray-900 dark:text-zinc-100 px-6 pb-12">
       <div className="max-w-4xl mx-auto">
 
-        {/* GitHub source picker — import a PR, full repo, branch comparison, or commit diff */}
-        <GitHubSourcePicker onSource={handleGitHubSource} disabled={loading} />
-
         {/* Code Input */}
-        <div className="mb-3">
+        <div className="mb-1.5">
           <textarea
             id="code-input"
             value={code}
@@ -598,11 +597,18 @@ export default function CodeAuditPanel() {
             className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-5 py-4 text-sm font-mono text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 resize-y min-h-[180px] disabled:bg-zinc-100 dark:disabled:bg-zinc-800 disabled:text-zinc-400 dark:disabled:text-zinc-600 disabled:cursor-not-allowed"
             aria-label="Code to audit"
           />
+          {/* Privacy line — inline footer instead of its own row. */}
+          <p className="mt-1 text-[11px] text-gray-400 dark:text-zinc-500 flex items-center gap-1">
+            <svg className="w-3 h-3 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            Analyzed in memory and immediately discarded — never stored, never used for training.
+          </p>
         </div>
 
         {/* Sample code button — only shown when textarea is empty */}
         {!code && !loading && !result && (
-          <div className="mb-3 flex items-center gap-2">
+          <div className="mb-2 flex items-center gap-2">
             <button
               onClick={() => handleCodeChange(SAMPLE_CODE)}
               className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-dashed border-gray-300 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:border-violet-400 dark:hover:border-violet-500 hover:text-violet-600 dark:hover:text-violet-300 transition-colors"
@@ -618,117 +624,152 @@ export default function CodeAuditPanel() {
 
         {/* Auto-detect badge */}
         {autoDetectInfo && !loading && !result && (
-          <div className="mb-3 flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-violet-50 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <div className="mb-2 flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium bg-violet-50 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
               </svg>
-              {[
-                autoDetectInfo.language,
-                autoDetectInfo.framework,
-              ].filter(Boolean).join(' + ') || 'Code'} detected
+              {[autoDetectInfo.language, autoDetectInfo.framework].filter(Boolean).join(' + ') || 'Code'} detected
               {autoDetectInfo.addedIds.length > 0 && ` — ${autoDetectInfo.addedIds.length} auditors auto-added`}
             </span>
           </div>
         )}
 
-        {/* Context files — collapsible upload for related files */}
-        <div className="mb-3">
-          <div className="inline-flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() => contextFileInputRef.current?.click()}
-              disabled={loading || contextFiles.length >= MAX_CONTEXT_FILES}
-              title="Attach related files (middleware, auth config, shared utilities) so auditors know what the primary code depends on — these files are not audited themselves"
-              className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors disabled:bg-zinc-100 dark:disabled:bg-zinc-800 disabled:text-zinc-400 dark:disabled:text-zinc-600 disabled:cursor-not-allowed"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-              </svg>
-              Attach context files{contextFiles.length > 0 ? ` (${contextFiles.length}/${MAX_CONTEXT_FILES})` : ''}
-            </button>
-            <input
-              ref={contextFileInputRef}
-              type="file"
-              multiple
-              accept=".js,.ts,.tsx,.jsx,.html,.css,.py,.go,.java,.rb,.php,.md,.txt,.json,.yaml,.yml,.toml,.env.example"
-              onChange={handleContextFileChange}
-              className="hidden"
-              aria-label="Attach context files"
-            />
-            {contextFiles.map((f) => (
-              <span
-                key={f.name}
-                title="Context file — sent alongside your code but not audited itself"
-                className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 px-2 py-0.5 rounded font-mono flex items-center gap-1"
-              >
-                {f.name}
-                <button
-                  onClick={() => removeContextFile(f.name)}
-                  className="text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 ml-1"
-                  aria-label={`Remove ${f.name}`}
-                >✕</button>
-              </span>
-            ))}
-          </div>
-          {contextFiles.length > 0 && (
-            <p className="mt-1 text-[11px] text-blue-500 dark:text-blue-400">
-              These files help auditors understand what the primary code depends on — they reduce false positives from patterns like auth middleware or shared validators that live outside the audited file.
-            </p>
-          )}
-        </div>
-
-        {/* Runtime context — collapsible */}
+        {/* Consolidated "Add context" — single toggle holding Files, Runtime, and GitHub. */}
         <div className="mb-3">
           <button
             type="button"
-            onClick={() => setRuntimeContextOpen((o) => !o)}
+            onClick={() => setContextOpen((o) => !o)}
             className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors"
-            aria-expanded={runtimeContextOpen}
+            aria-expanded={contextOpen}
           >
             <svg
-              className={`w-3.5 h-3.5 transition-transform ${runtimeContextOpen ? 'rotate-90' : ''}`}
+              className={`w-3.5 h-3.5 transition-transform ${contextOpen ? 'rotate-90' : ''}`}
               fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
-            Add runtime context
-            {runtimeContext.trim() && !runtimeContextOpen && (
-              <span className="ml-1 px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-[10px] font-medium">
-                active
+            Add context
+            {/* Indicator chips for what's currently attached. */}
+            {contextFiles.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-[10px] font-medium">
+                {contextFiles.length} file{contextFiles.length === 1 ? '' : 's'}
               </span>
             )}
+            {runtimeContext.trim() && (
+              <span className="ml-1 px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-[10px] font-medium">
+                runtime
+              </span>
+            )}
+            <span className="ml-1 text-gray-400 dark:text-zinc-600">
+              · GitHub · files · runtime
+            </span>
           </button>
-          {runtimeContextOpen && (
-            <div className="mt-2">
-              <textarea
-                value={runtimeContext}
-                onChange={(e) => setRuntimeContext(e.target.value)}
-                disabled={loading}
-                rows={4}
-                maxLength={15000}
-                placeholder={`Optional: paste a stack trace, error log, or runtime env info.\n\nExamples:\n  - A TypeError with line numbers\n  - Relevant environment variables (redact secrets)\n  - A curl request / response pair that's misbehaving`}
-                className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-xs font-mono text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500 focus-visible:ring-2 focus-visible:ring-violet-500 resize-y disabled:bg-zinc-100 dark:disabled:bg-zinc-800 disabled:text-zinc-400 dark:disabled:text-zinc-600 disabled:cursor-not-allowed"
-                aria-label="Runtime context (optional)"
-              />
-              <p className="mt-1 text-[11px] text-gray-400 dark:text-zinc-600 flex justify-between">
-                <span>Stack traces and logs help auditors distinguish theoretical issues from confirmed runtime failures.</span>
-                <span>{runtimeContext.length}/15000</span>
-              </p>
-            </div>
-          )}
+
+          <AnimatePresence initial={false}>
+            {contextOpen && (
+              <motion.div
+                key="context-panel"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto', transition: transitions.soft }}
+                exit={{ opacity: 0, height: 0, transition: transitions.snappy }}
+                style={{ overflow: 'hidden' }}
+              >
+                <div className="mt-2 p-3 rounded-xl bg-gray-50 dark:bg-zinc-900/60 border border-gray-200 dark:border-zinc-800 space-y-3">
+
+                  {/* GitHub source — its own nested toggle (PR / repo / compare / commit). */}
+                  <GitHubSourcePicker onSource={handleGitHubSource} disabled={loading} />
+
+                  {/* Attach files */}
+                  <div>
+                    <div className="inline-flex items-center gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => contextFileInputRef.current?.click()}
+                        disabled={loading || contextFiles.length >= MAX_CONTEXT_FILES}
+                        title="Attach related files (middleware, auth config, shared utilities) so auditors know what the primary code depends on — these files are not audited themselves"
+                        className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                        Attach context files{contextFiles.length > 0 ? ` (${contextFiles.length}/${MAX_CONTEXT_FILES})` : ''}
+                      </button>
+                      <input
+                        ref={contextFileInputRef}
+                        type="file"
+                        multiple
+                        accept=".js,.ts,.tsx,.jsx,.html,.css,.py,.go,.java,.rb,.php,.md,.txt,.json,.yaml,.yml,.toml,.env.example"
+                        onChange={handleContextFileChange}
+                        className="hidden"
+                        aria-label="Attach context files"
+                      />
+                      {contextFiles.map((f) => (
+                        <span
+                          key={f.name}
+                          title="Context file — sent alongside your code but not audited itself"
+                          className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 px-2 py-0.5 rounded font-mono flex items-center gap-1"
+                        >
+                          {f.name}
+                          <button
+                            onClick={() => removeContextFile(f.name)}
+                            className="text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 ml-1"
+                            aria-label={`Remove ${f.name}`}
+                          >✕</button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Runtime context — sub-toggle */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setRuntimeContextOpen((o) => !o)}
+                      className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors"
+                      aria-expanded={runtimeContextOpen}
+                    >
+                      <svg
+                        className={`w-3.5 h-3.5 transition-transform ${runtimeContextOpen ? 'rotate-90' : ''}`}
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                      Add runtime context
+                      {runtimeContext.trim() && !runtimeContextOpen && (
+                        <span className="ml-1 px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-[10px] font-medium">
+                          active
+                        </span>
+                      )}
+                    </button>
+                    {runtimeContextOpen && (
+                      <div className="mt-2">
+                        <textarea
+                          value={runtimeContext}
+                          onChange={(e) => setRuntimeContext(e.target.value)}
+                          disabled={loading}
+                          rows={4}
+                          maxLength={15000}
+                          placeholder={`Optional: paste a stack trace, error log, or runtime env info.\n\nExamples:\n  - A TypeError with line numbers\n  - Relevant environment variables (redact secrets)\n  - A curl request / response pair that's misbehaving`}
+                          className="w-full bg-white dark:bg-zinc-950 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-xs font-mono text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500 focus-visible:ring-2 focus-visible:ring-violet-500 resize-y disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label="Runtime context (optional)"
+                        />
+                        <p className="mt-1 text-[11px] text-gray-400 dark:text-zinc-600 flex justify-between">
+                          <span>Stack traces and logs help auditors distinguish theoretical issues from confirmed runtime failures.</span>
+                          <span>{runtimeContext.length}/15000</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Privacy note */}
-        <p className="text-xs text-gray-400 dark:text-zinc-500 mb-4 flex items-center gap-1.5">
-          <svg className="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
-          Your code is analyzed in memory and immediately discarded — never stored, never shared, never used for training.
-        </p>
-
         {/* Action Row */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 mb-5">
           <motion.button
             id="run-audit-btn"
             onClick={runCodeAudit}
@@ -760,10 +801,10 @@ export default function CodeAuditPanel() {
 
         {/* Agent Picker */}
         {!loading && !result && (
-          <div id="agent-picker" className="mb-8">
+          <div id="agent-picker" className="mb-5">
             <button
               onClick={() => setPickerOpen(!pickerOpen)}
-              className="flex items-center justify-between w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 transition-colors mb-3 group"
+              className="flex items-center justify-between w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 transition-colors mb-2 group"
               aria-expanded={pickerOpen}
             >
               <span className="flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-300 min-w-0">
@@ -824,7 +865,7 @@ export default function CodeAuditPanel() {
               >
               <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4">
                 {/* Global controls */}
-                <div className="flex flex-wrap gap-2 mb-4 pb-3 border-b border-gray-200 dark:border-zinc-800">
+                <div className="flex flex-wrap gap-2 mb-3 pb-2.5 border-b border-gray-200 dark:border-zinc-800">
                   <button
                     onClick={selectAll}
                     className="text-xs px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:bg-gray-300 dark:hover:bg-zinc-700 transition-colors"
@@ -961,7 +1002,7 @@ export default function CodeAuditPanel() {
 
         {/* Agent badge list — collapsible so it never blocks scroll */}
         {(loading || (!loading && result)) && (
-          <div className="mb-6">
+          <div className="mb-4">
             {/* Summary toggle row */}
             <button
               type="button"
@@ -1256,48 +1297,6 @@ export default function CodeAuditPanel() {
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Idle state: what you get */}
-        {!loading && !result && !error && !pickerOpen && selected.size > 0 && (
-          <div className="space-y-6">
-            <div className="flex flex-wrap gap-2">
-              {selectedAgents.map((agent) => (
-                <span
-                  key={agent.id}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"
-                >
-                  <span className={`w-2 h-2 rounded-full ${dotColor(agent.accentClass)}`} />
-                  {agent.name}
-                </span>
-              ))}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-              {[
-                {
-                  label: 'Severity-rated findings',
-                  desc: 'Critical, High, Medium, Low',
-                  icon: <svg className="w-5 h-5 text-red-500 mx-auto mb-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>,
-                },
-                {
-                  label: 'Line-level references',
-                  desc: 'Exact file and line numbers',
-                  icon: <svg className="w-5 h-5 text-blue-500 mx-auto mb-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" /></svg>,
-                },
-                {
-                  label: 'Fix suggestions',
-                  desc: 'Copy-paste remediation steps',
-                  icon: <svg className="w-5 h-5 text-green-500 mx-auto mb-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-                },
-              ].map((item) => (
-                <div key={item.label} className="px-4 py-4 rounded-xl bg-gray-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800">
-                  {item.icon}
-                  <p className="text-xs font-semibold text-gray-700 dark:text-zinc-300">{item.label}</p>
-                  <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">{item.desc}</p>
-                </div>
-              ))}
-            </div>
           </div>
         )}
 
