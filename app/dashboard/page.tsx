@@ -22,6 +22,59 @@ export const metadata: Metadata = {
 const PAGE_SIZE = 20;
 const HEATMAP_DAYS = 90;
 
+// PERF-031: Hoisted out of the request handler so the unstable_cache
+// wrapper is constructed ONCE at module load — not on every dashboard
+// load. The previous in-handler closure was creating a fresh wrapper
+// per request, defeating Next.js's cache key matching and turning every
+// page load into a full cold miss against the md5(substring(input))
+// SELECT below.
+//
+// Cache keys are derived from the static `['dashboard-stats-v4']` parts
+// PLUS the function args (`ownerId`, `isOrg`), so different users get
+// independent entries automatically. Invalidation via the shared tag
+// nukes all users' entries on demand (`revalidateTag('dashboard-stats')`).
+const getCachedStats = unstable_cache(
+  async (ownerId: string, isOrg: boolean) => {
+    const ownerFilter = isOrg
+      ? eq(audit.organizationId, ownerId)
+      : eq(audit.userId, ownerId);
+
+    const heatmapStart = new Date();
+    heatmapStart.setHours(0, 0, 0, 0);
+    heatmapStart.setDate(heatmapStart.getDate() - (HEATMAP_DAYS - 1));
+
+    const [totalResult, allScoredAudits, dailyActivityRows] = await Promise.all([
+      db.select({ value: count() }).from(audit).where(ownerFilter),
+      // TREND-002: include a SQL-computed input hash so we can group multi-agent
+      // sessions into a single trend point client-side without shipping full
+      // input text. md5 of the first 4KB is collision-safe at this volume.
+      db
+        .select({
+          score: audit.score,
+          createdAt: audit.createdAt,
+          sessionKey: sql<string>`md5(substring(${audit.input} from 1 for 4000))`.as('session_key'),
+        })
+        .from(audit)
+        .where(and(ownerFilter, eq(audit.status, 'completed'), isNotNull(audit.score)))
+        .orderBy(desc(audit.createdAt))
+        .limit(200),
+      // Daily audit counts for the activity heatmap. We bucket in SQL so
+      // the response payload stays small even for heavy users (max 90 rows).
+      db
+        .select({
+          date: sql<string>`to_char(${audit.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`.as('date'),
+          count: count(audit.id),
+        })
+        .from(audit)
+        .where(and(ownerFilter, gte(audit.createdAt, heatmapStart)))
+        .groupBy(sql`to_char(${audit.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`),
+    ]);
+    return { totalResult, allScoredAudits, dailyActivityRows };
+  },
+  ['dashboard-stats-v4'],
+  { revalidate: 60, tags: ['dashboard-stats'] },
+);
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -49,51 +102,6 @@ export default async function DashboardPage({
     conditions.push(eq(audit.status, statusFilter as AuditStatus));
   }
   const paginationWhere = conditions.length === 1 ? conditions[0] : and(...conditions);
-
-  // PERF-031: Cache aggregate stats (count + scores + daily activity) with 60s TTL.
-  const cacheTag = activeOrgId ? `dashboard-org-${activeOrgId}` : `dashboard-${session.user.id}`;
-  const getCachedStats = unstable_cache(
-    async (ownerId: string, isOrg: boolean) => {
-      const ownerFilter = isOrg
-        ? eq(audit.organizationId, ownerId)
-        : eq(audit.userId, ownerId);
-
-      // Activity heatmap window: last 90 days.
-      const heatmapStart = new Date();
-      heatmapStart.setHours(0, 0, 0, 0);
-      heatmapStart.setDate(heatmapStart.getDate() - (HEATMAP_DAYS - 1));
-
-      const [totalResult, allScoredAudits, dailyActivityRows] = await Promise.all([
-        db.select({ value: count() }).from(audit).where(ownerFilter),
-        // TREND-002: include a SQL-computed input hash so we can group multi-agent
-        // sessions into a single trend point client-side without shipping full
-        // input text. md5 of the first 4KB is collision-safe at this volume.
-        db
-          .select({
-            score: audit.score,
-            createdAt: audit.createdAt,
-            sessionKey: sql<string>`md5(substring(${audit.input} from 1 for 4000))`.as('session_key'),
-          })
-          .from(audit)
-          .where(and(ownerFilter, eq(audit.status, 'completed'), isNotNull(audit.score)))
-          .orderBy(desc(audit.createdAt))
-          .limit(200),
-        // Daily audit counts for the activity heatmap. We bucket in SQL so
-        // the response payload stays small even for heavy users (max 90 rows).
-        db
-          .select({
-            date: sql<string>`to_char(${audit.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`.as('date'),
-            count: count(audit.id),
-          })
-          .from(audit)
-          .where(and(ownerFilter, gte(audit.createdAt, heatmapStart)))
-          .groupBy(sql`to_char(${audit.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`),
-      ]);
-      return { totalResult, allScoredAudits, dailyActivityRows };
-    },
-    ['dashboard-stats-v4'], // bump cache key — defensive invalidation after audit schema gained detected* columns
-    { revalidate: 60, tags: [cacheTag] },
-  );
 
   const statsOwnerId = activeOrgId ?? session.user.id;
   // PERF-005: Parallelize org name fetch with stats + pagination queries.

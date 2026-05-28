@@ -314,9 +314,19 @@ const STREAM_HEADERS = STREAM_RESPONSE_HEADERS;
 export async function POST(req: NextRequest) {
   const requestId = crypto.randomUUID();
 
-  // STALE-001/PERF-017: Await cleanup so it's not a floating promise in serverless.
-  // The 5-min guard inside ensures this adds ~0ms on most requests.
-  await cleanupStaleAudits();
+  // PERF-B5: Fire-and-forget the stale-audit reaper. The earlier comment
+  // ("await so it's not a floating promise in serverless") was correct on
+  // Vercel where the container can vanish at response time. On Railway the
+  // container is long-lived across requests, so the cleanup runs to
+  // completion in the background without risk. Awaiting it added the
+  // function-call cost to every audit POST even though the in-function
+  // 5-min guard makes it a no-op 99.99% of the time.
+  void cleanupStaleAudits().catch((err) => {
+    log('warn', 'cleanup_stale_audits_failed', {
+      requestId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  });
 
   // VULN-010: CSRF origin check — reject cross-origin requests.
   // JSON Content-Type already provides implicit CSRF protection in most browsers,
@@ -392,7 +402,18 @@ export async function POST(req: NextRequest) {
 
   const data = parsed.data;
 
-  const rl = await auditLimiter.check(ip);
+  // PERF-A3: Fire the three rate-limit checks in parallel. Each one is an
+  // Upstash Redis round-trip (~10-30ms on Railway); serialising them added
+  // 30-90ms of pure latency before any audit work begins. The checks are
+  // independent — none of them feeds the next — so Promise.all is safe.
+  // We still apply the same priority order when reporting failures (limiter
+  // → IP burst → daily budget) so the user sees the most specific reason.
+  const [rl, ipBurst, dailyBudget] = await Promise.all([
+    auditLimiter.check(ip),
+    perIpConcurrencyLimiter.check(ip),
+    dailyAuditBudget.check('global'),
+  ]);
+
   if (!rl.allowed) {
     log('warn', 'rate_limit_exceeded', { requestId, ip: anonIp });
     return new Response('Too many requests. Please wait a moment.', {
@@ -400,10 +421,8 @@ export async function POST(req: NextRequest) {
       headers: { ...rl.headers, 'X-Request-Id': requestId },
     });
   }
-
   // SAFE-006: Per-IP burst guard — prevents a single IP from draining the
   // global Anthropic budget by re-clocking the 1-min auditLimiter window.
-  const ipBurst = await perIpConcurrencyLimiter.check(ip);
   if (!ipBurst.allowed) {
     log('warn', 'ip_burst_limit_exceeded', { requestId, ip: anonIp });
     return new Response('Too many requests from this IP. Please slow down.', {
@@ -411,9 +430,7 @@ export async function POST(req: NextRequest) {
       headers: { ...ipBurst.headers, 'X-Request-Id': requestId },
     });
   }
-
   // RL-010: Global daily audit call budget (500 calls/day across all users).
-  const dailyBudget = await dailyAuditBudget.check('global');
   if (!dailyBudget.allowed) {
     log('warn', 'daily_audit_budget_exceeded', { requestId, ip: anonIp });
     return new Response('Daily audit limit reached. Please try again tomorrow.', {
