@@ -222,12 +222,17 @@ export async function getInstallationToken(installationId: number): Promise<stri
 // noticeably faster than the constant-time compare, so an attacker could
 // distinguish "my hex was malformed" from "my hex was valid but wrong".
 const SHA256_HEX_RE = /^[0-9a-fA-F]{64}$/;
+const HEADER_PREFIX = 'sha256=';
 
 export function verifyWebhookSignature(rawBody: string, signatureHeader: string | null): boolean {
   const secret = process.env.GITHUB_APP_WEBHOOK_SECRET;
   if (!secret || !signatureHeader) return false;
-  const [scheme, provided] = signatureHeader.split('=');
-  if (scheme !== 'sha256' || !provided) return false;
+  // startsWith + slice instead of split('=') — split tokenises on every '='
+  // character, so an input like "sha256=abc=def" would put just "abc" into
+  // the destructured `provided`. The regex below catches that case too, but
+  // an explicit prefix match is the cleaner contract and avoids the surprise.
+  if (!signatureHeader.startsWith(HEADER_PREFIX)) return false;
+  const provided = signatureHeader.slice(HEADER_PREFIX.length);
   // Up-front structural validation — any reject before this point is not a
   // timing risk because no HMAC has been computed yet.
   if (!SHA256_HEX_RE.test(provided)) return false;

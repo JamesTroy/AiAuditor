@@ -49,6 +49,14 @@ describe('verifyWebhookSignature', () => {
     expect(verifyWebhookSignature(BODY, hex)).toBe(false);
   });
 
+  it('rejects a header with extra "=" characters after the hex', () => {
+    // Guards the regression class where split('=') tokenised on every '='
+    // and put the wrong substring into `provided`. With startsWith + slice
+    // the slice captures "<hex>=trailing" and the regex correctly rejects it.
+    const hex = createHmac('sha256', SECRET).update(BODY).digest('hex');
+    expect(verifyWebhookSignature(BODY, `sha256=${hex}=trailing`)).toBe(false);
+  });
+
   // This is the timing-oracle case the Claudit audit flagged on PR #17.
   // Before the fix, a 64-char string of non-hex chars (e.g. all 'z's) passed
   // the length check, then Buffer.from(_, 'hex') truncated silently,
