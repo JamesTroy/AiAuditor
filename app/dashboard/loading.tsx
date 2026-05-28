@@ -1,4 +1,6 @@
-const shimmer = 'motion-safe:animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800 bg-[length:200%_100%] motion-safe:animate-[shimmer_1.5s_ease-in-out_infinite]';
+// PERF: was a background-position shimmer (paint every frame). Now a
+// compositor-safe opacity pulse via the .skeleton utility in globals.css.
+const shimmer = 'skeleton';
 
 export default function DashboardLoading() {
   return (

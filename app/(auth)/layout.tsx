@@ -11,9 +11,19 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="flex-1 flex items-center justify-center px-4 py-12 relative overflow-hidden">
       {/* Gradient mesh background */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 -z-20" />
-      {/* Decorative gradient orbs */}
-      <div className="absolute top-1/4 right-1/4 w-72 h-72 bg-violet-500/15 blur-3xl rounded-full -z-10 pointer-events-none" />
-      <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-indigo-500/10 blur-3xl rounded-full -z-10 pointer-events-none" />
+      {/* PERF: Decorative gradient orbs. Was two blur-3xl (64px filter
+          blur) on solid-color rounded divs — each one independently caps
+          compositor refresh rate. Replaced with CSS radial-gradient
+          backgrounds: same soft-glow visual, zero paint cost per frame
+          because gradients compose as flat layers. */}
+      <div
+        className="absolute top-1/4 right-1/4 w-72 h-72 -z-10 pointer-events-none"
+        style={{ background: 'radial-gradient(closest-side, rgba(139,92,246,0.15), transparent 70%)' }}
+      />
+      <div
+        className="absolute bottom-1/4 left-1/4 w-80 h-80 -z-10 pointer-events-none"
+        style={{ background: 'radial-gradient(closest-side, rgba(99,102,241,0.10), transparent 70%)' }}
+      />
       {/* Grid pattern overlay */}
       <div className="absolute inset-0 bg-grid-pattern -z-10 opacity-30 pointer-events-none" />
 

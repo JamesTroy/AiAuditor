@@ -70,8 +70,8 @@ export default function ActiveSessions({ currentSessionToken }: { currentSession
           {[1, 2].map((i) => (
             <div key={i} className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-zinc-800/50 rounded-lg">
               <div className="space-y-1.5 flex-1">
-                <div className="h-4 w-24 rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-700 dark:via-zinc-600 dark:to-zinc-700 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
-                <div className="h-3 w-40 rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-700 dark:via-zinc-600 dark:to-zinc-700 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+                <div className="h-4 w-24 rounded skeleton" />
+                <div className="h-3 w-40 rounded skeleton" />
               </div>
             </div>
           ))}
