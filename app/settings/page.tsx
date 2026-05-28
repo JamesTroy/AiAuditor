@@ -112,15 +112,15 @@ export default function SettingsPage() {
       <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
         <div className="max-w-2xl mx-auto">
           <div className="mb-8">
-            <div className="h-8 w-32 rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
-            <div className="h-4 w-64 mt-2 rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+            <div className="h-8 w-32 rounded skeleton" />
+            <div className="h-4 w-64 mt-2 rounded skeleton" />
           </div>
           {[1, 2, 3].map((i) => (
             <div key={i} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">
-              <div className="h-5 w-24 mb-4 rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+              <div className="h-5 w-24 mb-4 rounded skeleton" />
               <div className="space-y-4">
-                <div className="h-10 rounded-xl bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
-                <div className="h-10 rounded-xl bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+                <div className="h-10 rounded-xl skeleton" />
+                <div className="h-10 rounded-xl skeleton" />
               </div>
             </div>
           ))}

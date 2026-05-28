@@ -101,13 +101,21 @@ html { scroll-behavior: smooth; }
   .disabled-muted-light {
     @apply disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500 dark:disabled:border-zinc-700;
   }
+  /* PERF: Skeleton loader. The previous pattern animated background-position
+     on a multi-stop gradient ("shimmer"), which paints on every frame and
+     was the cost of every loading state being visibly heavy. animate-pulse
+     is Tailwind's built-in opacity-only animation — fully compositor-safe.
+     Visually different (gentle fade vs sliding shine) but standard and
+     instantly cheaper. */
+  .skeleton {
+    @apply bg-gray-200 dark:bg-zinc-800 motion-safe:animate-pulse;
+  }
 }
 
 /* ─── Additional keyframes ───────────────────────────────────── */
-@keyframes shimmer {
-  from { background-position: -200% 0; }
-  to   { background-position: 200% 0; }
-}
+/* `shimmer` keyframe removed — was animating background-position on
+   skeleton loaders, which paints every frame. The .skeleton utility now
+   uses opacity-based animate-pulse (compositor-safe). */
 @keyframes slide-in {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }

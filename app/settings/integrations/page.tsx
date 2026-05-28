@@ -280,7 +280,7 @@ export default function IntegrationsPage() {
     return (
       <div className="text-gray-900 dark:text-zinc-100 px-6 py-12">
         <div className="max-w-2xl mx-auto">
-          <div className="h-8 w-48 rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+          <div className="h-8 w-48 rounded skeleton" />
         </div>
       </div>
     );
