@@ -644,8 +644,24 @@ export default function CodeAuditPanel() {
 
   return (
     <div className="relative text-gray-900 dark:text-zinc-100 px-6 pb-16">
-      {/* Ambient glow orb — purely decorative */}
-      <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-120px] -translate-x-1/2 -z-10 h-[400px] w-[700px] rounded-full bg-violet-600/[0.08] blur-[100px] motion-safe:animate-[aurora_10s_ease-in-out_infinite]" />
+      {/* PERF: Ambient glow orb. Was h-400 × w-700 with blur-[100px] +
+          opacity animation — a 100px CSS filter blur on a half-screen
+          area is one of the most expensive operations a browser can do,
+          and the looping animation forced the compositor to either
+          repaint the blurred region every frame or hold a huge GPU
+          layer. That capped effective refresh rate on /audit (the most-
+          used page) and is the root cause of "site feels low Hz."
+
+          Replaced with a radial-gradient background which is zero
+          paint cost (composited as a flat layer) and a slow opacity-
+          only pulse so the soul of the effect is preserved. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-[-120px] -translate-x-1/2 -z-10 h-[400px] w-[700px] motion-safe:animate-[aurora_10s_ease-in-out_infinite]"
+        style={{
+          background: 'radial-gradient(closest-side, rgba(139,92,246,0.16), rgba(139,92,246,0.06) 45%, transparent 75%)',
+        }}
+      />
       <div className="max-w-4xl mx-auto">
 
         {/* Hero heading — visible only in idle state */}
