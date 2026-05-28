@@ -295,15 +295,21 @@ export async function runPrAudit(ev: PrAuditEventInput): Promise<void> {
     await dismissPriorReview(ev, auditRowId);
 
     // ── 11. Post the review ─────────────────────────────────────
-    const walkthrough = formatWalkthrough({
-      score,
-      threshold,
-      passed,
-      findings: reviewable,
-      inlineFindingIds: new Set(inlineFindings.map((x) => x.finding.id)),
-      agentIds,
-      durationMs: Date.now() - startTime,
-    });
+    // Walkthrough is rendered with inline IDs *as known so far*. If the
+    // inline post fails and we fall back, we re-render with an empty
+    // inline set so every finding shows up in the "Other findings" section
+    // instead of being silently filtered out.
+    function renderWalkthrough(inlineIds: Set<string>): string {
+      return formatWalkthrough({
+        score,
+        threshold,
+        passed,
+        findings: reviewable,
+        inlineFindingIds: inlineIds,
+        agentIds,
+        durationMs: Date.now() - startTime,
+      });
+    }
 
     let postedReviewId: number | undefined;
     try {
@@ -313,7 +319,7 @@ export async function runPrAudit(ev: PrAuditEventInput): Promise<void> {
         ev.repository.name,
         ev.prNumber,
         {
-          body: walkthrough,
+          body: renderWalkthrough(new Set(inlineFindings.map((x) => x.finding.id))),
           event: 'COMMENT', // never APPROVE / REQUEST_CHANGES — keeps Claudit out of required-reviewer drama
           comments: inlineFindings.map((x) => x.comment),
           commit_id: ev.headSha,
@@ -327,16 +333,19 @@ export async function runPrAudit(ev: PrAuditEventInput): Promise<void> {
         ...ctx,
         error: err instanceof Error ? err.message : String(err),
       });
+      // Move everything to orphans BEFORE re-rendering so the walkthrough's
+      // "Other findings" section actually lists them. Previously the body
+      // was pre-rendered with the inline-positive set and never updated,
+      // leaving the summary line saying "N findings" with no detail visible.
+      for (const x of inlineFindings) orphanIds.add(x.finding.id);
       const review = await createReview(
         ev.installationId,
         ev.repository.owner,
         ev.repository.name,
         ev.prNumber,
-        { body: walkthrough, event: 'COMMENT', commit_id: ev.headSha },
+        { body: renderWalkthrough(new Set()), event: 'COMMENT', commit_id: ev.headSha },
       );
       postedReviewId = review.id;
-      // Move everything to orphans so the walkthrough shows them
-      for (const x of inlineFindings) orphanIds.add(x.finding.id);
     }
 
     // ── 12. Check run ───────────────────────────────────────────
