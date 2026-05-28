@@ -85,13 +85,19 @@ interface PullRequestEvent {
 }
 
 interface InstallationEvent {
-  action: 'created' | 'deleted' | 'suspend' | 'unsuspend' | 'new_permissions_accepted';
+  // `installation` action set
+  // `installation_repositories` actions: 'added' | 'removed'
+  action: 'created' | 'deleted' | 'suspend' | 'unsuspend' | 'new_permissions_accepted' | 'added' | 'removed';
   installation: {
     id: number;
     account: { login: string; type: 'User' | 'Organization' };
     repository_selection: 'all' | 'selected';
   };
+  // Full repo list on 'installation' events.
   repositories?: Array<{ id: number; full_name: string }>;
+  // Delta lists on 'installation_repositories' events.
+  repositories_added?:   Array<{ id: number; full_name: string }>;
+  repositories_removed?: Array<{ id: number; full_name: string }>;
   sender: { login: string };
 }
 
@@ -164,12 +170,101 @@ export async function POST(req: NextRequest) {
             error: err instanceof Error ? err.message : String(err),
           });
         }
+        return Response.json({ ok: true });
       }
 
-      // 'suspend' / 'unsuspend' / 'created' / 'new_permissions_accepted'
-      // are handled implicitly: the next pr_audit row that lands will
-      // upsert the row, and we don't need to act on suspend (the orchestrator
-      // would just keep working until the App's token is invalidated).
+      // Selection or repo-list changes — sync repositorySelection +
+      // repositories JSON so the integrations page reflects reality
+      // (previously the warning banner showed "all repositories" even
+      // after the user switched to specific repos).
+      const isSelectionEvent =
+        event === 'installation_repositories' ||
+        (event === 'installation' && (ev.action === 'created' || ev.action === 'new_permissions_accepted' || ev.action === 'unsuspend'));
+
+      if (isSelectionEvent) {
+        try {
+          // For 'installation_repositories.added/removed', GitHub sends the
+          // current full repository_selection plus delta lists. Re-fetch the
+          // full list from the API so our DB carries the complete set —
+          // delta-merging client-side would drift over time on missed
+          // deliveries.
+          let repositoriesJson: string | null = null;
+          if (ev.installation.repository_selection === 'selected') {
+            try {
+              const { getInstallationToken } = await import('@/lib/github/app');
+              const token = await getInstallationToken(ev.installation.id);
+              const res = await fetch('https://api.github.com/installation/repositories?per_page=100', {
+                headers: {
+                  Authorization: `token ${token}`,
+                  Accept: 'application/vnd.github+json',
+                  'X-GitHub-Api-Version': '2022-11-28',
+                  'User-Agent': 'Claudit/1.0',
+                },
+                signal: AbortSignal.timeout(10_000),
+              });
+              if (res.ok) {
+                const data = (await res.json()) as { repositories: Array<{ id: number; full_name: string }> };
+                repositoriesJson = JSON.stringify(
+                  data.repositories.slice(0, 200).map((r) => ({ id: r.id, full_name: r.full_name })),
+                );
+              }
+            } catch (err) {
+              log('warn', 'gh_install_repo_refetch_failed', {
+                installationId: ev.installation.id,
+                error: err instanceof Error ? err.message : String(err),
+              });
+            }
+          } else {
+            // repository_selection === 'all' — empty list is the right value.
+            repositoriesJson = '[]';
+          }
+
+          // Build the set clause. We always update the selection mode;
+          // repositories only when the fetch succeeded.
+          const setClause: Record<string, unknown> = {
+            repositorySelection: ev.installation.repository_selection,
+            accountLogin: ev.installation.account.login,
+            accountType: ev.installation.account.type,
+            suspendedAt: ev.action === 'unsuspend' ? null : undefined,
+            updatedAt: new Date(),
+          };
+          if (repositoriesJson !== null) setClause.repositories = repositoriesJson;
+
+          await db
+            .update(githubInstallations)
+            .set(setClause)
+            .where(eq(githubInstallations.installationId, ev.installation.id));
+
+          log('info', 'gh_install_synced', {
+            installationId: ev.installation.id,
+            selection: ev.installation.repository_selection,
+            repoCount: ev.repositories?.length ?? ev.repositories_added?.length ?? 0,
+          });
+        } catch (err) {
+          log('warn', 'gh_install_sync_failed', {
+            installationId: ev.installation.id,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+        return Response.json({ ok: true });
+      }
+
+      // 'suspend' — leave the row as-is; user can still see the install
+      // in the UI marked suspended. Orchestrator would fail on next audit
+      // attempt at which point we record it.
+      if (ev.action === 'suspend') {
+        try {
+          await db
+            .update(githubInstallations)
+            .set({ suspendedAt: new Date(), updatedAt: new Date() })
+            .where(eq(githubInstallations.installationId, ev.installation.id));
+        } catch (err) {
+          log('warn', 'gh_install_suspend_failed', {
+            installationId: ev.installation.id,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
       return Response.json({ ok: true });
     }
 
