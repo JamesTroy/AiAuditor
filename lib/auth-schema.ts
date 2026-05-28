@@ -216,12 +216,18 @@ export const findingDismissals = pgTable('finding_dismissals', {
   severity:   text('severity', { enum: ['critical', 'high', 'medium', 'low', 'informational'] }).notNull(),
   confidence: text('confidence', { enum: ['certain', 'likely', 'possible'] }),
   reason:     text('reason'),
+  // Stable cross-audit identity (see lib/baselines/findingHash.ts) — lets
+  // dismissal-driven learning recognise "this user has dismissed this same
+  // finding N times before" across different audits of the same code.
+  findingHash: text('findingHash'),
   createdAt:  timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('idx_fd_auditId').on(t.auditId),
   index('idx_fd_userId').on(t.userId),
   index('idx_fd_auditId_finding').on(t.auditId, t.findingId),
   index('idx_fd_createdAt').on(t.createdAt),
+  // Fast aggregate for dismissal-learning queries.
+  index('idx_fd_user_hash').on(t.userId, t.findingHash),
 ]);
 
 // ─── Scheduled audits ────────────────────────────────────────────
