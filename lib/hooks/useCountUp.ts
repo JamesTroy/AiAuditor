@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { usePrefersReducedMotion } from '@/lib/hooks/usePrefersReducedMotion';
 
 /**
  * Pure easeOutCubic interpolation between `from` and `target`, based on
@@ -40,6 +41,7 @@ export function countUpAt(
  */
 export function useCountUp(target: number | null, durationMs = 600): number {
   const [value, setValue] = useState<number>(0);
+  const reduceMotion = usePrefersReducedMotion();
 
   // Live mirror of what's painted on screen. Read by the effect as the
   // animation's starting point, written every frame. Using a ref instead
@@ -65,11 +67,7 @@ export function useCountUp(target: number | null, durationMs = 600): number {
     if (lastTarget.current === intTarget) return;
     lastTarget.current = intTarget;
 
-    // Optional chaining covers the jsdom-without-matchMedia case (some
-    // test environments) without adding the `typeof window` guard back —
-    // useEffect only runs client-side, so `window` itself is always present.
-    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-    if (reduce) {
+    if (reduceMotion) {
       displayRef.current = intTarget;
       setValue(intTarget);
       return;
@@ -109,7 +107,7 @@ export function useCountUp(target: number | null, durationMs = 600): number {
       cancelled = true;
       if (frame !== null) cancelAnimationFrame(frame);
     };
-  }, [intTarget, durationMs]);
+  }, [intTarget, durationMs, reduceMotion]);
 
   return value;
 }
