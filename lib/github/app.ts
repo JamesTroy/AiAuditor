@@ -38,11 +38,60 @@ function getAppId(): string {
   return appId;
 }
 
+/**
+ * Normalise a PEM string pulled from an env var.
+ *
+ * Real-world failure modes we've hit on Railway / Vercel:
+ *   - The value is wrapped in literal `"`…`"` because the dashboard editor
+ *     auto-quoted a paste with newlines.
+ *   - Newlines were stripped on paste so the entire key is one line.
+ *   - Newlines were escaped to literal `\n` (so the runtime sees `…\\nMI…`).
+ *   - CRLF line endings instead of LF.
+ *   - Trailing whitespace / blank lines.
+ *
+ * Strategy: strip quotes, decode `\n`, normalise CRLF→LF, then if the PEM
+ * is still one line (no internal newlines but has BEGIN/END), rebuild it by
+ * inserting newlines after the header, every 64 base64 chars, and before
+ * the footer — which is what GitHub's downloaded .pem actually looks like.
+ */
+function normalizePem(raw: string): string {
+  let s = raw.trim();
+  // Strip a single layer of wrapping quotes (single or double).
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+    s = s.slice(1, -1).trim();
+  }
+  // Literal backslash-n → actual newline.
+  if (s.includes('\\n')) s = s.replace(/\\n/g, '\n');
+  // Windows-style line endings.
+  s = s.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // Single-line PEM repair. Detect by: has BEGIN/END markers but no newlines
+  // between them, OR has a single header line followed by base64 without breaks.
+  const m = s.match(/^(-----BEGIN [A-Z0-9 ]+-----)([\s\S]+?)(-----END [A-Z0-9 ]+-----)\s*$/);
+  if (m) {
+    const header = m[1];
+    const footer = m[3];
+    // Strip ALL whitespace from the body, then re-wrap at 64 chars.
+    const body = m[2].replace(/\s+/g, '');
+    if (body.length > 0) {
+      const wrapped = body.match(/.{1,64}/g)?.join('\n') ?? body;
+      s = `${header}\n${wrapped}\n${footer}\n`;
+    }
+  }
+
+  return s;
+}
+
 function getPrivateKey(): string {
   const key = process.env.GITHUB_APP_PRIVATE_KEY;
   if (!key) throw new Error('GITHUB_APP_PRIVATE_KEY is not set');
-  // Railway/Vercel-style env vars sometimes wrap the PEM with literal \n.
-  return key.includes('\\n') ? key.replace(/\\n/g, '\n') : key;
+  const normalized = normalizePem(key);
+
+  // Sanity-check before handing to crypto — fail fast with a useful reason.
+  if (!normalized.includes('-----BEGIN') || !normalized.includes('-----END')) {
+    throw new Error('GITHUB_APP_PRIVATE_KEY missing BEGIN/END markers — paste the full .pem contents');
+  }
+  return normalized;
 }
 
 function base64urlEncode(input: string | Buffer): string {
@@ -74,7 +123,22 @@ export function buildAppJwt(): string {
   const signer = createSign('RSA-SHA256');
   signer.update(signingInput);
   signer.end();
-  const signature = signer.sign(createPrivateKey(getPrivateKey()));
+
+  const pem = getPrivateKey();
+  let keyObject;
+  try {
+    keyObject = createPrivateKey(pem);
+  } catch (err) {
+    // Reconstruct a useful diagnostic — the bare OpenSSL message
+    // (`error:1E08010C:DECODER routines::unsupported`) is opaque on its own.
+    const lines = pem.split('\n');
+    const firstLine = lines[0] ?? '';
+    throw new Error(
+      `createPrivateKey failed: ${err instanceof Error ? err.message : String(err)} ` +
+      `(pem starts with "${firstLine.slice(0, 40)}", ${lines.length} lines, ${pem.length} chars)`,
+    );
+  }
+  const signature = signer.sign(keyObject);
   return `${signingInput}.${base64urlEncode(signature)}`;
 }
 
