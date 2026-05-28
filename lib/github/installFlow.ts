@@ -11,9 +11,33 @@
 // to be ≥ 32 chars).
 
 import { createHmac, timingSafeEqual } from 'crypto';
+import type { NextRequest } from 'next/server';
 
 export const INSTALL_STATE_TTL_MS = 10 * 60_000;
 const DEFAULT_APP_SLUG = 'clauditconsulting';
+
+/**
+ * Return the externally-visible origin (e.g., https://aiauditor-production.up.railway.app).
+ *
+ * Why this helper exists: in Node.js-runtime route handlers, `req.url` is the
+ * raw URL Node sees on the socket, which on Railway is the internal container
+ * address `http://0.0.0.0:8080`. Using `new URL('/login', req.url)` for a
+ * redirect therefore emits `Location: http://0.0.0.0:8080/login` — un-routable
+ * from the user's browser. Middleware (Edge runtime) does NOT have this issue
+ * because `request.url` there is forwarded-host-aware.
+ *
+ * Resolution order:
+ *   1. x-forwarded-host + x-forwarded-proto (set by Railway's edge)
+ *   2. host header + assumed https
+ *   3. NEXT_PUBLIC_APP_URL env var
+ *   4. http://localhost:3000 (local dev)
+ */
+export function publicOrigin(req: NextRequest): string {
+  const proto = req.headers.get('x-forwarded-proto') ?? 'https';
+  const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host');
+  if (host) return `${proto}://${host}`;
+  return process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+}
 
 interface StatePayload {
   userId: string;

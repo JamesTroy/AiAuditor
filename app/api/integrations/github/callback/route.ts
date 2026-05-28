@@ -19,7 +19,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { githubInstallations } from '@/lib/auth-schema';
 import { settingsLimiter } from '@/lib/rateLimit';
-import { verifyInstallState } from '@/lib/github/installFlow';
+import { verifyInstallState, publicOrigin } from '@/lib/github/installFlow';
 import { buildAppJwt } from '@/lib/github/app';
 
 export const runtime = 'nodejs';
@@ -37,14 +37,18 @@ interface GitHubInstallationRepos {
 
 const SETTINGS_URL = '/settings/integrations';
 
+// All redirects built from forwarded headers — req.url on Railway is the
+// internal 0.0.0.0:8080 container address, which would produce a Location
+// the user's browser can't follow. See publicOrigin() for the resolution
+// order.
 function redirectWithError(req: NextRequest, code: string): NextResponse {
-  const url = new URL(SETTINGS_URL, req.url);
+  const url = new URL(SETTINGS_URL, publicOrigin(req));
   url.searchParams.set('error', code);
   return NextResponse.redirect(url);
 }
 
 function redirectInstalled(req: NextRequest, installationId: number): NextResponse {
-  const url = new URL(SETTINGS_URL, req.url);
+  const url = new URL(SETTINGS_URL, publicOrigin(req));
   url.searchParams.set('installed', String(installationId));
   return NextResponse.redirect(url);
 }
@@ -61,7 +65,7 @@ export async function GET(req: NextRequest) {
     // We can't link an install without a user. Send them to login, but with
     // a return-to that does NOT carry the install state (which is bound to
     // a different user anyway).
-    const loginUrl = new URL('/login', req.url);
+    const loginUrl = new URL('/login', publicOrigin(req));
     loginUrl.searchParams.set('callbackUrl', SETTINGS_URL);
     return NextResponse.redirect(loginUrl);
   }

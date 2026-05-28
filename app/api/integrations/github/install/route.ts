@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { headers as nextHeaders } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { settingsLimiter } from '@/lib/rateLimit';
-import { signInstallState, getGitHubInstallUrl } from '@/lib/github/installFlow';
+import { signInstallState, getGitHubInstallUrl, publicOrigin } from '@/lib/github/installFlow';
 
 export const runtime = 'nodejs';
 
@@ -24,8 +24,10 @@ export async function GET(req: NextRequest) {
 
   const session = await auth.api.getSession({ headers: await nextHeaders() });
   if (!session) {
-    // Redirect to login with a return-to so the user lands back here.
-    const loginUrl = new URL('/login', req.url);
+    // Build redirect from forwarded headers — req.url is the internal
+    // 0.0.0.0:8080 container address on Railway and would produce a
+    // Location the browser can't follow.
+    const loginUrl = new URL('/login', publicOrigin(req));
     loginUrl.searchParams.set('callbackUrl', '/api/integrations/github/install');
     return NextResponse.redirect(loginUrl);
   }
