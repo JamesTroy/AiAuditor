@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSession, authClient } from '@/lib/auth-client';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
@@ -432,6 +433,27 @@ export default function SettingsPage() {
               <span className="text-xs text-gray-400 dark:text-zinc-600">{workspaceContext.length}/2000</span>
             </div>
           </form>
+        </motion.section>
+
+        {/* GitHub integration — single-line card linking to the dedicated /settings/integrations page */}
+        <motion.section variants={fadeUp} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 mb-6">
+          <Link
+            href="/settings/integrations"
+            className="flex items-center justify-between gap-4 group"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <svg className="w-5 h-5 shrink-0 text-gray-700 dark:text-zinc-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 0a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.1c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.7-1.3-1.7-1.1-.8.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2.9-.3 2-.4 3-.4s2.1.1 3 .4c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 0z" />
+              </svg>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">GitHub</p>
+                <p className="text-xs text-gray-500 dark:text-zinc-500 truncate">Review pull requests automatically.</p>
+              </div>
+            </div>
+            <span className="shrink-0 text-sm text-violet-600 dark:text-violet-400 group-hover:underline">
+              Manage →
+            </span>
+          </Link>
         </motion.section>
 
         {/* Scheduled audits */}
