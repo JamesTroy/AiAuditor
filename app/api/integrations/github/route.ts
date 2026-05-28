@@ -59,6 +59,15 @@ export async function GET(req: NextRequest) {
     } catch {
       /* leave empty */
     }
+    let threshold = 70;
+    try {
+      const cfg = JSON.parse(r.config);
+      if (cfg && typeof cfg.threshold === 'number' && cfg.threshold >= 0 && cfg.threshold <= 100) {
+        threshold = cfg.threshold;
+      }
+    } catch {
+      /* default */
+    }
     return {
       installationId: r.installationId,
       accountLogin: r.accountLogin,
@@ -68,6 +77,7 @@ export async function GET(req: NextRequest) {
       repositories: repos.slice(0, 10),  // cap returned to keep payload small
       installedAt: r.installedAt,
       suspendedAt: r.suspendedAt,
+      threshold,
     };
   });
 
@@ -83,6 +93,8 @@ export async function GET(req: NextRequest) {
     findingsTotal: number | null;
     findingsCritical: number | null;
     findingsHigh: number | null;
+    postedReviewId: number | null;
+    postedCheckRunId: number | null;
     createdAt: Date;
   };
   let recentAudits: RecentAuditRow[] = [];
@@ -100,6 +112,8 @@ export async function GET(req: NextRequest) {
           findingsTotal: prAudits.findingsTotal,
           findingsCritical: prAudits.findingsCritical,
           findingsHigh: prAudits.findingsHigh,
+          postedReviewId: prAudits.postedReviewId,
+          postedCheckRunId: prAudits.postedCheckRunId,
           createdAt: prAudits.createdAt,
         })
         .from(prAudits)
@@ -112,6 +126,69 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({ installations, recentAudits });
+}
+
+export async function PATCH(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? req.headers.get('x-real-ip') ?? '127.0.0.1';
+  const rl = await settingsLimiter.check(ip);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: rl.headers });
+  }
+
+  const session = await auth.api.getSession({ headers: await nextHeaders() });
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const idRaw = req.nextUrl.searchParams.get('id');
+  const installationId = idRaw ? parseInt(idRaw, 10) : NaN;
+  if (Number.isNaN(installationId) || installationId <= 0) {
+    return NextResponse.json({ error: 'id query param required' }, { status: 400 });
+  }
+
+  let body: { threshold?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  const threshold = body.threshold;
+  if (typeof threshold !== 'number' || !Number.isFinite(threshold) || threshold < 0 || threshold > 100) {
+    return NextResponse.json({ error: 'threshold must be a number 0-100' }, { status: 400 });
+  }
+
+  // Fetch existing config, merge threshold, write back.
+  const [existing] = await db
+    .select({ config: githubInstallations.config })
+    .from(githubInstallations)
+    .where(
+      and(
+        eq(githubInstallations.installationId, installationId),
+        eq(githubInstallations.userId, session.user.id),
+      ),
+    )
+    .limit(1);
+  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  let parsed: Record<string, unknown> = {};
+  try {
+    const obj = JSON.parse(existing.config);
+    if (obj && typeof obj === 'object') parsed = obj as Record<string, unknown>;
+  } catch {
+    /* malformed existing config — overwrite */
+  }
+  parsed.threshold = Math.round(threshold);
+
+  await db
+    .update(githubInstallations)
+    .set({ config: JSON.stringify(parsed), updatedAt: new Date() })
+    .where(
+      and(
+        eq(githubInstallations.installationId, installationId),
+        eq(githubInstallations.userId, session.user.id),
+      ),
+    );
+
+  return NextResponse.json({ threshold: parsed.threshold });
 }
 
 export async function DELETE(req: NextRequest) {

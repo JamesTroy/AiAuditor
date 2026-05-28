@@ -18,9 +18,12 @@
 // lib/github/prAudit.ts.
 
 import { NextRequest } from 'next/server';
+import { eq } from 'drizzle-orm';
 import { verifyWebhookSignature } from '@/lib/github/app';
 import { RateLimiter } from '@/lib/rateLimit';
 import { runPrAudit } from '@/lib/github/prAudit';
+import { db } from '@/lib/db';
+import { githubInstallations } from '@/lib/auth-schema';
 
 export const runtime = 'nodejs';
 
@@ -146,7 +149,27 @@ export async function POST(req: NextRequest) {
         accountType: ev.installation.account.type,
         repoCount: ev.repositories?.length ?? 0,
       });
-      // TODO(phase 3): persist installation + linked repos to DB.
+
+      // installation.deleted = user uninstalled the App on GitHub. Clean up
+      // our local row so the integrations page no longer lists it. Cascading
+      // delete also removes the related pr_audits rows.
+      if (ev.action === 'deleted') {
+        try {
+          await db
+            .delete(githubInstallations)
+            .where(eq(githubInstallations.installationId, ev.installation.id));
+        } catch (err) {
+          log('warn', 'gh_install_delete_failed', {
+            installationId: ev.installation.id,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+
+      // 'suspend' / 'unsuspend' / 'created' / 'new_permissions_accepted'
+      // are handled implicitly: the next pr_audit row that lands will
+      // upsert the row, and we don't need to act on suspend (the orchestrator
+      // would just keep working until the App's token is invalidated).
       return Response.json({ ok: true });
     }
 
