@@ -220,6 +220,10 @@ export default function IntegrationsPage() {
     accountType: 'User' | 'Organization';
   }> | null>(null);
   const [claimingId, setClaimingId] = useState<number | null>(null);
+  // Per-install "Sync" — re-fetches repositorySelection + repo list from
+  // GitHub. Needed when the user changes selection on github.com and our
+  // webhook missed the update.
+  const [syncingId, setSyncingId] = useState<number | null>(null);
 
   // Surface error/installed query params as flash banners, then strip them.
   useEffect(() => {
@@ -325,6 +329,30 @@ export default function IntegrationsPage() {
     } finally {
       setLinkingExisting(false);
       setClaimingId(null);
+    }
+  }
+
+  async function syncInstall(installationId: number) {
+    setSyncingId(installationId);
+    setFlashError(null);
+    setFlashSuccess(null);
+    try {
+      const res = await fetch('/api/integrations/github/backfill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ installationId }),
+      });
+      const json = (await res.json()) as { linked?: number; message?: string };
+      if (!res.ok || (json.linked ?? 0) === 0) {
+        setFlashError(json.message ?? "Couldn't refresh from GitHub. Try again in a moment.");
+        return;
+      }
+      setFlashSuccess('Refreshed from GitHub.');
+      await load();
+    } catch (e) {
+      setFlashError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSyncingId(null);
     }
   }
 
@@ -546,14 +574,8 @@ export default function IntegrationsPage() {
                           {' · connected '}
                           {new Date(inst.installedAt).toLocaleDateString()}
                         </p>
-                        {inst.repositorySelection === 'selected' && inst.repositories.length > 0 && (
-                          <p className="text-xs text-gray-400 dark:text-zinc-600 mt-1 truncate font-mono">
-                            {inst.repositories.slice(0, 3).map((r) => r.full_name).join(', ')}
-                            {inst.repositoryCount > 3 ? ` + ${inst.repositoryCount - 3} more` : ''}
-                          </p>
-                        )}
                       </div>
-                      <div className="shrink-0">
+                      <div className="shrink-0 flex flex-col items-end gap-1">
                         <a
                           href={`https://github.com/settings/installations/${inst.installationId}`}
                           target="_blank"
@@ -563,10 +585,21 @@ export default function IntegrationsPage() {
                         >
                           Manage on GitHub →
                         </a>
+                        <button
+                          onClick={() => syncInstall(inst.installationId)}
+                          disabled={syncingId !== null}
+                          className="text-xs text-gray-500 dark:text-zinc-500 hover:text-violet-600 dark:hover:text-violet-400 hover:underline disabled:opacity-60 disabled:cursor-not-allowed"
+                          title="Re-pull repository access from GitHub if you changed it there recently"
+                        >
+                          {syncingId === inst.installationId ? 'Syncing…' : 'Sync from GitHub'}
+                        </button>
                       </div>
                     </div>
 
-                    {/* Warning: "all repositories" — easy to set, hard to un-do without thinking */}
+                    {/* Warning: "all repositories" — only show when GitHub
+                        actually reports the install as all-repos. If the
+                        user changed it on github.com but our webhook missed
+                        the update, the Sync button above re-pulls truth. */}
                     {inst.repositorySelection === 'all' && !inst.suspendedAt && (
                       <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
                         <strong>Reviewing every repository in this account.</strong> Every PR you (or anyone in this account) opens will use Claudit credit.
@@ -579,6 +612,36 @@ export default function IntegrationsPage() {
                         >
                           Switch to specific repositories →
                         </a>
+                        {' '}
+                        Already switched on GitHub?{' '}
+                        <button
+                          onClick={() => syncInstall(inst.installationId)}
+                          disabled={syncingId !== null}
+                          className="underline hover:no-underline disabled:opacity-60"
+                        >
+                          {syncingId === inst.installationId ? 'Syncing…' : 'Click to sync'}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Repo list — shown when selection mode is 'selected'.
+                        Caps at 20 to keep the card compact; full list is on
+                        GitHub via Manage. */}
+                    {inst.repositorySelection === 'selected' && inst.repositories.length > 0 && (
+                      <div className="rounded-lg bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 px-3 py-2">
+                        <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-zinc-500 mb-1.5">
+                          Repositories Claudit can review
+                        </p>
+                        <ul className="text-xs font-mono text-gray-700 dark:text-zinc-300 space-y-0.5">
+                          {inst.repositories.slice(0, 20).map((r) => (
+                            <li key={r.id} className="truncate" title={r.full_name}>{r.full_name}</li>
+                          ))}
+                        </ul>
+                        {inst.repositoryCount > 20 && (
+                          <p className="text-[11px] text-gray-400 dark:text-zinc-600 mt-1.5">
+                            + {inst.repositoryCount - 20} more
+                          </p>
+                        )}
                       </div>
                     )}
 
