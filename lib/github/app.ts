@@ -215,20 +215,33 @@ export async function getInstallationToken(installationId: number): Promise<stri
  * GitHub sends `X-Hub-Signature-256: sha256=<hex>` computed over the raw body
  * using the webhook secret. Constant-time compare to prevent timing attacks.
  */
+// sha256 hex digest is exactly 64 lowercase-or-uppercase hex chars. Validating
+// the header against this regex BEFORE decoding fixes a timing-side-channel
+// where Buffer.from(provided, 'hex') would silently truncate at the first
+// non-hex char, causing timingSafeEqual to throw synchronously — a path
+// noticeably faster than the constant-time compare, so an attacker could
+// distinguish "my hex was malformed" from "my hex was valid but wrong".
+const SHA256_HEX_RE = /^[0-9a-fA-F]{64}$/;
+const HEADER_PREFIX = 'sha256=';
+
 export function verifyWebhookSignature(rawBody: string, signatureHeader: string | null): boolean {
   const secret = process.env.GITHUB_APP_WEBHOOK_SECRET;
   if (!secret || !signatureHeader) return false;
-  const [scheme, provided] = signatureHeader.split('=');
-  if (scheme !== 'sha256' || !provided) return false;
+  // startsWith + slice instead of split('=') — split tokenises on every '='
+  // character, so an input like "sha256=abc=def" would put just "abc" into
+  // the destructured `provided`. The regex below catches that case too, but
+  // an explicit prefix match is the cleaner contract and avoids the surprise.
+  if (!signatureHeader.startsWith(HEADER_PREFIX)) return false;
+  const provided = signatureHeader.slice(HEADER_PREFIX.length);
+  // Up-front structural validation — any reject before this point is not a
+  // timing risk because no HMAC has been computed yet.
+  if (!SHA256_HEX_RE.test(provided)) return false;
 
   // Lazy import — avoids paying for createHmac on every request.
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { createHmac, timingSafeEqual } = require('crypto') as typeof import('crypto');
   const expected = createHmac('sha256', secret).update(rawBody).digest('hex');
-  if (expected.length !== provided.length) return false;
-  try {
-    return timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(provided, 'hex'));
-  } catch {
-    return false;
-  }
+  // Both buffers are now guaranteed to be exactly 32 bytes — timingSafeEqual
+  // runs the full constant-time loop with no early throw branch.
+  return timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(provided, 'hex'));
 }
