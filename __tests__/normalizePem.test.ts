@@ -92,6 +92,14 @@ describe('normalizePem', () => {
     expect(normalizePem(garbage)).toBe(garbage);
   });
 
+  it('is idempotent — normalising twice gives the same result as once', () => {
+    // Regression guard: a future change that, say, always appended a newline
+    // would break idempotency and slowly grow the value on each pass.
+    const once  = normalizePem(`"${CANONICAL_PEM.replace(/\n/g, '\\n')}"`);
+    const twice = normalizePem(once);
+    expect(twice).toBe(once);
+  });
+
   it('supports the PKCS#8 "BEGIN PRIVATE KEY" header form too', () => {
     const pkcs8 = CANONICAL_PEM
       .replace('-----BEGIN RSA PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----')
