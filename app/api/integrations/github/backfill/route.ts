@@ -132,10 +132,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Admin diagnostic mode — surface the underlying GitHub error to admins
-  // instead of hiding it behind the generic "couldn't reach GitHub" message.
-  const isAdmin = (session.user as Record<string, unknown>).role === 'admin';
-
   let installations: AppInstallation[];
   try {
     installations = await listAllAppInstallations();
@@ -159,9 +155,11 @@ export async function POST(req: NextRequest) {
         linked: 0,
         error: 'github_list_failed',
         message: "Couldn't reach GitHub to list installations. Try again in a moment.",
-        // Admin-only: actual GitHub status + first chunk of body so we can
-        // diagnose without poking through Railway logs.
-        ...(isAdmin && { adminDetail: { ghStatus, hint, ghBody: ghBody.slice(0, 500), error: message.slice(0, 500) } }),
+        // Surfacing GitHub's status + body to every signed-in caller —
+        // contents are an HTTP code, a hint string, and GitHub's error
+        // payload, none of which leak secrets. Saves a round-trip through
+        // Railway logs for diagnosis.
+        diagnostic: { ghStatus, hint, ghBody: ghBody.slice(0, 500), error: message.slice(0, 500) },
       },
       { status: 502 },
     );

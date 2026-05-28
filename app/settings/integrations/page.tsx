@@ -109,7 +109,7 @@ export default function IntegrationsPage() {
   // Backfill: link installations the user already created on GitHub (e.g.,
   // installed before our table existed, or via direct github.com install).
   const [linkingExisting, setLinkingExisting] = useState(false);
-  const [adminBackfillDetail, setAdminBackfillDetail] = useState<{
+  const [backfillDiagnostic, setBackfillDiagnostic] = useState<{
     ghStatus: number | null;
     hint: string | null;
     ghBody: string;
@@ -173,17 +173,17 @@ export default function IntegrationsPage() {
     setLinkingExisting(true);
     setFlashError(null);
     setFlashSuccess(null);
-    setAdminBackfillDetail(null);
+    setBackfillDiagnostic(null);
     try {
       const res = await fetch('/api/integrations/github/backfill', { method: 'POST' });
       const json = (await res.json()) as {
         linked?: number;
         message?: string;
-        adminDetail?: { ghStatus: number | null; hint: string | null; ghBody: string; error: string };
+        diagnostic?: { ghStatus: number | null; hint: string | null; ghBody: string; error: string };
       };
       if (!res.ok) {
         setFlashError(json.message ?? "Couldn't link your existing GitHub installs. Try again.");
-        if (json.adminDetail) setAdminBackfillDetail(json.adminDetail);
+        if (json.diagnostic) setBackfillDiagnostic(json.diagnostic);
         return;
       }
       if ((json.linked ?? 0) === 0) {
@@ -257,29 +257,29 @@ export default function IntegrationsPage() {
               <button onClick={() => setFlashError(null)} className="text-xs hover:underline shrink-0">Dismiss</button>
             </motion.div>
           )}
-          {adminBackfillDetail && isAdmin && (
+          {backfillDiagnostic && (
             <motion.div
-              key="admin-backfill-detail"
+              key="backfill-diagnostic"
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={transitions.snappy}
               className="mb-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300 text-xs space-y-2"
             >
-              <p className="font-semibold">Admin diagnostic — backfill failed</p>
-              <p><span className="opacity-70">GitHub status:</span> <span className="font-mono">{adminBackfillDetail.ghStatus ?? 'n/a'}</span></p>
-              {adminBackfillDetail.hint && <p><span className="opacity-70">Likely cause:</span> {adminBackfillDetail.hint}</p>}
+              <p className="font-semibold">Diagnostic — backfill failed</p>
+              <p><span className="opacity-70">GitHub status:</span> <span className="font-mono">{backfillDiagnostic.ghStatus ?? 'n/a'}</span></p>
+              {backfillDiagnostic.hint && <p><span className="opacity-70">Likely cause:</span> {backfillDiagnostic.hint}</p>}
               <details>
                 <summary className="cursor-pointer opacity-70 hover:opacity-100">Raw error</summary>
-                <pre className="mt-2 whitespace-pre-wrap break-words text-[11px] font-mono">{adminBackfillDetail.error}</pre>
-                {adminBackfillDetail.ghBody && (
+                <pre className="mt-2 whitespace-pre-wrap break-words text-[11px] font-mono">{backfillDiagnostic.error}</pre>
+                {backfillDiagnostic.ghBody && (
                   <>
                     <p className="opacity-70 mt-2">GitHub response body:</p>
-                    <pre className="mt-1 whitespace-pre-wrap break-words text-[11px] font-mono">{adminBackfillDetail.ghBody}</pre>
+                    <pre className="mt-1 whitespace-pre-wrap break-words text-[11px] font-mono">{backfillDiagnostic.ghBody}</pre>
                   </>
                 )}
               </details>
-              <button onClick={() => setAdminBackfillDetail(null)} className="text-xs hover:underline">Dismiss</button>
+              <button onClick={() => setBackfillDiagnostic(null)} className="text-xs hover:underline">Dismiss</button>
             </motion.div>
           )}
           {flashSuccess && (
