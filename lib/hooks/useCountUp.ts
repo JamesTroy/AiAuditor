@@ -1,53 +1,70 @@
 import { useEffect, useRef, useState } from 'react';
 
 /**
- * Animate an integer from 0 (or from the previous value) up to `target`
- * over `durationMs`. Returns the current frame value.
+ * Animate an integer from 0 (or from the previous displayed value) up to
+ * `target` over `durationMs`. Returns the current frame value.
  *
- * Honours prefers-reduced-motion by snapping straight to the target — the
- * accessibility cost of a counting animation is non-zero for users with
- * vestibular sensitivity, and a static number is fully informative anyway.
- *
- * First-paint behaviour: starts at 0 and animates up to `target` on mount.
- * Earlier versions initialised value to target on first paint, which made
- * the very first appearance skip the animation entirely — so users opening
- * a fully-static list never saw the count-up fire.
+ * Behaviour:
+ *  - First paint: starts at 0 and animates up to `target` on mount.
+ *  - Target changes mid-animation: cancels the in-flight animation and
+ *    starts a new one from whatever's currently on screen (via a ref —
+ *    no stale-closure capture of React state).
+ *  - prefers-reduced-motion: snaps directly to `target`. Read at the start
+ *    of each animation; toggling the OS preference mid-animation will not
+ *    interrupt the current one, but the next animation respects it.
+ *  - SSR: useEffect is client-only, so performance.now / rAF / matchMedia
+ *    are always defined when this runs. No environment guards needed.
  */
 export function useCountUp(target: number | null, durationMs = 600): number {
   const [value, setValue] = useState<number>(0);
-  // `null` sentinel for "never animated yet" — distinct from "animated and
-  // landed on this value". Without this, the equality check below would
-  // short-circuit on the very first effect run.
+
+  // Live mirror of what's painted on screen. Read by the effect as the
+  // animation's starting point, written every frame. Using a ref instead
+  // of the closure-captured `value` state avoids needing `value` in the
+  // dependency array (which would restart the animation every frame).
+  const displayRef = useRef<number>(0);
+  // Last target we animated TO. Lets a same-target re-render short-circuit
+  // without restarting the animation. null sentinel = "never animated yet".
   const lastTarget = useRef<number | null>(null);
 
   useEffect(() => {
-    if (target === null) return;
+    if (target === null) {
+      lastTarget.current = null;
+      return;
+    }
     if (lastTarget.current === target) return;
     lastTarget.current = target;
 
-    const reduce =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce) {
+      displayRef.current = target;
       setValue(target);
       return;
     }
 
-    const start = performance.now();
-    const from = value;
+    const from = displayRef.current;
+    let cancelled = false;
     let frame = 0;
+    let start: number | null = null;
+
     const tick = (now: number) => {
+      if (cancelled) return;
+      // Anchor `start` to the first rAF callback (not performance.now() at
+      // schedule time) so we don't overshoot on the first frame.
+      if (start === null) start = now;
       const t = Math.min(1, (now - start) / durationMs);
-      // easeOutCubic — fast start, gentle settle, feels right for a score.
-      const eased = 1 - Math.pow(1 - t, 3);
-      setValue(Math.round(from + (target - from) * eased));
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      const next = Math.round(from + (target - from) * eased);
+      displayRef.current = next;
+      setValue(next);
       if (t < 1) frame = requestAnimationFrame(tick);
     };
+
     frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-    // value intentionally omitted — including it would restart the
-    // animation on every paint.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+    };
   }, [target, durationMs]);
 
   return value;
