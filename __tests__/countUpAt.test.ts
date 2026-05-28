@@ -82,6 +82,21 @@ describe('countUpAt', () => {
     expect(countUpAt(0, 0, 0, 100, -10)).toBe(100);
   });
 
+  it('returns target (rounded) when start/now/from are non-finite', () => {
+    // Guards the NaN-propagation path. Without this, useCountUp's setValue
+    // would commit NaN to React state and render literally "NaN".
+    expect(countUpAt(NaN, 100, 0, 87, 600)).toBe(87);
+    expect(countUpAt(0, NaN, 0, 87, 600)).toBe(87);
+    expect(countUpAt(0, 100, NaN, 87, 600)).toBe(87);
+    expect(countUpAt(0, Infinity, 0, 87, 600)).toBe(87);
+  });
+
+  it('returns 0 when target itself is non-finite', () => {
+    // No sensible "final" value exists; 0 is the documented initial state.
+    expect(countUpAt(0, 100, 0, NaN, 600)).toBe(0);
+    expect(countUpAt(0, 100, 0, Infinity, 600)).toBe(0);
+  });
+
   it('handles target === from (no animation needed)', () => {
     expect(countUpAt(0, 0, 50, 50, 600)).toBe(50);
     expect(countUpAt(0, 300, 50, 50, 600)).toBe(50);

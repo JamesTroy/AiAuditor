@@ -19,6 +19,11 @@ export function countUpAt(
   // both because dividing by zero produces Infinity and because the caller's
   // intent in passing 0 is unambiguous.
   if (durationMs <= 0) return target;
+  // Defensive: any non-finite input (NaN, ±Infinity) would propagate as
+  // NaN through React state and render literally "NaN". Snap to target.
+  if (!Number.isFinite(start) || !Number.isFinite(now) || !Number.isFinite(from) || !Number.isFinite(target)) {
+    return Number.isFinite(target) ? Math.round(target) : 0;
+  }
   const t = Math.min(1, Math.max(0, (now - start) / durationMs));
   const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
   return Math.round(from + (target - from) * eased);
@@ -62,6 +67,10 @@ export function useCountUp(target: number | null, durationMs = 600): number {
   useEffect(() => {
     if (intTarget === null) {
       lastTarget.current = null;
+      // Reset the display ref too — without this, a target sequence of
+      // 100 → null → 50 would start the second animation from 100, not 0.
+      displayRef.current = 0;
+      setValue(0);
       return;
     }
     if (lastTarget.current === intTarget) return;
