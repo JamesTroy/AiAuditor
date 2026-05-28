@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getSessionCookie } from 'better-auth/cookies';
 import { LandingNav } from '@/components/landing/LandingNav';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { ProofStrip, HowItWorks, Features, Testimonials } from '@/components/landing/Sections';
@@ -20,10 +20,16 @@ export const metadata: Metadata = {
 
 export default async function LandingPage() {
   // The landing page is for logged-out visitors only. Authenticated users go
-  // straight to their dashboard — the symmetric move to /dashboard redirecting
-  // unauthenticated visitors to /login.
-  const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
-  if (session) redirect('/dashboard');
+  // straight to their dashboard.
+  //
+  // Cookie-presence check instead of a full getSession() DB round-trip — the
+  // common case (anonymous visitor, no cookie) returns null instantly without
+  // touching Postgres. Users with a stale/invalid cookie get redirected to
+  // /dashboard, which does the real session validation and bounces them to
+  // /login if needed — slightly longer dance for the ~1-in-1000 stale-cookie
+  // case in exchange for free landing-page render for everyone else.
+  const sessionCookie = getSessionCookie(await headers());
+  if (sessionCookie) redirect('/dashboard');
 
   return (
     <div className="bg-zinc-950 text-zinc-100">
