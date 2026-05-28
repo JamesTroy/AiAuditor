@@ -91,7 +91,7 @@ export default async function DashboardPage({
       ]);
       return { totalResult, allScoredAudits, dailyActivityRows };
     },
-    ['dashboard-stats-v3'], // bump cache key — query shape changed (added sessionKey for trend grouping)
+    ['dashboard-stats-v4'], // bump cache key — defensive invalidation after audit schema gained detected* columns
     { revalidate: 60, tags: [cacheTag] },
   );
 
@@ -99,8 +99,20 @@ export default async function DashboardPage({
   // PERF-005: Parallelize org name fetch with stats + pagination queries.
   const [{ totalResult, allScoredAudits, dailyActivityRows }, rawAudits, orgNameResult] = await Promise.all([
     getCachedStats(statsOwnerId, !!activeOrgId),
+    // Explicit column list — drizzle's `select()` with no args reads every
+    // column declared in the schema, which makes the page brittle to schema
+    // additions whose migration hasn't been applied yet. Only fetch what
+    // DashboardView actually uses (mirrored in the map() below).
     db
-      .select()
+      .select({
+        id:         audit.id,
+        agentId:    audit.agentId,
+        agentName:  audit.agentName,
+        status:     audit.status,
+        score:      audit.score,
+        durationMs: audit.durationMs,
+        createdAt:  audit.createdAt,
+      })
       .from(audit)
       .where(paginationWhere)
       .orderBy(desc(audit.createdAt))
