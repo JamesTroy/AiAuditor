@@ -292,6 +292,34 @@ export const githubInstallations = pgTable('github_installations', {
 // single audit run. When a PR is re-pushed (new head_sha), we look up the
 // previous row to find postedReviewId and dismiss it before posting fresh.
 
+// ─── Finding baselines ───────────────────────────────────────────
+// Per-finding identity tracking: lets a caller mark a set of findings as
+// "already known" (e.g., baseline for a repo's main branch) so that future
+// audits surface only NEW findings instead of re-flagging legacy code.
+//
+// scopeKey is a free-form caller-defined identifier. Conventions:
+//   - 'audit:<auditId>'                           web-app audit baseline
+//   - 'gh:<installationId>:<repoFullName>'        PR-review baseline
+//   - 'sched:<scheduledAuditId>'                  scheduled-audit baseline
+//
+// findingHash is deterministic: see lib/baselines/findingHash.ts. Stable
+// across line shifts and whitespace; sensitive to file renames and rewrites.
+
+export const findingBaselines = pgTable('finding_baselines', {
+  id:             text('id').primaryKey(),
+  userId:         text('userId').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  scopeKey:       text('scopeKey').notNull(),
+  findingHash:    text('findingHash').notNull(),
+  title:          text('title').notNull(),
+  path:           text('path'),
+  severity:       text('severity').notNull(),
+  classification: text('classification').notNull(),
+  createdAt:      timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('idx_fb_unique').on(t.userId, t.scopeKey, t.findingHash),
+  index('idx_fb_scope').on(t.userId, t.scopeKey),
+]);
+
 export const PR_AUDIT_STATUSES = ['queued', 'running', 'posted', 'failed', 'skipped'] as const;
 
 export const prAudits = pgTable('pr_audits', {
