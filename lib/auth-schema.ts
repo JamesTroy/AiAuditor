@@ -1,4 +1,4 @@
-import { pgTable, text, boolean, timestamp, integer, index, check, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, text, boolean, timestamp, integer, bigint, index, check, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { encryptedText } from '@/lib/crypto';
 
@@ -347,8 +347,11 @@ export const prAudits = pgTable('pr_audits', {
   // Link to the audit table when we create a corresponding Claudit audit row
   // (so the user can see PR runs in their dashboard alongside web audits).
   auditId:            text('auditId'),
-  postedReviewId:     integer('postedReviewId'),      // GitHub review ID we created
-  postedCheckRunId:   integer('postedCheckRunId'),    // GitHub check-run ID we created
+  // GitHub uses bigints for review and check-run IDs — they exceed int4's
+  // 2^31 ceiling in real production data. mode:'number' is safe here: even
+  // the largest plausible value (~2^53) stays inside JS Number precision.
+  postedReviewId:     bigint('postedReviewId',   { mode: 'number' }),
+  postedCheckRunId:   bigint('postedCheckRunId', { mode: 'number' }),
   score:              integer('score'),               // 0–100, from quickScore
   findingsTotal:      integer('findingsTotal'),
   findingsCritical:   integer('findingsCritical'),
