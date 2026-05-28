@@ -122,10 +122,25 @@ export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await nextHeaders() });
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  // Optional explicit claim: { installationId: <number> } — links a specific
+  // installation that's visible to our App, bypassing the identity-match
+  // heuristic. The match check itself still happens (so we can confirm the
+  // ID is real and grab its metadata), but the result of that check is
+  // ignored in favour of the user's stated choice.
+  let explicitId: number | null = null;
+  try {
+    const body = (await req.json()) as { installationId?: unknown };
+    if (typeof body?.installationId === 'number' && body.installationId > 0) {
+      explicitId = body.installationId;
+    }
+  } catch {
+    /* no body — discovery mode */
+  }
+
   const { githubUserId, githubLogin } = await fetchUserGithubIdentity(session.user.id);
   const sessionNameLower = session.user.name?.toLowerCase() ?? null;
 
-  if (!githubUserId && !githubLogin && !sessionNameLower) {
+  if (!githubUserId && !githubLogin && !sessionNameLower && !explicitId) {
     return NextResponse.json(
       { linked: 0, error: 'no_github_identity', message: 'No GitHub identity found on your Claudit account. Sign in with GitHub once, then retry.' },
       { status: 400 },
@@ -165,13 +180,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const matches = installations.filter((inst) => {
-    const loginLower = inst.account.login.toLowerCase();
-    if (githubUserId && String(inst.account.id) === githubUserId && inst.account.type === 'User') return true;
-    if (githubLogin && loginLower === githubLogin) return true;
-    if (sessionNameLower && loginLower === sessionNameLower) return true;
-    return false;
-  });
+  // Explicit claim takes precedence — user has seen the list of available
+  // installations and chosen one. We still require it to be in the App's
+  // listing so the user can't claim a number they made up.
+  const matches = explicitId
+    ? installations.filter((inst) => inst.id === explicitId)
+    : installations.filter((inst) => {
+        const loginLower = inst.account.login.toLowerCase();
+        if (githubUserId && String(inst.account.id) === githubUserId && inst.account.type === 'User') return true;
+        if (githubLogin && loginLower === githubLogin) return true;
+        if (sessionNameLower && loginLower === sessionNameLower) return true;
+        return false;
+      });
 
   log('integrations_github_backfill_matched', {
     userId: session.user.id,
@@ -186,7 +206,27 @@ export async function POST(req: NextRequest) {
       linked: 0,
       candidates: [],
       message:
-        'No GitHub App installations match your account. If the install is on an organization, make sure your GitHub username has access to that org, or use the standard Install on GitHub button.',
+        'No GitHub App installations match your account. Check the diagnostic below for what we tried to match against.',
+      // Show what we know vs what GitHub listed — most often the mismatch is
+      // that the install is on an org and the user's GitHub login isn't an
+      // org member, or session.user.name is a display name (e.g. "James Troy")
+      // and the GitHub login is "JamesTroy".
+      diagnostic: {
+        ghStatus: 200,
+        hint: 'Listing succeeded but no installation matched. Pick one from "GitHub installations" and link it explicitly.',
+        ghBody: '',
+        error:
+          `Tried to match against: ` +
+          `githubUserId=${githubUserId ?? '(none)'}, ` +
+          `githubLogin=${githubLogin ?? '(none)'}, ` +
+          `sessionName=${sessionNameLower ?? '(none)'}`,
+      },
+      installations: installations.map((i) => ({
+        installationId: i.id,
+        accountLogin: i.account.login,
+        accountId: i.account.id,
+        accountType: i.account.type,
+      })),
     });
   }
 

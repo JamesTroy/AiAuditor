@@ -115,6 +115,14 @@ export default function IntegrationsPage() {
     ghBody: string;
     error: string;
   } | null>(null);
+  // When no auto-match succeeds, the server returns the list of installations
+  // visible to our App and the user picks which one to link.
+  const [availableInstalls, setAvailableInstalls] = useState<Array<{
+    installationId: number;
+    accountLogin: string;
+    accountType: 'User' | 'Organization';
+  }> | null>(null);
+  const [claimingId, setClaimingId] = useState<number | null>(null);
 
   // Surface error/installed query params as flash banners, then strip them.
   useEffect(() => {
@@ -169,17 +177,24 @@ export default function IntegrationsPage() {
     setThresholdDraft(inst.threshold);
   }
 
-  async function linkExistingInstall() {
-    setLinkingExisting(true);
+  async function linkExistingInstall(installationId?: number) {
+    if (installationId) setClaimingId(installationId);
+    else setLinkingExisting(true);
     setFlashError(null);
     setFlashSuccess(null);
     setBackfillDiagnostic(null);
+    setAvailableInstalls(null);
     try {
-      const res = await fetch('/api/integrations/github/backfill', { method: 'POST' });
+      const res = await fetch('/api/integrations/github/backfill', {
+        method: 'POST',
+        headers: installationId ? { 'Content-Type': 'application/json' } : undefined,
+        body: installationId ? JSON.stringify({ installationId }) : undefined,
+      });
       const json = (await res.json()) as {
         linked?: number;
         message?: string;
         diagnostic?: { ghStatus: number | null; hint: string | null; ghBody: string; error: string };
+        installations?: Array<{ installationId: number; accountLogin: string; accountType: 'User' | 'Organization' }>;
       };
       if (!res.ok) {
         setFlashError(json.message ?? "Couldn't link your existing GitHub installs. Try again.");
@@ -188,6 +203,8 @@ export default function IntegrationsPage() {
       }
       if ((json.linked ?? 0) === 0) {
         setFlashError(json.message ?? 'No matching GitHub installations found for your account.');
+        if (json.diagnostic) setBackfillDiagnostic(json.diagnostic);
+        if (json.installations && json.installations.length > 0) setAvailableInstalls(json.installations);
         return;
       }
       setFlashSuccess(
@@ -200,6 +217,7 @@ export default function IntegrationsPage() {
       setFlashError(e instanceof Error ? e.message : String(e));
     } finally {
       setLinkingExisting(false);
+      setClaimingId(null);
     }
   }
 
@@ -255,6 +273,40 @@ export default function IntegrationsPage() {
             >
               <span>{flashError}</span>
               <button onClick={() => setFlashError(null)} className="text-xs hover:underline shrink-0">Dismiss</button>
+            </motion.div>
+          )}
+          {availableInstalls && availableInstalls.length > 0 && (
+            <motion.div
+              key="available-installs"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={transitions.snappy}
+              className="mb-4 p-4 rounded-xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-sm"
+            >
+              <p className="font-semibold mb-1">Pick the installation to link</p>
+              <p className="text-xs text-gray-500 dark:text-zinc-500 mb-3">
+                We found these GitHub App installations. Click the one that belongs to you.
+              </p>
+              <ul className="space-y-2">
+                {availableInstalls.map((inst) => (
+                  <li key={inst.installationId} className="flex items-center justify-between gap-3 border border-gray-100 dark:border-zinc-800 rounded-lg px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{inst.accountLogin}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-zinc-500">
+                        {inst.accountType} · install #{inst.installationId}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => linkExistingInstall(inst.installationId)}
+                      disabled={claimingId !== null}
+                      className="shrink-0 text-xs bg-violet-600 hover:bg-violet-500 disabled-muted text-white rounded-lg px-3 py-1.5 transition-colors"
+                    >
+                      {claimingId === inst.installationId ? 'Linking…' : 'Link this one'}
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </motion.div>
           )}
           {backfillDiagnostic && (
@@ -351,7 +403,7 @@ export default function IntegrationsPage() {
                 <div className="text-xs text-gray-400 dark:text-zinc-600">
                   Already installed Claudit on GitHub but it isn&apos;t showing here?{' '}
                   <button
-                    onClick={linkExistingInstall}
+                    onClick={() => linkExistingInstall()}
                     disabled={linkingExisting}
                     className="text-violet-600 dark:text-violet-400 hover:underline disabled-muted"
                   >
