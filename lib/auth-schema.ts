@@ -260,3 +260,64 @@ export const webhookConfigs = pgTable('webhook_configs', {
   index('idx_wc_userId').on(t.userId),
   uniqueIndex('idx_wc_apiKeyHash').on(t.apiKeyHash),
 ]);
+
+// ─── GitHub App installations ────────────────────────────────────
+// Tracks each install of the GitHub App. Installation ID is GitHub's
+// stable identifier; we use it as primary key.
+// userId links to the Claudit user account that owns the install (for
+// billing — PR audits decrement that user's daily audit budget).
+
+export const githubInstallations = pgTable('github_installations', {
+  installationId:      integer('installationId').primaryKey(),
+  userId:              text('userId').references(() => user.id, { onDelete: 'set null' }),
+  accountLogin:        text('accountLogin').notNull(),
+  accountType:         text('accountType', { enum: ['User', 'Organization'] }).notNull(),
+  repositorySelection: text('repositorySelection', { enum: ['all', 'selected'] }).notNull(),
+  // Array of { id, full_name }. Empty when repositorySelection='all'
+  // (we'd hit GitHub on demand instead of mirroring all repos here).
+  repositories:        text('repositories').notNull().default('[]'),
+  // Per-installation config (threshold, agents, skip patterns). Free-form JSON
+  // so we can extend without migrations.
+  config:              text('config').notNull().default('{}'),
+  suspendedAt:         timestamp('suspendedAt', { withTimezone: true }),
+  installedAt:         timestamp('installedAt', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:           timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('idx_gi_userId').on(t.userId),
+  index('idx_gi_accountLogin').on(t.accountLogin),
+]);
+
+// ─── PR audit history ────────────────────────────────────────────
+// One row per (installation, repo, PR, head_sha) — uniquely identifies a
+// single audit run. When a PR is re-pushed (new head_sha), we look up the
+// previous row to find postedReviewId and dismiss it before posting fresh.
+
+export const PR_AUDIT_STATUSES = ['queued', 'running', 'posted', 'failed', 'skipped'] as const;
+
+export const prAudits = pgTable('pr_audits', {
+  id:                 text('id').primaryKey(),
+  installationId:     integer('installationId').notNull().references(() => githubInstallations.installationId, { onDelete: 'cascade' }),
+  repoFullName:       text('repoFullName').notNull(),
+  prNumber:           integer('prNumber').notNull(),
+  headSha:            text('headSha').notNull(),
+  action:             text('action').notNull(),       // 'opened' | 'reopened' | 'synchronize' | 'ready_for_review'
+  status:             text('status', { enum: PR_AUDIT_STATUSES }).notNull().default('queued'),
+  // Link to the audit table when we create a corresponding Claudit audit row
+  // (so the user can see PR runs in their dashboard alongside web audits).
+  auditId:            text('auditId'),
+  postedReviewId:     integer('postedReviewId'),      // GitHub review ID we created
+  postedCheckRunId:   integer('postedCheckRunId'),    // GitHub check-run ID we created
+  score:              integer('score'),               // 0–100, from quickScore
+  findingsTotal:      integer('findingsTotal'),
+  findingsCritical:   integer('findingsCritical'),
+  findingsHigh:       integer('findingsHigh'),
+  errorMessage:       text('errorMessage'),
+  startedAt:          timestamp('startedAt', { withTimezone: true }),
+  completedAt:        timestamp('completedAt', { withTimezone: true }),
+  createdAt:          timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  // Find the most recent run for a given PR (latest head_sha for re-push dismissal).
+  index('idx_pra_pr').on(t.installationId, t.repoFullName, t.prNumber),
+  // Find the exact head_sha row (idempotency on webhook retries).
+  uniqueIndex('idx_pra_headSha').on(t.installationId, t.repoFullName, t.prNumber, t.headSha),
+]);

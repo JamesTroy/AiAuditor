@@ -20,6 +20,7 @@
 import { NextRequest } from 'next/server';
 import { verifyWebhookSignature } from '@/lib/github/app';
 import { RateLimiter } from '@/lib/rateLimit';
+import { runPrAudit } from '@/lib/github/prAudit';
 
 export const runtime = 'nodejs';
 
@@ -73,7 +74,7 @@ interface PullRequestEvent {
   repository: {
     id: number;
     full_name: string;
-    owner: { login: string };
+    owner: { login: string; type?: 'User' | 'Organization' };
     name: string;
   };
   installation: { id: number };
@@ -178,7 +179,22 @@ export async function POST(req: NextRequest) {
 
       // Fire-and-forget. Railway containers stay alive across requests; we
       // intentionally don't await so we can ack within GitHub's 10s window.
-      runPrAuditBackground(ev).catch((err) => {
+      runPrAudit({
+        installationId: ev.installation.id,
+        accountLogin: ev.repository.owner.login,
+        // GitHub's pull_request payload only includes owner.type for repos
+        // owned by orgs; for personal repos it's omitted. Default to 'User'.
+        accountType: ev.repository.owner.type ?? 'User',
+        repository: {
+          id: ev.repository.id,
+          full_name: ev.repository.full_name,
+          owner: ev.repository.owner.login,
+          name: ev.repository.name,
+        },
+        prNumber: ev.pull_request.number,
+        headSha: ev.pull_request.head.sha,
+        action: ev.action,
+      }).catch((err) => {
         log('error', 'gh_pr_audit_unhandled', {
           repo: ev.repository.full_name,
           prNumber: ev.pull_request.number,
@@ -193,13 +209,4 @@ export async function POST(req: NextRequest) {
       // Unhandled event types (push, check_run, etc.) — ack to stop GitHub retrying.
       return Response.json({ ignored: event });
   }
-}
-
-// Phase 3 will replace this stub with the real orchestrator.
-async function runPrAuditBackground(ev: PullRequestEvent): Promise<void> {
-  log('info', 'gh_pr_audit_stub_invoked', {
-    repo: ev.repository.full_name,
-    prNumber: ev.pull_request.number,
-    note: 'phase 3 pipeline not yet wired',
-  });
 }
