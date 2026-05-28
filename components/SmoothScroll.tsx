@@ -28,8 +28,14 @@ export default function SmoothScroll() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     if (window.matchMedia('(pointer: coarse)').matches) return;
 
+    // lerp 0.18 instead of 0.08 — bigger position step per frame so the
+    // interpolation doesn't visibly "step" on high-refresh displays
+    // (120Hz ProMotion Macs, 144Hz Windows VRR). Smoother to the eye
+    // because each frame's motion is larger and less granular. Trade-off
+    // is slightly less "floaty" feel — feels closer to native scroll
+    // with just-enough smoothing on top.
     const lenis = new Lenis({
-      lerp: 0.08,
+      lerp: 0.18,
       wheelMultiplier: 1.0,
       smoothWheel: true,
       syncTouch: false,
