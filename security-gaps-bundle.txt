@@ -1,0 +1,810 @@
+SECURITY GAPS AUDIT — CODE BUNDLE
+=================================
+
+## Project context
+- Framework: Next.js 15 App Router (Node.js runtime; no Edge)
+- Auth pattern: Better Auth 1.5.5 (drizzle adapter, Postgres) — server-side `auth.api.getSession({ headers })` in route handlers; cookie-presence gate in middleware.ts via `getSessionCookie`. Admin RBAC via `requireAdminRole(req)` helper. API-key auth (sha256-hashed) on `/api/webhooks/pre-deploy`. Bearer-secret auth (`REVALIDATION_SECRET`, `CRON_SECRET`, optional `API_ACCESS_TOKEN`) on admin / cron routes.
+- Deployment: Railway (containers, multi-replica). Upstash Redis for cross-replica rate-limit state; in-memory fallback per-replica.
+- Known posture: rate limiting in place (per-IP, per-email, per-user, global daily budget); CSP set with per-request nonce in middleware; HSTS in middleware; CSRF posture = Origin allowlist on POST /api/audit and /api/synthesize + Better Auth `trustedOrigins`; SameSite cookies from Better Auth defaults. No CSRF token framework. No audit log table for security events (structured JSON logs only).
+
+## Routes included (representative — all 27 handlers follow these patterns)
+- app/api/audit/route.ts  ← EXCERPT (security checks only — file is 710 lines)
+- app/api/chat/route.ts
+- app/api/fetch-url/route.ts
+- app/api/synthesize/route.ts ← summarised (same pattern as chat)
+- app/api/github-pr/route.ts ← summarised
+- app/api/github-source/route.ts ← summarised
+- app/api/auth/[...all]/route.ts
+- app/api/billing/checkout/route.ts
+- app/api/billing/portal/route.ts
+- app/api/webhooks/stripe/route.ts
+- app/api/webhooks/pre-deploy/route.ts
+- app/api/webhooks/configs/route.ts
+- app/api/webhooks/configs/[id]/route.ts ← summarised (mirrors scheduled-audits/[id])
+- app/api/scheduled-audits/route.ts
+- app/api/scheduled-audits/[id]/route.ts
+- app/api/cron/scheduled-audits/route.ts
+- app/api/admin/cleanup/route.ts
+- app/api/admin/revalidate/route.ts
+- app/api/admin/dismissal-audit-trail/route.ts ← summarised
+- app/api/settings/workspace/route.ts
+- app/api/org/audit-defaults/route.ts ← summarised
+- app/api/org/notifications/route.ts ← summarised
+- app/api/analytics/dismissal/route.ts ← summarised
+- app/api/agents/fp-rates/route.ts ← summarised
+- app/api/csp-report/route.ts
+- app/api/health/route.ts ← public, no body, no side effects (omitted)
+- app/api/health/db/route.ts ← public health, omitted
+
+Framework defaults to mention:
+- Better Auth issues SameSite=Lax cookies by default; `trustedOrigins` enforced for OAuth callbacks and API requests by the library.
+- Next.js App Router does NOT add any automatic CSRF token — application code is responsible for Origin/CSRF checks on state-changing methods.
+
+--- middleware.ts ---
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getSessionCookie } from 'better-auth/cookies';
+
+const PROTECTED_PREFIXES = ['/dashboard', '/settings', '/admin'];
+const AUTH_ROUTES = ['/login', '/signup', '/forgot-password'];
+const isDev = process.env.NODE_ENV === 'development';
+const hasPlausible = !!process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
+
+const CSP_SCRIPT_PRE = "default-src 'self'; script-src 'nonce-";
+const CSP_SCRIPT_POST = [
+  "' 'strict-dynamic'",
+  isDev ? " 'unsafe-eval'" : '',
+  hasPlausible ? ' https://plausible.io' : '',
+].join('');
+const CSP_STYLE_PRE = "; style-src 'self' 'nonce-";
+const CSP_TAIL = [
+  "'",
+  "; style-src-attr 'unsafe-inline'",                // inline style attrs only — see comment
+  "; font-src 'self'",
+  "; img-src 'self' data: blob: https://avatars.githubusercontent.com https://lh3.googleusercontent.com",
+  `; connect-src 'self'${hasPlausible ? ' https://plausible.io' : ''}`,
+  "; frame-ancestors 'none'",
+  "; object-src 'none'",
+  "; base-uri 'self'",
+  "; form-action 'self'",
+  '; upgrade-insecure-requests',
+  '; report-to csp-endpoint',
+].join('');
+
+const REPORT_TO_HEADER = JSON.stringify({
+  group: 'csp-endpoint', max_age: 86400, endpoints: [{ url: '/api/csp-report' }],
+});
+const REPORTING_ENDPOINTS = 'csp-endpoint="/api/csp-report"';
+
+export function middleware(request: NextRequest) {
+  const startMs = Date.now();
+  const { pathname } = request.nextUrl;
+
+  // Auth gate: cookie PRESENCE only — full session validation happens in
+  // route handlers (auth.api.getSession). A stale/revoked cookie passes here.
+  const sessionCookie = getSessionCookie(request);
+  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
+  if (isProtected && !sessionCookie) {
+    const loginUrl = new URL('/login', request.url);
+    if (pathname.startsWith('/') && !pathname.startsWith('//')) {
+      const search = request.nextUrl.search;
+      loginUrl.searchParams.set('callbackUrl', pathname + search);
+    } else {
+      loginUrl.searchParams.set('callbackUrl', '/dashboard');
+    }
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // CSP per-request nonce (128-bit, base64url)
+  const nonceBytes = new Uint8Array(16);
+  crypto.getRandomValues(nonceBytes);
+  const nonce = btoa(String.fromCharCode(...nonceBytes))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const csp = CSP_SCRIPT_PRE + nonce + CSP_SCRIPT_POST + CSP_STYLE_PRE + nonce + CSP_TAIL;
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+
+  response.headers.set('Content-Security-Policy', csp);
+  response.headers.set('Report-To', REPORT_TO_HEADER);
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy',
+    'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), magnetometer=(), gyroscope=(), accelerometer=(), autoplay=(), encrypted-media=(), picture-in-picture=()');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('Server', '');
+  response.headers.set('X-XSS-Protection', '0');
+  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+  response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
+  response.headers.set('X-Request-Id', crypto.randomUUID());
+  response.headers.set('Reporting-Endpoints', REPORTING_ENDPOINTS);
+  response.headers.set('Server-Timing', `mw;dur=${Date.now() - startMs};desc="Middleware"`);
+  if (!isDev) {
+    response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+  }
+  return response;
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+};
+
+--- lib/auth.ts ---
+import { betterAuth } from 'better-auth';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { admin, twoFactor, organization } from 'better-auth/plugins';
+import { nextCookies } from 'better-auth/next-js';
+import { db } from '@/lib/db';
+import * as schema from '@/lib/auth-schema';
+import { Resend } from 'resend';
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const FROM_EMAIL = process.env.EMAIL_FROM ?? 'Claudit <noreply@claudit.consulting>';
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+async function sendEmail(to: string, subject: string, html: string) { /* Resend send */ }
+
+// Fail fast if secret missing / too short
+const authSecret = process.env.BETTER_AUTH_SECRET;
+if (!authSecret || authSecret.length < 32) {
+  throw new Error('BETTER_AUTH_SECRET must be at least 32 characters.');
+}
+
+export const auth = betterAuth({
+  appName: 'Claudit',
+  trustedOrigins: [
+    process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
+    ...(process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL !== process.env.BETTER_AUTH_URL
+      ? [process.env.NEXT_PUBLIC_APP_URL] : []),
+    ...(process.env.RAILWAY_PUBLIC_DOMAIN ? [`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`] : []),
+  ],
+  database: drizzleAdapter(db, { provider: 'pg', schema: { ...schema } }),
+  session: {
+    expiresIn: 60 * 60 * 24 * 7,    // 7-day absolute
+    updateAge: 60 * 60 * 24,         // sliding 24h
+    cookieCache: { enabled: true, maxAge: 60 },  // DB revalidation every 60s
+  },
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 8,
+    maxPasswordLength: 128,
+    requireEmailVerification: process.env.NODE_ENV === 'production' ? !!process.env.RESEND_API_KEY : false,
+    sendResetPassword: async ({ user, url }) => { /* email */ },
+  },
+  emailVerification: { sendVerificationEmail: async ({ user, url }) => { /* email */ } },
+  socialProviders: {
+    ...(process.env.GITHUB_CLIENT_ID && { github: { clientId: process.env.GITHUB_CLIENT_ID, clientSecret: process.env.GITHUB_CLIENT_SECRET! } }),
+    ...(process.env.GOOGLE_CLIENT_ID && { google: { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET! } }),
+  },
+  plugins: [
+    nextCookies(),
+    admin(),
+    twoFactor({ issuer: 'Claudit', otpOptions: { async sendOTP({ user, otp }) { /* email */ } } }),
+    organization({
+      allowUserToCreateOrganization: true,
+      organizationLimit: 5,
+      membershipLimit: 20,
+      creatorRole: 'owner',
+      invitationExpiresIn: 60 * 60 * 48,
+      async sendInvitationEmail(data) { /* email */ },
+    }),
+  ],
+});
+
+--- lib/middleware/requireAdmin.ts ---
+import { auth } from '@/lib/auth';
+export async function requireAdminRole(req: Request): Promise<Response | null> {
+  const session = await auth.api.getSession({ headers: req.headers });
+  if (!session?.user || session.user.role !== 'admin') {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), {
+      status: 403, headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  return null;
+}
+
+--- next.config.ts (security-relevant sections) ---
+// NB: CSP intentionally NOT set here — middleware.ts sets a per-request nonce CSP.
+const securityHeaders = [
+  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), magnetometer=(), gyroscope=(), accelerometer=(), autoplay=(), encrypted-media=(), picture-in-picture=()' },
+  { key: 'X-XSS-Protection', value: '0' },
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+  { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
+];
+const nextConfig: NextConfig = {
+  output: 'standalone',
+  poweredByHeader: false,
+  experimental: { sri: { algorithm: 'sha256' } },
+  async headers() {
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      { source: '/api/:path*', headers: [{ key: 'Vary', value: 'Authorization, Cookie' }] },
+      { source: '/audit/:agent', headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=3600, stale-while-revalidate=60' },
+          { key: 'Vary', value: 'Accept-Encoding' }] },
+      { source: '/(privacy|how-it-works)', headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=2592000, stale-while-revalidate=86400' },
+          { key: 'Vary', value: 'Accept-Encoding' }] },
+      { source: '/((?!api|_next).*)', headers: [{ key: 'Vary', value: 'Accept-Encoding' }] },
+    ];
+  },
+};
+
+--- lib/config/apiHeaders.ts ---
+export const STREAM_RESPONSE_HEADERS: Record<string, string> = {
+  'Content-Type': 'text/plain; charset=utf-8',
+  'Cache-Control': 'no-store',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Accel-Buffering': 'no',
+};
+export const API_RESPONSE_HEADERS: Record<string, string> = {
+  'Cache-Control': 'no-store',
+  'X-Content-Type-Options': 'nosniff',
+};
+export const ALLOWED_ORIGINS: ReadonlySet<string> = new Set([
+  process.env.NEXT_PUBLIC_APP_URL,
+  process.env.RAILWAY_PUBLIC_DOMAIN && `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`,
+  ...(process.env.NODE_ENV === 'development' ? ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'] : []),
+].filter(Boolean) as string[]);
+
+--- lib/rateLimit.ts (config + exports only; implementation omitted) ---
+// Hybrid Upstash Redis (cross-replica) + in-memory sliding-window fallback.
+// `failClosedOnStoreError: true` => Redis outage causes 429 (used on global
+// budget + per-user limiter to prevent N×budget when Redis is down).
+// All limiters are Node.js runtime only — module throws at import time if
+// loaded under Edge Runtime.
+//
+// class RateLimiter has: check(key): Promise<{ allowed, remaining, resetAt, headers }>
+//
+// Exported named limiters:
+export const auditLimiter            = new RateLimiter({ windowMs: 60_000,            maxRequests: 10,   prefix: 'audit' });
+export const fetchUrlLimiter         = new RateLimiter({ windowMs: 60_000,            maxRequests: 30,   prefix: 'fetch-url' });
+export const authLoginLimiter        = new RateLimiter({ windowMs: 15 * 60_000,       maxRequests: 5,    prefix: 'auth-login' });
+export const authSignupLimiter       = new RateLimiter({ windowMs: 60 * 60_000,       maxRequests: 3,    prefix: 'auth-signup' });
+export const authResetLimiter        = new RateLimiter({ windowMs: 60 * 60_000,       maxRequests: 3,    prefix: 'auth-reset' });
+export const auth2faLimiter          = new RateLimiter({ windowMs: 15 * 60_000,       maxRequests: 5,    prefix: 'auth-2fa' });
+export const authGeneralLimiter      = new RateLimiter({ windowMs: 60_000,            maxRequests: 30,   prefix: 'auth-general' });
+export const dailyAuditBudget        = new RateLimiter({ windowMs: 24 * 60 * 60_000,  maxRequests: 2000, maxEntries: 1, prefix: 'daily-budget',  failClosedOnStoreError: true });
+export const userDailyAuditLimiter   = new RateLimiter({ windowMs: 24 * 60 * 60_000,  maxRequests: 500,                  prefix: 'user-daily',    failClosedOnStoreError: true });
+export const perIpConcurrencyLimiter = new RateLimiter({ windowMs: 120_000,           maxRequests: 150,                  prefix: 'ip-concurrent' });
+export const synthesisLimiter        = new RateLimiter({ windowMs: 60_000,            maxRequests: 20,                   prefix: 'synthesis' });
+export const perEmailLoginLimiter    = new RateLimiter({ windowMs: 60 * 60_000,       maxRequests: 10,                   prefix: 'login-email' });
+export const settingsLimiter         = new RateLimiter({ windowMs: 60_000,            maxRequests: 20,                   prefix: 'settings' });
+export const fpRatesLimiter          = new RateLimiter({ windowMs: 60_000,            maxRequests: 60,                   prefix: 'fp-rates' });
+
+--- app/api/auth/[...all]/route.ts ---
+import { NextRequest } from 'next/server';
+import { createHmac } from 'crypto';
+import { auth } from '@/lib/auth';
+import { toNextJsHandler } from 'better-auth/next-js';
+import {
+  RateLimiter, authLoginLimiter, authSignupLimiter, authResetLimiter,
+  auth2faLimiter, authGeneralLimiter, perEmailLoginLimiter,
+} from '@/lib/rateLimit';
+
+const RL_EMAIL_KEY_SECRET = process.env.BETTER_AUTH_SECRET ?? '';
+function hashEmailForRateLimit(email: string): string {
+  return createHmac('sha256', RL_EMAIL_KEY_SECRET).update(email.toLowerCase().trim()).digest('hex');
+}
+const { GET: authGet, POST: authPost } = toNextJsHandler(auth);
+
+function getIp(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0].trim()
+    ?? req.headers.get('x-real-ip') ?? '127.0.0.1';
+}
+function getLimiterForPath(pathname: string): RateLimiter {
+  if (pathname.endsWith('/sign-in/email'))             return authLoginLimiter;
+  if (pathname.endsWith('/sign-up/email'))             return authSignupLimiter;
+  if (pathname.endsWith('/request-password-reset'))    return authResetLimiter;
+  if (pathname.endsWith('/reset-password'))            return authResetLimiter;
+  if (pathname.endsWith('/two-factor/verify'))         return auth2faLimiter;
+  if (pathname.endsWith('/two-factor/enable'))         return auth2faLimiter;
+  if (pathname.endsWith('/two-factor/disable'))        return auth2faLimiter;
+  if (pathname.endsWith('/verify-email'))              return authGeneralLimiter;
+  if (pathname.includes('/organization/create'))       return authSignupLimiter;
+  if (pathname.includes('/organization/create-invitation')) return authGeneralLimiter;
+  return authGeneralLimiter;
+}
+const EMAIL_RATE_LIMITED_PATHS = ['/sign-in/email', '/sign-up/email'];
+
+export async function POST(req: NextRequest) {
+  const limiter = getLimiterForPath(req.nextUrl.pathname);
+  const rl = await limiter.check(getIp(req));
+  if (!rl.allowed) return new Response('Too many requests. Please try again later.', { status: 429, headers: rl.headers });
+
+  const needsEmailCheck = EMAIL_RATE_LIMITED_PATHS.some((p) => req.nextUrl.pathname.endsWith(p));
+  if (needsEmailCheck) {
+    try {
+      const clone = req.clone();
+      const body = await clone.json();
+      if (typeof body?.email === 'string' && body.email.length > 0) {
+        const emailKey = hashEmailForRateLimit(body.email);
+        const emailRl = await perEmailLoginLimiter.check(emailKey);
+        if (!emailRl.allowed) return new Response('Too many attempts for this account. Please try again later.', { status: 429, headers: emailRl.headers });
+      }
+    } catch { /* let better-auth handle bad body */ }
+  }
+  return authPost(req);
+}
+export { authGet as GET };
+
+--- app/api/audit/route.ts (security-relevant excerpt — full file is 710 lines) ---
+import { headers as nextHeaders } from 'next/headers';
+import { auditLimiter, dailyAuditBudget, userDailyAuditLimiter, perIpConcurrencyLimiter } from '@/lib/rateLimit';
+import { auditRequestSchema } from '@/lib/schemas/auditRequest';
+import { STREAM_RESPONSE_HEADERS, ALLOWED_ORIGINS } from '@/lib/config/apiHeaders';
+import { auth } from '@/lib/auth';
+
+if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY is required');
+export const runtime = 'nodejs';
+
+function anonymizeIp(ip: string): string { /* zero last octet IPv4 / 3 groups IPv6 — for GDPR-pseudonymised logs */ }
+
+export async function POST(req: NextRequest) {
+  const requestId = crypto.randomUUID();
+  await cleanupStaleAudits();
+
+  // CSRF Origin allowlist — only enforced when Origin header is present.
+  const origin = req.headers.get('origin');
+  if (origin && !ALLOWED_ORIGINS.has(origin)) {
+    return new Response('Forbidden', { status: 403, headers: { 'X-Request-Id': requestId } });
+  }
+
+  // Optional bearer token (defense in depth behind hosting-layer ACL).
+  const expectedToken = process.env.API_ACCESS_TOKEN;
+  if (expectedToken) {
+    const authHeader = req.headers.get('authorization');
+    if (authHeader !== `Bearer ${expectedToken}`) {
+      return new Response('Unauthorized', { status: 401, headers: { 'X-Request-Id': requestId } });
+    }
+  }
+
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
+    ?? req.headers.get('x-real-ip') ?? '127.0.0.1';
+  const anonIp = anonymizeIp(ip);
+
+  // Content-Length pre-check
+  const contentLengthHeader = req.headers.get('content-length');
+  if (contentLengthHeader !== null) {
+    const declaredLength = parseInt(contentLengthHeader, 10);
+    if (!isNaN(declaredLength) && declaredLength > MAX_CONTENT_LENGTH) {
+      return new Response('Request body too large', { status: 413, headers: { 'X-Request-Id': requestId } });
+    }
+  }
+
+  let rawBody: unknown;
+  try { rawBody = await req.json(); }
+  catch { return new Response('Invalid JSON', { status: 400, headers: { 'X-Request-Id': requestId } }); }
+
+  // Zod schema validation
+  const parsed = auditRequestSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? 'Invalid request';
+    return new Response(message, { status: 400, headers: { 'X-Request-Id': requestId } });
+  }
+  const data = parsed.data;
+
+  // Rate limits — per-IP per-min, per-IP burst guard, global daily budget
+  const rl = await auditLimiter.check(ip);
+  if (!rl.allowed) return new Response('Too many requests.', { status: 429, headers: { ...rl.headers, 'X-Request-Id': requestId } });
+  const ipBurst = await perIpConcurrencyLimiter.check(ip);
+  if (!ipBurst.allowed) return new Response('Too many requests from this IP.', { status: 429, headers: { ...ipBurst.headers, 'X-Request-Id': requestId } });
+  const dailyBudget = await dailyAuditBudget.check('global');
+  if (!dailyBudget.allowed) return new Response('Daily AI limit reached.', { status: 429, headers: { ...dailyBudget.headers, 'X-Request-Id': requestId } });
+
+  // Optional session (audits work anonymously) — used for per-user limit + workspace context + org assoc
+  let userId: string | null = null;
+  let organizationId: string | null = null;
+  try {
+    const session = await auth.api.getSession({ headers: await nextHeaders() });
+    userId = session?.user?.id ?? null;
+    organizationId = (session?.session as Record<string, unknown>)?.activeOrganizationId as string | null ?? null;
+  } catch { /* anonymous */ }
+
+  // Org membership re-check before associating audit
+  if (organizationId && userId) {
+    try {
+      const memberRows = await db.select({ id: memberTable.id }).from(memberTable)
+        .where(and(eq(memberTable.organizationId, organizationId), eq(memberTable.userId, userId))).limit(1);
+      if (memberRows.length === 0) organizationId = null;
+    } catch { organizationId = null; }
+  }
+
+  if (userId) {
+    const userRl = await userDailyAuditLimiter.check(userId);
+    if (!userRl.allowed) return new Response('Daily limit reached.', { status: 429, headers: { ...userRl.headers, 'X-Request-Id': requestId } });
+  }
+  // ... rest of file builds the LLM stream; no further auth/security decisions
+}
+
+--- app/api/chat/route.ts ---
+// Pattern: per-IP minute limit + per-IP burst + global daily budget + optional per-user daily limit.
+// XML-escapes + delimits user messages before passing to LLM (prompt injection defense).
+// NO Origin check (gap candidate vs /api/audit which DOES origin-check).
+// Anonymous traffic allowed; session lookup is best-effort.
+export const runtime = 'nodejs';
+export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? req.headers.get('x-real-ip') ?? '127.0.0.1';
+  const rl = await auditLimiter.check(ip);
+  if (!rl.allowed) return new Response('Too many requests.', { status: 429, headers: rl.headers });
+  const ipBurst = await perIpConcurrencyLimiter.check(ip);
+  if (!ipBurst.allowed) return new Response('Too many requests from this IP.', { status: 429, headers: ipBurst.headers });
+  const dailyBudget = await dailyAuditBudget.check('global');
+  if (!dailyBudget.allowed) return new Response('Daily AI limit reached.', { status: 429, headers: dailyBudget.headers });
+
+  let rawBody: unknown;
+  try { rawBody = await req.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
+  const parsed = chatRequestSchema.safeParse(rawBody);
+  if (!parsed.success) return new Response(parsed.error.issues[0]?.message ?? 'Invalid', { status: 400 });
+  const { messages, context } = parsed.data;
+
+  let userId: string | null = null;
+  try {
+    const session = await auth.api.getSession({ headers: await nextHeaders() });
+    userId = session?.user?.id ?? null;
+  } catch {}
+  if (userId) {
+    const userRl = await userDailyAuditLimiter.check(userId);
+    if (!userRl.allowed) return new Response('Daily AI limit reached for your account.', { status: 429, headers: userRl.headers });
+  }
+  // ... LLM stream
+  return new Response(stream, { headers: STREAM_RESPONSE_HEADERS });
+}
+
+--- app/api/fetch-url/route.ts ---
+// Pattern: rate limit + URL allowlist (GitHub raw + gist only) + DNS-level SSRF
+// validation (resolve+verify public IPs) + redirect: 'error' + content-type
+// filter + 30KB byte cap + 10s timeout.
+import { isAllowedUrl, ALLOWED_URL_DESCRIPTION } from '@/lib/config/urlAllowlist';
+import { fetchUrlLimiter } from '@/lib/rateLimit';
+import { validateUrlForSSRF } from '@/lib/ssrf';
+export const runtime = 'nodejs';
+const MAX_BYTES = 30_000;
+
+export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? req.headers.get('x-real-ip') ?? '127.0.0.1';
+  const rl = await fetchUrlLimiter.check(ip);
+  if (!rl.allowed) return new Response('Too many requests.', { status: 429, headers: rl.headers });
+
+  let body: { url?: unknown };
+  try { body = await req.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
+  const { url } = body;
+  if (typeof url !== 'string' || !url.trim()) return new Response('Missing url', { status: 400 });
+  const trimmed = url.trim();
+  if (!isAllowedUrl(trimmed)) return new Response(`Only raw GitHub and Gist URLs are supported`, { status: 400 });
+  const ssrfError = await validateUrlForSSRF(trimmed);   // DNS resolve + public-IP check (anti-rebinding)
+  if (ssrfError) return new Response(ssrfError, { status: 400 });
+
+  let fetchRes: Response;
+  try {
+    fetchRes = await fetch(trimmed, {
+      headers: { 'User-Agent': 'Claudit/1.0' },
+      signal: AbortSignal.timeout(10_000),
+      redirect: 'error',           // never follow redirects (anti-rebinding)
+    });
+  } catch { return new Response('Failed to fetch URL.', { status: 502 }); }
+  if (!fetchRes.ok) return new Response(`Remote returned ${fetchRes.status}`, { status: 502 });
+  const contentType = fetchRes.headers.get('content-type') ?? '';
+  if (contentType.includes('text/html')) return new Response('URL returned HTML — use raw URL instead', { status: 400 });
+  const text = await fetchRes.text();
+  return new Response(text.length > MAX_BYTES ? text.slice(0, MAX_BYTES) : text, {
+    headers: { ...API_RESPONSE_HEADERS, 'Content-Type': 'text/plain; charset=utf-8' },
+  });
+}
+
+--- app/api/synthesize/route.ts (summary) ---
+// Identical security wrapper to /api/audit: Origin allowlist (ALLOWED_ORIGINS),
+// optional API_ACCESS_TOKEN bearer, ip extraction, synthesisLimiter.check(ip),
+// dailyAuditBudget.check('global'), JSON parse + Zod, optional session via
+// auth.api.getSession. Streams response with STREAM_RESPONSE_HEADERS.
+
+--- app/api/github-pr/route.ts (summary) ---
+// auditLimiter + perIpConcurrencyLimiter per IP. NO session check (anonymous).
+// Server-only GITHUB_TOKEN injected into outbound request (never echoed to client).
+// Zod-validates owner/repo/pull number, fetches PR via GitHub API.
+
+--- app/api/github-source/route.ts (summary) ---
+// auditLimiter + perIpConcurrencyLimiter per IP. NO session check (anonymous).
+// Server-only GITHUB_TOKEN injected into outbound request (never echoed).
+// Zod-validates owner/repo/branch, fetches code via GitHub API, returns truncated text.
+// No SSRF check needed — destination is fixed to api.github.com.
+
+--- app/api/webhooks/stripe/route.ts ---
+import { NextRequest, NextResponse } from 'next/server';
+import type Stripe from 'stripe';
+import { stripe } from '@/lib/stripe';
+import { db } from '@/lib/db';
+import { orgBilling } from '@/lib/db/schema/org-settings';
+import { eq } from 'drizzle-orm';
+
+export async function POST(req: NextRequest) {
+  if (!stripe) return NextResponse.json({ error: 'Billing not configured' }, { status: 503 });
+  const body = await req.text();
+  const sig = req.headers.get('stripe-signature');
+  if (!sig || !process.env.STRIPE_WEBHOOK_SECRET) return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
+
+  let event: Stripe.Event;
+  try { event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET); }
+  catch { return NextResponse.json({ error: 'Invalid signature' }, { status: 400 }); }
+
+  switch (event.type) {
+    case 'checkout.session.completed':       { /* update orgBilling by orgId from metadata */ break; }
+    case 'customer.subscription.updated':    { /* update plan/status/cancelAtPeriodEnd from metadata.orgId */ break; }
+    case 'customer.subscription.deleted':    { /* downgrade to free */ break; }
+    case 'invoice.payment_failed':           { /* lookup orgId by stripeCustomerId, set past_due */ break; }
+  }
+  return NextResponse.json({ received: true });
+}
+// NOTE: no rate limit (Stripe-signed) and no Origin check (Stripe doesn't send Origin).
+
+--- app/api/webhooks/pre-deploy/route.ts ---
+import { NextRequest, NextResponse } from 'next/server';
+import { createHash } from 'crypto';
+import { db } from '@/lib/db';
+import { webhookConfigs } from '@/lib/auth-schema';
+import { eq } from 'drizzle-orm';
+import { z } from 'zod';
+export const runtime = 'nodejs';
+export const maxDuration = 180;
+
+const bodySchema = z.union([
+  z.object({ owner: z.string().min(1), repo: z.string().min(1), branch: z.string().default('HEAD'), githubToken: z.string().optional() }),
+  z.object({ repoUrl: z.string().url(), branch: z.string().default('HEAD'), githubToken: z.string().optional() }),
+  z.object({ code: z.string().min(1).max(300_000) }),
+]);
+
+function extractBearerToken(req: NextRequest): string | null {
+  const a = req.headers.get('authorization') ?? '';
+  if (!a.startsWith('Bearer ')) return null;
+  return a.slice(7).trim() || null;
+}
+
+export async function POST(req: NextRequest) {
+  const rawKey = extractBearerToken(req);
+  if (!rawKey) return NextResponse.json({ error: 'Missing Authorization: Bearer <api_key>' }, { status: 401 });
+
+  const keyHash = createHash('sha256').update(rawKey).digest('hex');   // sha256 lookup (no plain-text storage)
+  const config = await db.query.webhookConfigs.findFirst({ where: eq(webhookConfigs.apiKeyHash, keyHash) });
+  if (!config || !config.enabled) return NextResponse.json({ error: 'Invalid or disabled API key' }, { status: 401 });
+
+  db.update(webhookConfigs).set({ lastUsedAt: new Date() }).where(eq(webhookConfigs.id, config.id)).catch(() => {});
+  // (no rate limit on this endpoint — API-key-scoped, multi-tenant)
+
+  let body: unknown;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
+  const parsed = bodySchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: 'Provide owner+repo, repoUrl, or code', details: parsed.error.flatten() }, { status: 422 });
+  // ... runs quickScore + returns pass/fail
+}
+
+--- app/api/webhooks/configs/route.ts ---
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
+import { createHash, randomBytes } from 'crypto';
+import { z } from 'zod';
+const createSchema = z.object({ name: z.string().min(1).max(100), threshold: z.number().int().min(0).max(100).default(70) });
+
+export async function GET() {
+  const s = await auth.api.getSession({ headers: await headers() });
+  if (!s) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // ... list rows scoped WHERE userId = s.user.id; apiKeyHash NEVER returned (only apiKeyPreview)
+}
+export async function POST(req: NextRequest) {
+  const s = await auth.api.getSession({ headers: await headers() });
+  if (!s) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let body: unknown;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
+  const parsed = createSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+
+  const rawKey = `ck_${randomBytes(24).toString('hex')}`;       // 24-byte token, prefixed
+  const keyHash = createHash('sha256').update(rawKey).digest('hex');
+  const keyPreview = `${rawKey.slice(0, 10)}...${rawKey.slice(-4)}`;
+  await db.insert(webhookConfigs).values({ id: crypto.randomUUID(), userId: s.user.id, name: parsed.data.name, apiKeyHash: keyHash, apiKeyPreview: keyPreview, threshold: parsed.data.threshold });
+  return NextResponse.json({ apiKey: rawKey, preview: keyPreview }, { status: 201 });  // raw key shown ONCE
+}
+// NO rate limit (gap candidate).
+
+--- app/api/webhooks/configs/[id]/route.ts (summary) ---
+// PUT/DELETE: requires session (401 if none). UPDATE/DELETE WHERE id = :id AND userId = session.user.id
+// (ownership scoping prevents IDOR). Returns 404 if no row matched.
+
+--- app/api/scheduled-audits/route.ts ---
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
+import { z } from 'zod';
+const createSchema = z.object({
+  name: z.string().min(1).max(100),
+  repoUrl: z.string().url().regex(/github\.com/, 'Must be a GitHub repo URL'),
+  githubToken: z.string().max(200).optional(),       // STORED IN PLAIN TEXT (gap candidate — see [id]/route below)
+  branch: z.string().min(1).max(200).default('main'),
+  schedule: z.enum(['daily', 'weekly']).default('daily'),
+  threshold: z.number().int().min(0).max(100).default(70),
+});
+export async function GET() {
+  const s = await auth.api.getSession({ headers: await headers() });
+  if (!s) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // SELECT WHERE userId = s.user.id
+}
+export async function POST(req: NextRequest) {
+  const s = await auth.api.getSession({ headers: await headers() });
+  if (!s) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // ... Zod parse → INSERT with userId: s.user.id
+}
+// NO rate limit (gap candidate — could be used to insert many rows).
+
+--- app/api/scheduled-audits/[id]/route.ts ---
+const updateSchema = z.object({ /* same fields, all optional */ enabled: z.boolean().optional() });
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const s = await auth.api.getSession({ headers: await headers() });
+  if (!s) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { id } = await params;
+  /* Zod parse */
+  const [row] = await db.update(scheduledAudits).set(updates)
+    .where(and(eq(scheduledAudits.id, id), eq(scheduledAudits.userId, s.user.id)))   // <-- ownership scope
+    .returning();
+  if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  return NextResponse.json({ scheduledAudit: row });
+}
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const s = await auth.api.getSession({ headers: await headers() });
+  if (!s) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { id } = await params;
+  const [row] = await db.delete(scheduledAudits)
+    .where(and(eq(scheduledAudits.id, id), eq(scheduledAudits.userId, s.user.id)))
+    .returning({ id: scheduledAudits.id });
+  if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  return NextResponse.json({ deleted: true });
+}
+
+--- app/api/cron/scheduled-audits/route.ts (security excerpt) ---
+export const runtime = 'nodejs'; export const maxDuration = 300;
+const BATCH_SIZE = 10;
+export async function POST(req: NextRequest) {
+  const secret = req.headers.get('authorization')?.replace('Bearer ', '').trim();
+  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  // ... selects up to 10 enabled, due-by-schedule rows, runs quickScore, emails on drop
+  // NB: plain-string equality (not timingSafeEqual) — possible timing-attack gap candidate.
+}
+
+--- app/api/admin/cleanup/route.ts ---
+import { requireAdminRole } from '@/lib/middleware/requireAdmin';
+export async function POST(req: NextRequest) {
+  // Dual auth: bearer secret (cron) OR admin session
+  const secret = process.env.REVALIDATION_SECRET;
+  const authHeader = req.headers.get('authorization');
+  const isSecretAuth = secret && authHeader === `Bearer ${secret}`;     // plain string compare
+  if (!isSecretAuth) {
+    const forbidden = await requireAdminRole(req);                       // 403 if not admin
+    if (forbidden) return forbidden;
+  }
+  // ... DELETE expired sessions / 90+ day audits / expired verifications
+  return Response.json({ cleaned: results, timestamp: new Date().toISOString() }, { headers: API_RESPONSE_HEADERS });
+}
+// NO rate limit (admin-only or cron-secret — acceptable).
+
+--- app/api/admin/revalidate/route.ts ---
+import { requireAdminRole } from '@/lib/middleware/requireAdmin';
+const VALID_TARGETS = new Set(['agent-pages', 'static-pages', 'all']);
+export async function POST(req: NextRequest) {
+  const secret = process.env.REVALIDATION_SECRET;
+  const authHeader = req.headers.get('authorization');
+  const isSecretAuth = secret && authHeader === `Bearer ${secret}`;     // plain string compare
+  if (!isSecretAuth) {
+    const forbidden = await requireAdminRole(req);
+    if (forbidden) return forbidden;
+  }
+  let body: { targets?: unknown };
+  try { body = await req.json(); } catch { return new Response('Invalid JSON', { status: 400, headers: API_RESPONSE_HEADERS }); }
+  const targets = Array.isArray(body.targets) ? body.targets.filter((t): t is string => typeof t === 'string') : [];
+  if (targets.length === 0) return new Response('Missing or empty "targets" array', { status: 400, headers: API_RESPONSE_HEADERS });
+  const invalid = targets.filter((t) => !VALID_TARGETS.has(t));
+  if (invalid.length > 0) return new Response(`Invalid targets: ${invalid.join(', ')}.`, { status: 400, headers: API_RESPONSE_HEADERS });
+  // ... revalidatePath per target
+}
+
+--- app/api/admin/dismissal-audit-trail/route.ts (summary) ---
+// GET handler — requireAdminRole(req) returns 403 if not admin; reads dismissal logs.
+
+--- app/api/billing/checkout/route.ts ---
+export async function POST(req: NextRequest) {
+  if (!stripe) return NextResponse.json({ error: 'Billing not configured' }, { status: 503 });
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const orgId = (session.session as Record<string, unknown>)?.activeOrganizationId as string | null;
+  if (!orgId) return NextResponse.json({ error: 'No active organization' }, { status: 400 });
+  const { planId } = (await req.json()) as { planId: PlanId };
+  const plan = PLANS[planId];
+  if (!plan?.priceId) return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
+  // ... lookup org, get-or-create Stripe customer, create checkout session
+  return NextResponse.json({ url: checkoutSession.url });
+}
+// NO rate limit. NO Origin check.
+// NB: planId is NOT validated against Zod (just looked up in PLANS map — null check is the gate).
+// NB: orgId is read from session, not from request body (good — no IDOR vector).
+
+--- app/api/billing/portal/route.ts ---
+export async function POST() {
+  if (!stripe) return NextResponse.json({ error: 'Billing not configured' }, { status: 503 });
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const orgId = (session.session as Record<string, unknown>)?.activeOrganizationId as string | null;
+  if (!orgId) return NextResponse.json({ error: 'No active organization' }, { status: 400 });
+  // ... org lookup + Stripe billing portal session
+}
+// NO rate limit. NO Origin check. orgId from session (not body).
+
+--- app/api/settings/workspace/route.ts ---
+const MAX_WORKSPACE_CONTEXT_CHARS = 2_000;
+export async function GET(req: NextRequest) {
+  const ip = /* ... */; const rl = await settingsLimiter.check(ip);
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: rl.headers });
+  const session = await auth.api.getSession({ headers: await nextHeaders() });
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // SELECT WHERE id = session.user.id
+}
+export async function PATCH(req: NextRequest) {
+  /* same rate-limit + session check */
+  const ctx = (body as Record<string, unknown>).workspaceContext;
+  if (typeof ctx !== 'string') return NextResponse.json({ error: 'workspaceContext must be a string' }, { status: 400 });
+  if (ctx.length > MAX_WORKSPACE_CONTEXT_CHARS) return NextResponse.json({ error: 'too long' }, { status: 400 });
+  // UPDATE WHERE id = session.user.id
+}
+// NO Zod schema (uses inline typeof + length check). NO Origin check.
+
+--- app/api/org/audit-defaults/route.ts (summary) ---
+// GET + POST. Session required (401 if missing). Reads/writes orgSettings WHERE orgId = activeOrganizationId.
+// Does NOT verify caller is org admin/owner — any member of the org can write defaults (gap candidate).
+// NO Zod schema, NO rate limit.
+
+--- app/api/org/notifications/route.ts (summary) ---
+// GET + POST. Same pattern: session-required, orgId from session, writes to orgSettings.
+// Same gap candidate: does not verify org-role (member vs owner).
+// NO Zod schema, NO rate limit.
+
+--- app/api/analytics/dismissal/route.ts (summary) ---
+// POST. analyticsLimiter.check(ip); session NOT required (anonymous analytics ping).
+// Inserts a row recording finding dismissal — payload is Zod-validated.
+
+--- app/api/agents/fp-rates/route.ts (summary) ---
+// GET. fpRatesLimiter.check(ip); session NOT required. Public read-only aggregate stats.
+
+--- app/api/csp-report/route.ts ---
+import { RateLimiter } from '@/lib/rateLimit';
+export const runtime = 'nodejs';
+const cspReportLimiter = new RateLimiter({ windowMs: 60_000, maxRequests: 30, prefix: 'csp-report' });
+const MAX_BODY_BYTES = 4096;
+function stripQueryParams(uri: string): string { /* strip PII from document-uri */ }
+const noisePatterns = [/^chrome-extension:\/\//, /^moz-extension:\/\//, /^safari-extension:\/\//, /^about:/, /^blob:/, /^data:/, /^inline$/, /^eval$/];
+
+export async function POST(req: NextRequest) {
+  const ip = /* ... */; const rl = await cspReportLimiter.check(ip);
+  if (!rl.allowed) return new Response(null, { status: 429, headers: rl.headers });
+  const ct = req.headers.get('content-type') ?? '';
+  if (!ct.includes('application/csp-report') && !ct.includes('application/json') && !ct.includes('application/reports+json')) {
+    return new Response(null, { status: 415 });
+  }
+  const contentLength = req.headers.get('content-length');
+  if (contentLength !== null && parseInt(contentLength, 10) > MAX_BODY_BYTES) return new Response(null, { status: 413 });
+  try {
+    const rawText = await req.text();
+    if (rawText.length > MAX_BODY_BYTES) return new Response(null, { status: 413 });
+    const body = JSON.parse(rawText);
+    const report = body?.['csp-report'] ?? body;
+    if (typeof report !== 'object' || report === null) return new Response(null, { status: 204 });
+    /* extract fixed fields, slice to bounded length, log structured JSON */
+  } catch {}
+  return new Response(null, { status: 204 });
+}
+// Public endpoint (browsers post unauthenticated). Acceptable: rate-limited + body-capped + noise-filtered.
+
+=================================
+END OF BUNDLE
