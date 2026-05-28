@@ -40,9 +40,31 @@ export async function GET(req: NextRequest) {
       .orderBy(desc(githubInstallations.installedAt));
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    // Migration 006 not applied → table missing. Surface a friendly hint
-    // instead of a generic 500 so the UI can render an actionable message.
-    if (/relation .* does not exist|no such table/i.test(message)) {
+    const e = err as { code?: string; cause?: { code?: string; message?: string } };
+    const sqlstate = e.code ?? e.cause?.code;
+    const causeMessage = e.cause?.message ?? '';
+
+    // Log the raw shape so we can diagnose Railway issues from logs — the
+    // generic "Couldn't load" UI message hides the real cause otherwise.
+    console.error(JSON.stringify({
+      ts: new Date().toISOString(),
+      level: 'error',
+      event: 'integrations_github_list_query_failed',
+      sqlstate,
+      message: message.slice(0, 300),
+      cause: causeMessage.slice(0, 300),
+    }));
+
+    // Postgres SQLSTATE 42P01 = undefined_table (migration 006 not applied).
+    // Match by code first (most reliable), then by message text as a fallback
+    // in case the error is wrapped and the code doesn't surface — drizzle
+    // wraps errors with a generic "Failed query: …" prefix that has tripped
+    // a stricter regex in the past.
+    const tableMissing =
+      sqlstate === '42P01' ||
+      /relation .* does not exist|no such table|table .* does not exist/i.test(message) ||
+      /relation .* does not exist|no such table|table .* does not exist/i.test(causeMessage);
+    if (tableMissing) {
       return NextResponse.json(
         { installations: [], recentAudits: [], migrationMissing: true },
         { status: 200 },
