@@ -7,12 +7,18 @@ import { useEffect, useRef, useState } from 'react';
  * Honours prefers-reduced-motion by snapping straight to the target — the
  * accessibility cost of a counting animation is non-zero for users with
  * vestibular sensitivity, and a static number is fully informative anyway.
+ *
+ * First-paint behaviour: starts at 0 and animates up to `target` on mount.
+ * Earlier versions initialised value to target on first paint, which made
+ * the very first appearance skip the animation entirely — so users opening
+ * a fully-static list never saw the count-up fire.
  */
 export function useCountUp(target: number | null, durationMs = 600): number {
-  const [value, setValue] = useState<number>(target ?? 0);
-  // Track the value we last animated *from* so re-renders that pass the
-  // same target don't restart the animation.
-  const lastTarget = useRef<number | null>(target);
+  const [value, setValue] = useState<number>(0);
+  // `null` sentinel for "never animated yet" — distinct from "animated and
+  // landed on this value". Without this, the equality check below would
+  // short-circuit on the very first effect run.
+  const lastTarget = useRef<number | null>(null);
 
   useEffect(() => {
     if (target === null) return;
