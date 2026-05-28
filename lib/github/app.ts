@@ -54,7 +54,7 @@ function getAppId(): string {
  * inserting newlines after the header, every 64 base64 chars, and before
  * the footer — which is what GitHub's downloaded .pem actually looks like.
  */
-function normalizePem(raw: string): string {
+export function normalizePem(raw: string): string {
   let s = raw.trim();
   // Strip a single layer of wrapping quotes (single or double).
   if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
