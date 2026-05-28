@@ -71,9 +71,15 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50">
-        {/* Glass panel */}
-        <div className="relative bg-white/80 dark:bg-[#0a0a0f]/90 backdrop-blur-2xl">
+      {/* PERF: Sticky header. backdrop-blur-2xl on a sticky element was
+          repainting the entire blurred area on every scroll frame — a 40px
+          blur is one of the most expensive CSS operations and was the
+          primary cause of global scroll lag. Switched to a near-opaque
+          background that doesn't need the blur to read as a glass panel,
+          and forced the header to its own compositor layer so scrolling
+          doesn't trigger paint on the rest of the page. */}
+      <header className="sticky top-0 z-50" style={{ willChange: 'transform' }}>
+        <div className="relative bg-white/95 dark:bg-[#0a0a0f]/95">
           {/* Top violet accent line */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-500/60 to-transparent" />
           {/* Bottom border */}

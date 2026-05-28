@@ -6,7 +6,10 @@ import { fadeUp, staggerContainer } from '@/lib/motion/variants';
 
 export function LandingNav({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
-    <header className="sticky top-0 z-50 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/60">
+    <header
+      className="sticky top-0 z-50 bg-zinc-950/95 border-b border-zinc-800/60"
+      style={{ willChange: 'transform' }}
+    >
       <motion.nav
         variants={staggerContainer}
         initial="hidden"
