@@ -27,7 +27,7 @@ jobs:
 
       # CLOUD-012: Secret scanning gate — block commits containing real API keys.
       - name: Secret scanning
-        uses: trufflesecurity/trufflehog@6f37e32a01fa8a5c9de9e1eaf72f0bedf2c270e1 # v3.88.26
+        uses: trufflesecurity/trufflehog@37b77001d0174ebec2fcca2bd83ff83a6d45a3ab # v3.95.3
         with:
           extra_args: --only-verified
 

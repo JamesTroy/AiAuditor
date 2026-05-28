@@ -121,6 +121,63 @@ html { scroll-behavior: smooth; }
   to   { opacity: 1; }
 }
 
+/* Slow opacity breathe for the "we're watching for updates" dot in the
+   integrations page header. Constant 1.6s loop. */
+@keyframes breathe {
+  0%, 100% { opacity: 0.35; }
+  50%       { opacity: 1;    }
+}
+
+/* One-shot celebratory pulse for a status badge transitioning to a
+   terminal state (Reviewed / Failed). Scales briefly, then settles. */
+@keyframes pulse-once {
+  0%   { transform: scale(1);    }
+  35%  { transform: scale(1.18); }
+  100% { transform: scale(1);    }
+}
+
+/* Subtle emerald tint that fades out, used when a list row transitions
+   from "Reviewing…" to "Reviewed" so the user catches that something
+   just finished without it looking spammy. */
+@keyframes row-flash-emerald {
+  0%   { background-color: rgba(16, 185, 129, 0.18); }
+  100% { background-color: rgba(16, 185, 129, 0);    }
+}
+
+/* Shimmering badge background — used on the "Reviewing…" badge while a
+   PR audit is in flight. The gradient travels left → right under the
+   badge text. Tailwind's animate-[shimmer_…] picks this up. */
+@keyframes badge-shimmer {
+  0%   { background-position: -150% 0; }
+  100% { background-position:  150% 0; }
+}
+
+@layer utilities {
+  .animate-breathe       { animation: breathe 1.6s ease-in-out infinite; }
+  .animate-pulse-once    { animation: pulse-once 600ms ease-out 1; }
+  .animate-row-flash     { animation: row-flash-emerald 1400ms ease-out 1; }
+  /* Reviewing… badge: amber base, lighter band sweeping across. */
+  .badge-shimmer {
+    background-image: linear-gradient(
+      90deg,
+      rgba(251, 191, 36, 0) 0%,
+      rgba(251, 191, 36, 0.55) 50%,
+      rgba(251, 191, 36, 0) 100%
+    );
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: badge-shimmer 1.6s ease-in-out infinite;
+  }
+}
+
+/* Respect users who've asked for reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-breathe,
+  .animate-pulse-once,
+  .animate-row-flash,
+  .badge-shimmer { animation: none; }
+}
+
 /* ─── Scroll compensation for sticky navbar ─────────────────── */
 html {
   scroll-padding-top: 4rem;

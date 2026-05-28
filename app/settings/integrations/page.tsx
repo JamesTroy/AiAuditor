@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSession } from '@/lib/auth-client';
 import { fadeUp, staggerContainer, transitions } from '@/lib/motion/variants';
+import { useCountUp } from '@/lib/hooks/useCountUp';
 
 interface InstallationRepo {
   id: number;
@@ -72,6 +73,11 @@ const STATUS_BADGE: Record<RecentAudit['status'], string> = {
   skipped: 'bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-500',
 };
 
+// Statuses still in motion — used for the live-polling decision and for
+// the "Watching" breathing dot in the section header.
+const ACTIVE_STATUSES: ReadonlySet<RecentAudit['status']> = new Set(['queued', 'running']);
+const TERMINAL_STATUSES: ReadonlySet<RecentAudit['status']> = new Set(['posted', 'failed', 'skipped']);
+
 function reviewUrl(audit: RecentAudit): string {
   if (audit.postedReviewId) {
     return `https://github.com/${audit.repoFullName}/pull/${audit.prNumber}#pullrequestreview-${audit.postedReviewId}`;
@@ -82,6 +88,97 @@ function reviewUrl(audit: RecentAudit): string {
 function checkRunUrl(audit: RecentAudit): string | null {
   if (!audit.postedCheckRunId) return null;
   return `https://github.com/${audit.repoFullName}/runs/${audit.postedCheckRunId}`;
+}
+
+/**
+ * Single Recent-reviews row. Pulled out of the page component so we can
+ * own per-row animation state (score count-up, status-transition flash,
+ * badge shimmer) without ballooning the parent.
+ */
+function RecentReviewRow({ audit }: { audit: RecentAudit }) {
+  const cr = checkRunUrl(audit);
+  // Smoothly count the score up on first paint / when it changes after a
+  // re-fetch (e.g., row moved from running → posted with a final score).
+  const animatedScore = useCountUp(audit.score, 700);
+
+  // Watch for terminal-state transitions so we can fire a one-shot row
+  // flash + badge pulse without re-firing on every re-render.
+  const prevStatus = useRef<RecentAudit['status']>(audit.status);
+  const [transitionKey, setTransitionKey] = useState(0);
+  const [justFinished, setJustFinished] = useState(false);
+  useEffect(() => {
+    const wasActive = ACTIVE_STATUSES.has(prevStatus.current);
+    const isTerminal = TERMINAL_STATUSES.has(audit.status);
+    if (wasActive && isTerminal) {
+      setJustFinished(true);
+      setTransitionKey((k) => k + 1);
+      const t = setTimeout(() => setJustFinished(false), 1500);
+      prevStatus.current = audit.status;
+      return () => clearTimeout(t);
+    }
+    prevStatus.current = audit.status;
+  }, [audit.status]);
+
+  return (
+    <li
+      key={transitionKey}
+      className={`py-3 flex items-center justify-between gap-3 rounded-md px-2 -mx-2 ${justFinished ? 'animate-row-flash' : ''}`}
+    >
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium truncate">
+          <a
+            href={reviewUrl(audit)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-violet-600 dark:hover:text-violet-400 hover:underline"
+            title={audit.postedReviewId ? "Open Claudit's review on this PR" : 'Open the PR on GitHub'}
+          >
+            {audit.repoFullName} <span className="text-gray-400 dark:text-zinc-600">#{audit.prNumber}</span>
+          </a>
+        </p>
+        <p className="text-xs text-gray-400 dark:text-zinc-600 mt-0.5">
+          {new Date(audit.createdAt).toLocaleString()}
+          {audit.findingsTotal !== null
+            ? ` · ${audit.findingsTotal} ${audit.findingsTotal === 1 ? 'issue' : 'issues'}${(audit.findingsCritical ?? 0) + (audit.findingsHigh ?? 0) > 0 ? ` (${audit.findingsCritical ?? 0} critical, ${audit.findingsHigh ?? 0} high)` : ''}`
+            : ''}
+          {cr && audit.status === 'posted' ? (
+            <>
+              {' · '}
+              <a
+                href={cr}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-violet-600 dark:hover:text-violet-400 hover:underline"
+              >
+                check
+              </a>
+            </>
+          ) : null}
+        </p>
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
+        {audit.score !== null && (
+          <span className="text-sm font-mono tabular-nums" title="Score (pass-fail threshold is set per repository)">
+            {animatedScore}
+          </span>
+        )}
+        <span
+          className={
+            `relative overflow-hidden text-[10px] uppercase tracking-wider rounded px-1.5 py-0.5 ` +
+            STATUS_BADGE[audit.status] +
+            (justFinished ? ' animate-pulse-once' : '')
+          }
+        >
+          {STATUS_LABEL[audit.status]}
+          {/* Shimmer band runs only while the audit is actively running.
+              Sits as a non-interactive absolute layer so the text stays put. */}
+          {audit.status === 'running' && (
+            <span aria-hidden="true" className="absolute inset-0 badge-shimmer pointer-events-none" />
+          )}
+        </span>
+      </div>
+    </li>
+  );
 }
 
 export default function IntegrationsPage() {
@@ -156,6 +253,16 @@ export default function IntegrationsPage() {
   useEffect(() => {
     if (session) void load();
   }, [session, load]);
+
+  // Live polling — while any recent audit is still in queued/running state,
+  // refetch every 5s so the UI can flip rows to "Reviewed" without the user
+  // hitting refresh. Stops as soon as nothing's in motion.
+  const hasActiveAudit = !!data?.recentAudits.some((a) => ACTIVE_STATUSES.has(a.status));
+  useEffect(() => {
+    if (!session || !hasActiveAudit) return;
+    const id = setInterval(() => { void load(); }, 5_000);
+    return () => clearInterval(id);
+  }, [session, hasActiveAudit, load]);
 
   if (isPending) {
     return (
@@ -528,60 +635,22 @@ export default function IntegrationsPage() {
         {/* Recent PR audits */}
         {data && data.recentAudits.length > 0 && (
           <motion.section variants={fadeUp} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-1">Recent reviews</h2>
+            <div className="flex items-center justify-between gap-3 mb-1">
+              <h2 className="text-lg font-semibold">Recent reviews</h2>
+              {hasActiveAudit && (
+                <span className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-300" title="Auto-refreshing while an audit is in flight">
+                  <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-breathe" />
+                  Watching
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-500 dark:text-zinc-500 mb-4">
               The last 20 pull requests Claudit reviewed.
             </p>
             <ul className="divide-y divide-gray-100 dark:divide-zinc-800">
-              {data.recentAudits.map((a) => {
-                const cr = checkRunUrl(a);
-                return (
-                  <li key={a.id} className="py-3 flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">
-                        <a
-                          href={reviewUrl(a)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-violet-600 dark:hover:text-violet-400 hover:underline"
-                          title={a.postedReviewId ? "Open Claudit's review on this PR" : 'Open the PR on GitHub'}
-                        >
-                          {a.repoFullName} <span className="text-gray-400 dark:text-zinc-600">#{a.prNumber}</span>
-                        </a>
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-zinc-600 mt-0.5">
-                        {new Date(a.createdAt).toLocaleString()}
-                        {a.findingsTotal !== null
-                          ? ` · ${a.findingsTotal} ${a.findingsTotal === 1 ? 'issue' : 'issues'}${(a.findingsCritical ?? 0) + (a.findingsHigh ?? 0) > 0 ? ` (${a.findingsCritical ?? 0} critical, ${a.findingsHigh ?? 0} high)` : ''}`
-                          : ''}
-                        {cr && a.status === 'posted' ? (
-                          <>
-                            {' · '}
-                            <a
-                              href={cr}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:text-violet-600 dark:hover:text-violet-400 hover:underline"
-                            >
-                              check
-                            </a>
-                          </>
-                        ) : null}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      {a.score !== null && (
-                        <span className="text-sm font-mono tabular-nums" title={`Score (pass-fail threshold is set per repository)`}>
-                          {a.score}
-                        </span>
-                      )}
-                      <span className={`text-[10px] uppercase tracking-wider rounded px-1.5 py-0.5 ${STATUS_BADGE[a.status]}`}>
-                        {STATUS_LABEL[a.status]}
-                      </span>
-                    </div>
-                  </li>
-                );
-              })}
+              {data.recentAudits.map((a) => (
+                <RecentReviewRow key={a.id} audit={a} />
+              ))}
             </ul>
           </motion.section>
         )}
