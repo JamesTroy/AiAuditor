@@ -260,11 +260,19 @@ function makeStream(
               })
               .where(and(eq(auditTable.id, auditRecord.id), eq(auditTable.status, 'running')));
             log('info', 'audit_saved', { requestId: logMeta.requestId, auditId: auditRecord.id });
-            // PERF-031: Invalidate dashboard cache so user sees fresh stats.
+            // PERF: Invalidate dashboard cache so user sees fresh stats.
+            // The cache (app/dashboard/page.tsx) is registered with the static
+            // tag 'dashboard-stats'; the per-user/per-org tags used here
+            // previously never matched a real cache entry, so the dashboard
+            // stayed stale until the 60s TTL expired naturally. Using the
+            // shared tag invalidates all users' entries — a small thundering-
+            // herd risk at scale, but correct invalidation matters more than
+            // the marginal cost at current usage, and per-user tag scoping
+            // would require reintroducing the per-request unstable_cache
+            // wrapper we deliberately hoisted out of the request handler.
             if (auditRecord.userId) {
-              try { revalidateTag(`dashboard-${auditRecord.userId}`); } catch (e) { log('warn', 'revalidate_tag_failed', { requestId: logMeta.requestId, userId: auditRecord.userId, error: String(e) }); }
-              if (auditRecord.organizationId) {
-                try { revalidateTag(`dashboard-org-${auditRecord.organizationId}`); } catch { /* best effort */ }
+              try { revalidateTag('dashboard-stats'); } catch (e) {
+                log('warn', 'revalidate_tag_failed', { requestId: logMeta.requestId, userId: auditRecord.userId, error: String(e) });
               }
             }
           } catch (err) {
@@ -563,39 +571,44 @@ export async function POST(req: NextRequest) {
     organizationId = (session?.session as Record<string, unknown>)?.activeOrganizationId as string | null ?? null;
   } catch { /* no session — anonymous audit */ }
 
-  // Fetch workspace context for the logged-in user (best-effort — never blocks audit).
+  // PERF: After session resolution, the three remaining user-scoped checks
+  // (workspace context fetch, org membership validation, per-user daily limit)
+  // are all independent of each other. Previously they ran sequentially —
+  // adding three round-trips (~20-60ms) to first-byte latency. Promise.all
+  // batches them; all three already have isolated error handling so a fail
+  // in one doesn't poison the others.
   let workspaceContextBlock = '';
   let rawWorkspaceContext: string | undefined;
-  if (userId) {
-    try {
-      const userRows = await db
-        .select({ workspaceContext: userTable.workspaceContext })
-        .from(userTable)
-        .where(eq(userTable.id, userId))
-        .limit(1);
-      const ctx = userRows[0]?.workspaceContext;
-      if (ctx) {
-        rawWorkspaceContext = ctx;
-        workspaceContextBlock = `\n\n<workspace_context>\n${escapeXml(ctx)}\n</workspace_context>\n` +
-          `Use this workspace context to tailor findings — flag violations of stated standards, skip suggestions that conflict with stated conventions.`;
-      }
-    } catch { /* best-effort */ }
-  }
+  let userRl: Awaited<ReturnType<typeof userDailyAuditLimiter.check>> | null = null;
 
-  // Validate org membership before associating audit with org
-  if (organizationId && userId) {
-    try {
-      const memberRows = await db.select({ id: memberTable.id })
-        .from(memberTable)
-        .where(and(eq(memberTable.organizationId, organizationId), eq(memberTable.userId, userId)))
-        .limit(1);
-      if (memberRows.length === 0) organizationId = null;
-    } catch { organizationId = null; }
-  }
-
-  // RL-011: Per-user daily audit limit (50/day) for authenticated users.
   if (userId) {
-    const userRl = await userDailyAuditLimiter.check(userId);
+    const [workspaceResult, membershipResult, userRlResult] = await Promise.all([
+      // Workspace context — best-effort, never blocks
+      db.select({ workspaceContext: userTable.workspaceContext })
+        .from(userTable).where(eq(userTable.id, userId)).limit(1)
+        .catch(() => [] as Array<{ workspaceContext: string | null }>),
+      // Org membership — sets organizationId to null on failure or non-member
+      organizationId
+        ? db.select({ id: memberTable.id }).from(memberTable)
+            .where(and(eq(memberTable.organizationId, organizationId), eq(memberTable.userId, userId)))
+            .limit(1).catch(() => [] as Array<{ id: string }>)
+        : Promise.resolve([] as Array<{ id: string }>),
+      // Per-user daily limit
+      userDailyAuditLimiter.check(userId),
+    ]);
+
+    const ctx = workspaceResult[0]?.workspaceContext;
+    if (ctx) {
+      rawWorkspaceContext = ctx;
+      workspaceContextBlock = `\n\n<workspace_context>\n${escapeXml(ctx)}\n</workspace_context>\n` +
+        `Use this workspace context to tailor findings — flag violations of stated standards, skip suggestions that conflict with stated conventions.`;
+    }
+
+    if (organizationId && membershipResult.length === 0) {
+      organizationId = null;
+    }
+
+    userRl = userRlResult;
     if (!userRl.allowed) {
       log('warn', 'user_daily_limit_exceeded', { requestId, ip: anonIp, userId });
       return new Response('You have reached your daily audit limit. Please try again tomorrow.', {
@@ -609,37 +622,40 @@ export async function POST(req: NextRequest) {
   // Persists the auto-detected stack metadata so the dashboard can later
   // filter "all my Next.js audits" / "TS audits with criticals" without
   // re-running detectAgents on every row.
-  async function createAuditRecord(
+  // PERF: Generate the ID synchronously and fire the insert as a non-blocking
+  // background operation. Previously this awaited the Postgres write before
+  // returning the Response, adding 5-20ms to first-byte latency. The insert
+  // takes single-digit ms; the LLM stream runs 60-180s; by the time makeStream
+  // needs the record (post-stream db.update), the insert is long done. If the
+  // insert fails, makeStream's update fails benignly and logs — matches the
+  // existing error-tolerance contract for createAuditRecord.
+  function createAuditRecord(
     agentId: string,
     agentName: string,
     stack?: { language: string | null; framework: string | null; patterns: string[] },
-  ): Promise<{ id: string; startedAt: number; userId?: string; organizationId?: string } | undefined> {
+  ): { id: string; startedAt: number; userId?: string; organizationId?: string } | undefined {
     if (!userId) return undefined;
     const id = crypto.randomUUID();
     const now = Date.now();
-    try {
-      await db.insert(auditTable).values({
-        id,
-        userId,
-        organizationId,
-        agentId,
-        agentName,
-        input: data.input.slice(0, MAX_AUDIT_INPUT_CHARS),
-        status: 'running',
-        detectedLanguage:  stack?.language ?? null,
-        detectedFramework: stack?.framework ?? null,
-        // Cap to 20 patterns and ~2KB to keep rows lean — the patterns are
-        // a hint, not the source of truth for filtering. Beyond 20, the
-        // signal is mostly noise anyway.
-        detectedPatterns: stack?.patterns?.length
-          ? JSON.stringify(stack.patterns.slice(0, 20))
-          : null,
-      });
-      return { id, startedAt: now, userId: userId ?? undefined, organizationId: organizationId ?? undefined };
-    } catch (err) {
+    // Fire-and-forget the actual insert.
+    void db.insert(auditTable).values({
+      id,
+      userId,
+      organizationId,
+      agentId,
+      agentName,
+      input: data.input.slice(0, MAX_AUDIT_INPUT_CHARS),
+      status: 'running',
+      detectedLanguage:  stack?.language ?? null,
+      detectedFramework: stack?.framework ?? null,
+      // Cap to 20 patterns and ~2KB to keep rows lean.
+      detectedPatterns: stack?.patterns?.length
+        ? JSON.stringify(stack.patterns.slice(0, 20))
+        : null,
+    }).catch((err) => {
       log('error', 'audit_record_create_failed', { requestId, error: String(err) });
-      return undefined;
-    }
+    });
+    return { id, startedAt: now, userId: userId ?? undefined, organizationId: organizationId ?? undefined };
   }
 
   if (data.agentType === 'custom') {
@@ -664,7 +680,7 @@ export async function POST(req: NextRequest) {
     // STRUCT-001: Append structured output instruction so Claude calls the tool.
     guardedPrompt += STRUCTURED_OUTPUT_INSTRUCTION;
 
-    const auditRecord = await createAuditRecord('custom', 'Custom Agent', {
+    const auditRecord = createAuditRecord('custom', 'Custom Agent', {
       language: customDetection.language,
       framework: customDetection.framework,
       patterns: customDetection.patterns,
@@ -679,7 +695,8 @@ export async function POST(req: NextRequest) {
     });
 
     // WORKFLOW-10: Compute agent recommendations for this input.
-    const customRecs = recommendAgents(data.input);
+    // Pass pre-computed detection to avoid a second full-input regex pipeline pass.
+    const customRecs = recommendAgents(data.input, 5, customDetection);
     const customRecsHeader = formatRecommendationHeader(customRecs);
 
     // rawWorkspaceContext is declared above at workspace context fetch time.
@@ -724,10 +741,11 @@ export async function POST(req: NextRequest) {
   contextPrompt += STRUCTURED_OUTPUT_INSTRUCTION;
 
   // WORKFLOW-10: Compute agent recommendations for this input.
-  const recs = recommendAgents(data.input);
+  // Pass pre-computed detection to avoid a second full-input regex pipeline pass.
+  const recs = recommendAgents(data.input, 5, detection);
   const recsHeader = formatRecommendationHeader(recs);
 
-  const auditRecord = await createAuditRecord(data.agentType, agent.name, {
+  const auditRecord = createAuditRecord(data.agentType, agent.name, {
     language: detection.language,
     framework: detection.framework,
     patterns: detection.patterns,
