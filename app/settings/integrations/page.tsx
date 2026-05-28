@@ -109,6 +109,12 @@ export default function IntegrationsPage() {
   // Backfill: link installations the user already created on GitHub (e.g.,
   // installed before our table existed, or via direct github.com install).
   const [linkingExisting, setLinkingExisting] = useState(false);
+  const [adminBackfillDetail, setAdminBackfillDetail] = useState<{
+    ghStatus: number | null;
+    hint: string | null;
+    ghBody: string;
+    error: string;
+  } | null>(null);
 
   // Surface error/installed query params as flash banners, then strip them.
   useEffect(() => {
@@ -167,11 +173,17 @@ export default function IntegrationsPage() {
     setLinkingExisting(true);
     setFlashError(null);
     setFlashSuccess(null);
+    setAdminBackfillDetail(null);
     try {
       const res = await fetch('/api/integrations/github/backfill', { method: 'POST' });
-      const json = (await res.json()) as { linked?: number; message?: string };
+      const json = (await res.json()) as {
+        linked?: number;
+        message?: string;
+        adminDetail?: { ghStatus: number | null; hint: string | null; ghBody: string; error: string };
+      };
       if (!res.ok) {
         setFlashError(json.message ?? "Couldn't link your existing GitHub installs. Try again.");
+        if (json.adminDetail) setAdminBackfillDetail(json.adminDetail);
         return;
       }
       if ((json.linked ?? 0) === 0) {
@@ -243,6 +255,31 @@ export default function IntegrationsPage() {
             >
               <span>{flashError}</span>
               <button onClick={() => setFlashError(null)} className="text-xs hover:underline shrink-0">Dismiss</button>
+            </motion.div>
+          )}
+          {adminBackfillDetail && isAdmin && (
+            <motion.div
+              key="admin-backfill-detail"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={transitions.snappy}
+              className="mb-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300 text-xs space-y-2"
+            >
+              <p className="font-semibold">Admin diagnostic — backfill failed</p>
+              <p><span className="opacity-70">GitHub status:</span> <span className="font-mono">{adminBackfillDetail.ghStatus ?? 'n/a'}</span></p>
+              {adminBackfillDetail.hint && <p><span className="opacity-70">Likely cause:</span> {adminBackfillDetail.hint}</p>}
+              <details>
+                <summary className="cursor-pointer opacity-70 hover:opacity-100">Raw error</summary>
+                <pre className="mt-2 whitespace-pre-wrap break-words text-[11px] font-mono">{adminBackfillDetail.error}</pre>
+                {adminBackfillDetail.ghBody && (
+                  <>
+                    <p className="opacity-70 mt-2">GitHub response body:</p>
+                    <pre className="mt-1 whitespace-pre-wrap break-words text-[11px] font-mono">{adminBackfillDetail.ghBody}</pre>
+                  </>
+                )}
+              </details>
+              <button onClick={() => setAdminBackfillDetail(null)} className="text-xs hover:underline">Dismiss</button>
             </motion.div>
           )}
           {flashSuccess && (

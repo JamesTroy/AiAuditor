@@ -74,8 +74,19 @@ async function fetchUserGithubIdentity(userId: string): Promise<{ githubUserId: 
   return { githubUserId: row.accountId, githubLogin: login };
 }
 
+class GithubListError extends Error {
+  constructor(public status: number, public body: string) {
+    super(`GitHub ${status}: ${body.slice(0, 200)}`);
+  }
+}
+
 async function listAllAppInstallations(): Promise<AppInstallation[]> {
-  const jwt = buildAppJwt();
+  let jwt: string;
+  try {
+    jwt = buildAppJwt();
+  } catch (err) {
+    throw new GithubListError(0, `jwt_build_failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
   const all: AppInstallation[] = [];
   let page = 1;
   const PER_PAGE = 100;
@@ -87,9 +98,12 @@ async function listAllAppInstallations(): Promise<AppInstallation[]> {
         'X-GitHub-Api-Version': '2022-11-28',
         'User-Agent': 'Claudit/1.0',
       },
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(15_000),
     });
-    if (!res.ok) throw new Error(`GitHub returned ${res.status} listing installations`);
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new GithubListError(res.status, body);
+    }
     const batch = (await res.json()) as AppInstallation[];
     all.push(...batch);
     if (batch.length < PER_PAGE) break;
@@ -118,16 +132,37 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Admin diagnostic mode — surface the underlying GitHub error to admins
+  // instead of hiding it behind the generic "couldn't reach GitHub" message.
+  const isAdmin = (session.user as Record<string, unknown>).role === 'admin';
+
   let installations: AppInstallation[];
   try {
     installations = await listAllAppInstallations();
   } catch (err) {
+    const ghStatus = err instanceof GithubListError ? err.status : null;
+    const ghBody = err instanceof GithubListError ? err.body : '';
+    const message = err instanceof Error ? err.message : String(err);
     log('integrations_github_backfill_list_failed', {
       userId: session.user.id,
-      error: err instanceof Error ? err.message : String(err),
+      ghStatus,
+      ghBody: ghBody.slice(0, 500),
+      error: message.slice(0, 500),
     });
+    // Friendly hint for the two most common failure modes.
+    let hint: string | null = null;
+    if (ghStatus === 401) hint = 'GitHub rejected our App JWT (401). Most often: GITHUB_APP_ID or GITHUB_APP_PRIVATE_KEY is wrong, or container clock skew >60s.';
+    else if (ghStatus === 403) hint = 'GitHub returned 403 — App may be suspended or rate-limited.';
+    else if (ghStatus === 0) hint = 'Failed to build the App JWT locally (private key parse error). Check GITHUB_APP_PRIVATE_KEY format.';
     return NextResponse.json(
-      { linked: 0, error: 'github_list_failed', message: "Couldn't reach GitHub to list installations. Try again in a moment." },
+      {
+        linked: 0,
+        error: 'github_list_failed',
+        message: "Couldn't reach GitHub to list installations. Try again in a moment.",
+        // Admin-only: actual GitHub status + first chunk of body so we can
+        // diagnose without poking through Railway logs.
+        ...(isAdmin && { adminDetail: { ghStatus, hint, ghBody: ghBody.slice(0, 500), error: message.slice(0, 500) } }),
+      },
       { status: 502 },
     );
   }
