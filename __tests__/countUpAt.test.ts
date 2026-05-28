@@ -71,6 +71,17 @@ describe('countUpAt', () => {
     expect(countUpAt(1000, 500, 0, 100, 600)).toBe(0);
   });
 
+  it('returns target immediately when durationMs is 0', () => {
+    // Guards the divide-by-zero path. Caller intent of "no animation" is
+    // honoured by snapping straight to target.
+    expect(countUpAt(0, 0, 0, 100, 0)).toBe(100);
+    expect(countUpAt(0, 500, 42, 7, 0)).toBe(7);
+  });
+
+  it('returns target immediately for negative durations (defensive)', () => {
+    expect(countUpAt(0, 0, 0, 100, -10)).toBe(100);
+  });
+
   it('handles target === from (no animation needed)', () => {
     expect(countUpAt(0, 0, 50, 50, 600)).toBe(50);
     expect(countUpAt(0, 300, 50, 50, 600)).toBe(50);

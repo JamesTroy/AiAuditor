@@ -14,6 +14,10 @@ export function countUpAt(
   target: number,
   durationMs: number,
 ): number {
+  // Zero (or negative) duration means "snap" — return target immediately,
+  // both because dividing by zero produces Infinity and because the caller's
+  // intent in passing 0 is unambiguous.
+  if (durationMs <= 0) return target;
   const t = Math.min(1, Math.max(0, (now - start) / durationMs));
   const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
   return Math.round(from + (target - from) * eased);
@@ -74,7 +78,11 @@ export function useCountUp(target: number | null, durationMs = 600): number {
       const next = countUpAt(start, now, from, target, durationMs);
       displayRef.current = next;
       setValue(next);
-      if (now - start < durationMs) frame = requestAnimationFrame(tick);
+      // Keep ticking until the engine actually reports target. Time-based
+      // termination ("now - start >= durationMs") races against frame
+      // cadence and can stop one frame before target is rendered; this
+      // value-based check makes "target is set" the loop invariant.
+      if (next !== target) frame = requestAnimationFrame(tick);
     };
 
     frame = requestAnimationFrame(tick);
