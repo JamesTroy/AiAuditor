@@ -65,7 +65,10 @@ export function useCountUp(target: number | null, durationMs = 600): number {
     if (lastTarget.current === intTarget) return;
     lastTarget.current = intTarget;
 
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Optional chaining covers the jsdom-without-matchMedia case (some
+    // test environments) without adding the `typeof window` guard back —
+    // useEffect only runs client-side, so `window` itself is always present.
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     if (reduce) {
       displayRef.current = intTarget;
       setValue(intTarget);
