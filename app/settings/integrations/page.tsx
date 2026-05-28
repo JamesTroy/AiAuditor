@@ -106,6 +106,10 @@ export default function IntegrationsPage() {
   const [thresholdDraft, setThresholdDraft] = useState<number>(70);
   const [savingThreshold, setSavingThreshold] = useState<boolean>(false);
 
+  // Backfill: link installations the user already created on GitHub (e.g.,
+  // installed before our table existed, or via direct github.com install).
+  const [linkingExisting, setLinkingExisting] = useState(false);
+
   // Surface error/installed query params as flash banners, then strip them.
   useEffect(() => {
     const errCode = searchParams.get('error');
@@ -157,6 +161,34 @@ export default function IntegrationsPage() {
   function openThresholdEditor(inst: Installation) {
     setEditingThresholdId(inst.installationId);
     setThresholdDraft(inst.threshold);
+  }
+
+  async function linkExistingInstall() {
+    setLinkingExisting(true);
+    setFlashError(null);
+    setFlashSuccess(null);
+    try {
+      const res = await fetch('/api/integrations/github/backfill', { method: 'POST' });
+      const json = (await res.json()) as { linked?: number; message?: string };
+      if (!res.ok) {
+        setFlashError(json.message ?? "Couldn't link your existing GitHub installs. Try again.");
+        return;
+      }
+      if ((json.linked ?? 0) === 0) {
+        setFlashError(json.message ?? 'No matching GitHub installations found for your account.');
+        return;
+      }
+      setFlashSuccess(
+        json.linked === 1
+          ? 'Linked your existing GitHub install. Pull requests will get reviewed automatically.'
+          : `Linked ${json.linked} existing GitHub installs.`,
+      );
+      await load();
+    } catch (e) {
+      setFlashError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLinkingExisting(false);
+    }
   }
 
   async function saveThreshold(installationId: number) {
@@ -275,10 +307,20 @@ export default function IntegrationsPage() {
             {loading ? (
               <p className="text-sm text-gray-400 dark:text-zinc-600 py-2">Loading…</p>
             ) : data && data.installations.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-gray-200 dark:border-zinc-700 px-4 py-6 text-center">
+              <div className="rounded-xl border border-dashed border-gray-200 dark:border-zinc-700 px-4 py-6 text-center space-y-3">
                 <p className="text-sm text-gray-500 dark:text-zinc-500">
                   No GitHub connections yet. Click <span className="font-medium">Install on GitHub</span> above to pick which repositories Claudit should review.
                 </p>
+                <div className="text-xs text-gray-400 dark:text-zinc-600">
+                  Already installed Claudit on GitHub but it isn&apos;t showing here?{' '}
+                  <button
+                    onClick={linkExistingInstall}
+                    disabled={linkingExisting}
+                    className="text-violet-600 dark:text-violet-400 hover:underline disabled-muted"
+                  >
+                    {linkingExisting ? 'Linking…' : 'Link an existing install'}
+                  </button>
+                </div>
               </div>
             ) : (
               <ul className="space-y-3">
