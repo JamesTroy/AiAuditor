@@ -97,9 +97,13 @@ function checkRunUrl(audit: RecentAudit): string | null {
  */
 function RecentReviewRow({ audit }: { audit: RecentAudit }) {
   const cr = checkRunUrl(audit);
-  // Smoothly count the score up on first paint / when it changes after a
-  // re-fetch (e.g., row moved from running → posted with a final score).
-  const animatedScore = useCountUp(audit.score, 700);
+  // Snap rows that were already terminal at mount — they're just history,
+  // counting up from 0 there serves no purpose and 20 parallel rAF loops
+  // at mount saturate the main thread (≈840 setStates in 700ms). Reserve
+  // the animation for rows the user will actually see transition from
+  // running → posted in the live polling case.
+  const initialWasTerminal = useRef(TERMINAL_STATUSES.has(audit.status));
+  const animatedScore = useCountUp(audit.score, initialWasTerminal.current ? 0 : 700);
 
   // Watch for terminal-state transitions so we can fire a one-shot row
   // flash + badge pulse without re-firing on every re-render.
@@ -239,8 +243,12 @@ export default function IntegrationsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  // `silent=true` is for background poll cycles — skip the loading-skeleton
+  // flip so the whole page doesn't repaint every 5s while audits are in
+  // flight. The initial mount and explicit user-triggered reloads pass false
+  // (the default) so the skeleton still shows on first paint.
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const res = await fetch('/api/integrations/github');
@@ -250,7 +258,7 @@ export default function IntegrationsPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
@@ -264,7 +272,7 @@ export default function IntegrationsPage() {
   const hasActiveAudit = !!data?.recentAudits.some((a) => ACTIVE_STATUSES.has(a.status));
   useEffect(() => {
     if (!session || !hasActiveAudit) return;
-    const id = setInterval(() => { void load(); }, 5_000);
+    const id = setInterval(() => { void load(true); }, 5_000);
     return () => clearInterval(id);
   }, [session, hasActiveAudit, load]);
 
