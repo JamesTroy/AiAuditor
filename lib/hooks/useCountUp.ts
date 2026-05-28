@@ -50,24 +50,34 @@ export function useCountUp(target: number | null, durationMs = 600): number {
   // without restarting the animation. null sentinel = "never animated yet".
   const lastTarget = useRef<number | null>(null);
 
+  // Round the caller-supplied target to an integer up-front. The hook's
+  // animation pipeline operates in integer space (countUpAt rounds each
+  // frame), so accepting a non-integer means `next` can never equal
+  // `target` exactly — a value-based termination would never fire and
+  // we'd loop forever. Coercing once at the boundary eliminates the bug.
+  const intTarget = target === null ? null : Math.round(target);
+
   useEffect(() => {
-    if (target === null) {
+    if (intTarget === null) {
       lastTarget.current = null;
       return;
     }
-    if (lastTarget.current === target) return;
-    lastTarget.current = target;
+    if (lastTarget.current === intTarget) return;
+    lastTarget.current = intTarget;
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce) {
-      displayRef.current = target;
-      setValue(target);
+      displayRef.current = intTarget;
+      setValue(intTarget);
       return;
     }
 
     const from = displayRef.current;
     let cancelled = false;
-    let frame = 0;
+    // null sentinel — only call cancelAnimationFrame on a real handle so we
+    // never pass 0 into it (per-spec it's a no-op, but it's cleaner not to
+    // feed bogus IDs to the platform).
+    let frame: number | null = null;
     let start: number | null = null;
 
     const tick = (now: number) => {
@@ -75,22 +85,28 @@ export function useCountUp(target: number | null, durationMs = 600): number {
       // Anchor `start` to the first rAF callback (not performance.now() at
       // schedule time) so we don't overshoot on the first frame.
       if (start === null) start = now;
-      const next = countUpAt(start, now, from, target, durationMs);
+      const elapsed = now - start;
+      // Time-based termination — when the duration is up, snap to exact
+      // target and stop. Belt-and-braces vs the value-based check: even
+      // if rounding never lands on target (e.g. wild future refactor),
+      // we still terminate.
+      if (elapsed >= durationMs) {
+        displayRef.current = intTarget;
+        setValue(intTarget);
+        return;
+      }
+      const next = countUpAt(start, now, from, intTarget, durationMs);
       displayRef.current = next;
       setValue(next);
-      // Keep ticking until the engine actually reports target. Time-based
-      // termination ("now - start >= durationMs") races against frame
-      // cadence and can stop one frame before target is rendered; this
-      // value-based check makes "target is set" the loop invariant.
-      if (next !== target) frame = requestAnimationFrame(tick);
+      frame = requestAnimationFrame(tick);
     };
 
     frame = requestAnimationFrame(tick);
     return () => {
       cancelled = true;
-      cancelAnimationFrame(frame);
+      if (frame !== null) cancelAnimationFrame(frame);
     };
-  }, [target, durationMs]);
+  }, [intTarget, durationMs]);
 
   return value;
 }
