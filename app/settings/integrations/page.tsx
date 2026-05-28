@@ -520,7 +520,7 @@ export default function IntegrationsPage() {
             isAdmin ? (
               <div className="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300 text-xs">
                 <strong>Admin:</strong> the GitHub-App tables aren&apos;t created yet. Run migration 006 once:
-                <code className="block mt-2 text-[11px] font-mono whitespace-pre">curl -X POST https://aiauditor-production.up.railway.app/api/admin/migrate-006 -H &quot;Authorization: Bearer $CRON_SECRET&quot;</code>
+                <code className="block mt-2 text-[11px] font-mono whitespace-pre">curl -X POST {typeof window !== 'undefined' ? window.location.origin : ''}/api/admin/migrate-006 -H &quot;Authorization: Bearer $CRON_SECRET&quot;</code>
               </div>
             ) : (
               <div className="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300 text-sm">
