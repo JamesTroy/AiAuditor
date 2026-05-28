@@ -154,6 +154,12 @@ export const audit = pgTable('audit', {
   status: text('status').$type<AuditStatus>().notNull().default('pending'),
   score: integer('score'),
   durationMs: integer('durationMs'),
+  // Auto-detected stack metadata captured at audit time. Backfilled for
+  // future audits only — historical rows stay NULL. Enables dashboard
+  // filters like "all my Next.js audits" or "TS audits with criticals".
+  detectedLanguage:  text('detectedLanguage'),
+  detectedFramework: text('detectedFramework'),
+  detectedPatterns:  text('detectedPatterns'),       // JSON array (string)
   createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
@@ -168,6 +174,8 @@ export const audit = pgTable('audit', {
   check('audit_status_check', sql`${t.status} IN ('pending', 'running', 'completed', 'failed')`),
   check('audit_score_check', sql`${t.score} IS NULL OR (${t.score} >= 0 AND ${t.score} <= 100)`),
   check('audit_durationMs_check', sql`${t.durationMs} IS NULL OR ${t.durationMs} >= 0`),
+  // Dashboard filter index — find all my "react" or "nextjs" audits fast.
+  index('idx_audit_user_framework').on(t.userId, t.detectedFramework),
 ]);
 
 // ─── Dismissal analytics ────────────────────────────────────────

@@ -514,6 +514,16 @@ export default function AuditInterface({ agent, onAuditSaved }: Props) {
         </p>
       )}
 
+      {/* Unresolved internal imports — surfaces specific files to paste next.
+          Shown even when not a "snippet" because complete files often still
+          reference internal modules the user didn't bundle. */}
+      {snippetDetection.missingImports && snippetDetection.missingImports.length > 0 && !loading && !result && (
+        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+          Paste these too for context (currently unresolved internal imports):{' '}
+          <code className="font-mono">{snippetDetection.missingImports.join(', ')}</code>
+        </p>
+      )}
+
       {/* Smart suggestions */}
       {suggestedAgents.length > 0 && !loading && !result && (
         <div className="flex items-center gap-2 flex-wrap text-xs">

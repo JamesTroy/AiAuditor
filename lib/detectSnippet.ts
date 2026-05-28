@@ -12,10 +12,20 @@
  * showing the warning when it isn't useful.
  */
 
+import { detectMissingFiles } from '@/lib/detectMissingFiles';
+
 export interface SnippetDetection {
   isSnippet: boolean;
   /** Short explanation shown in the UI hint. */
   reason: string;
+  /**
+   * Internal imports the paste references but doesn't include. Even when
+   * `isSnippet` is false (the paste is a complete file or set of files),
+   * this surfaces specific file suggestions like "paste @/lib/auth too"
+   * so the audit sees the full context and doesn't false-positive on
+   * "missing middleware" findings.
+   */
+  missingImports?: string[];
 }
 
 // Patterns that indicate a complete file/module — suppress snippet warning.
@@ -113,6 +123,23 @@ function startsInsideScope(lines: string[]): boolean {
   return false;
 }
 
+// Cap the number of missing-import suggestions surfaced to keep the UI hint
+// readable — > 5 starts to look like noise and dilutes the signal.
+const MAX_MISSING_SUGGESTIONS = 5;
+
+function withMissingImports(code: string, base: SnippetDetection): SnippetDetection {
+  // Only meaningful for paste shapes that have imports — skip the analysis
+  // for import-free languages or single-fragment snippets where the user
+  // already gets the "this is a snippet" hint.
+  const { missing } = detectMissingFiles(code);
+  if (missing.length === 0) return base;
+  const importPaths = Array.from(new Set(missing.map((m) => m.importPath))).slice(
+    0,
+    MAX_MISSING_SUGGESTIONS,
+  );
+  return { ...base, missingImports: importPaths };
+}
+
 export function detectSnippet(code: string): SnippetDetection {
   const trimmed = code.trim();
 
@@ -121,9 +148,10 @@ export function detectSnippet(code: string): SnippetDetection {
     return { isSnippet: false, reason: '' };
   }
 
-  // If it looks like a complete file, no warning needed
+  // If it looks like a complete file, no snippet warning — but still surface
+  // unresolved internal imports so the user can paste them too.
   if (hasCompleteFileMarker(trimmed)) {
-    return { isSnippet: false, reason: '' };
+    return withMissingImports(trimmed, { isSnippet: false, reason: '' });
   }
 
   // Languages where missing imports are normal — skip
@@ -158,5 +186,5 @@ export function detectSnippet(code: string): SnippetDetection {
     };
   }
 
-  return { isSnippet: false, reason: '' };
+  return withMissingImports(trimmed, { isSnippet: false, reason: '' });
 }

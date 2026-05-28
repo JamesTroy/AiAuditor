@@ -588,8 +588,15 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Create audit record in DB if user is logged in
-  async function createAuditRecord(agentId: string, agentName: string): Promise<{ id: string; startedAt: number; userId?: string; organizationId?: string } | undefined> {
+  // Create audit record in DB if user is logged in.
+  // Persists the auto-detected stack metadata so the dashboard can later
+  // filter "all my Next.js audits" / "TS audits with criticals" without
+  // re-running detectAgents on every row.
+  async function createAuditRecord(
+    agentId: string,
+    agentName: string,
+    stack?: { language: string | null; framework: string | null; patterns: string[] },
+  ): Promise<{ id: string; startedAt: number; userId?: string; organizationId?: string } | undefined> {
     if (!userId) return undefined;
     const id = crypto.randomUUID();
     const now = Date.now();
@@ -602,6 +609,14 @@ export async function POST(req: NextRequest) {
         agentName,
         input: data.input.slice(0, MAX_AUDIT_INPUT_CHARS),
         status: 'running',
+        detectedLanguage:  stack?.language ?? null,
+        detectedFramework: stack?.framework ?? null,
+        // Cap to 20 patterns and ~2KB to keep rows lean — the patterns are
+        // a hint, not the source of truth for filtering. Beyond 20, the
+        // signal is mostly noise anyway.
+        detectedPatterns: stack?.patterns?.length
+          ? JSON.stringify(stack.patterns.slice(0, 20))
+          : null,
       });
       return { id, startedAt: now, userId: userId ?? undefined, organizationId: organizationId ?? undefined };
     } catch (err) {
@@ -632,7 +647,11 @@ export async function POST(req: NextRequest) {
     // STRUCT-001: Append structured output instruction so Claude calls the tool.
     guardedPrompt += STRUCTURED_OUTPUT_INSTRUCTION;
 
-    const auditRecord = await createAuditRecord('custom', 'Custom Agent');
+    const auditRecord = await createAuditRecord('custom', 'Custom Agent', {
+      language: customDetection.language,
+      framework: customDetection.framework,
+      patterns: customDetection.patterns,
+    });
     log('info', 'custom_audit_start', {
       requestId,
       ip: anonIp,
@@ -691,7 +710,11 @@ export async function POST(req: NextRequest) {
   const recs = recommendAgents(data.input);
   const recsHeader = formatRecommendationHeader(recs);
 
-  const auditRecord = await createAuditRecord(data.agentType, agent.name);
+  const auditRecord = await createAuditRecord(data.agentType, agent.name, {
+    language: detection.language,
+    framework: detection.framework,
+    patterns: detection.patterns,
+  });
   log('info', 'audit_start', {
     requestId,
     ip: anonIp,
