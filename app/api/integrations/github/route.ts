@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { headers as nextHeaders } from 'next/headers';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { githubInstallations, prAudits } from '@/lib/auth-schema';
@@ -122,7 +122,6 @@ export async function GET(req: NextRequest) {
   let recentAudits: RecentAuditRow[] = [];
   if (installationIds.length > 0) {
     try {
-      const { inArray } = await import('drizzle-orm');
       recentAudits = await db
         .select({
           id: prAudits.id,

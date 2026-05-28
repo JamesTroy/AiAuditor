@@ -76,7 +76,13 @@ export function useCountUp(target: number | null, durationMs = 600): number {
     if (lastTarget.current === intTarget) return;
     lastTarget.current = intTarget;
 
-    if (reduceMotion) {
+    // PERF: short-circuit before scheduling rAF when motion is reduced OR
+    // when the caller explicitly asked for instant transition (durationMs=0).
+    // Previously the effect still scheduled and immediately cancelled an rAF
+    // for the duration=0 case — Recent-reviews passes 0 for rows that were
+    // already terminal at mount, so with 20 rows that's 20 wasted rAF
+    // schedule+cancel pairs per page mount.
+    if (reduceMotion || durationMs <= 0) {
       displayRef.current = intTarget;
       setValue(intTarget);
       return;

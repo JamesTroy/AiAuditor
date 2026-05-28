@@ -94,20 +94,26 @@ export function middleware(request: NextRequest) {
   }
 
   // ── CSP nonce ──────────────────────────────────────────────────
-  // CRYPTO-003: Use crypto.getRandomValues for 128-bit nonce in base64url format
-  // (more compact and slightly stronger than UUID v4's 122 bits).
+  // CRYPTO-003: 128-bit nonce in base64url format. Node 20 supports
+  // Buffer.from(bytes).toString('base64url') natively — replaces the older
+  // btoa + spread + 3-replace chain with a single call.
   const nonceBytes = new Uint8Array(16);
   crypto.getRandomValues(nonceBytes);
-  const nonce = btoa(String.fromCharCode(...nonceBytes))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const nonce = Buffer.from(nonceBytes).toString('base64url');
 
   // PERF-013: Build CSP with nonce in both script-src and style-src.
   const csp = CSP_SCRIPT_PRE + nonce + CSP_SCRIPT_POST + CSP_STYLE_PRE + nonce + CSP_TAIL;
 
   // Forward nonce to the Next.js runtime — it stamps this value onto the
   // inline hydration scripts it generates, making them pass the nonce check.
+  // Generate the request ID once here and forward to handlers via header so
+  // server-side logs correlate with the X-Request-Id response header (previously
+  // middleware and handlers each generated their own, so logs and the response
+  // ID never matched).
+  const requestId = crypto.randomUUID();
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('x-request-id', requestId);
 
   const response = NextResponse.next({
     request: { headers: requestHeaders },
@@ -133,8 +139,8 @@ export function middleware(request: NextRequest) {
   // COOP/CORP: Cross-origin isolation headers for defense-in-depth.
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
   response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
-  // Request correlation ID for tracing and debugging.
-  const requestId = crypto.randomUUID();
+  // Reuse the request ID forwarded above — single UUID per request, correlated
+  // with downstream handler logs and the visible X-Request-Id response header.
   response.headers.set('X-Request-Id', requestId);
   // SESS-005: HSTS — prevent SSL stripping attacks.
   // Reporting-Endpoints: modern alternative to Report-To for CSP violation reports.
