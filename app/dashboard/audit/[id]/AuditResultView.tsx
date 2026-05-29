@@ -10,6 +10,7 @@ import { parseAuditResult, stripStructuredBlock, type Finding } from '@/lib/pars
 import { detectSnippet } from '@/lib/detectSnippet';
 import { fadeUp, staggerContainer, transitions } from '@/lib/motion/variants';
 import type { AgentFpRate } from '@/app/api/agents/fp-rates/route';
+import { ExecutiveSummaryCard } from './ExecutiveSummaryCard';
 
 // Reusable banner animation — fade + slight slide. Used by all three
 // status banners (snippet detected, high-FP, cold-start) so they enter and
@@ -221,6 +222,12 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
           Download .md
         </button>
       </div>
+
+      {/* Executive summary — plain-English, PM-friendly, lazy-generated.
+          Hidden while streaming because the synth needs the final findings. */}
+      {auditId && status === 'completed' && (
+        <ExecutiveSummaryCard auditId={auditId} />
+      )}
 
       {/* Conditional banners — wrapped in AnimatePresence so they slide in/out
           smoothly as conditions flip mid-stream (e.g. FP-rates fetch resolves
