@@ -32,7 +32,7 @@ import { audit as auditTable, member as memberTable, user as userTable } from '@
 import { eq, and, lt } from 'drizzle-orm';
 import { extractSkeleton } from '@/lib/chunking/skeletonExtract';
 import { splitByFile } from '@/lib/chunking/splitByFile';
-import { revalidateTag } from 'next/cache';
+import { revalidateTag, revalidatePath } from 'next/cache';
 import { escapeXml } from '@/lib/escapeXml';
 import { STRUCTURED_OUTPUT_INSTRUCTION } from '@/lib/ai/findingSchema';
 import { validateFindings, validationStats } from '@/lib/validateFindings';
@@ -271,7 +271,17 @@ function makeStream(
             // would require reintroducing the per-request unstable_cache
             // wrapper we deliberately hoisted out of the request handler.
             if (auditRecord.userId) {
-              try { revalidateTag('dashboard-stats'); } catch (e) {
+              try {
+                // Tag invalidation clears the unstable_cache-wrapped getCachedStats.
+                revalidateTag('dashboard-stats');
+                // Path invalidation also clears the Next.js client router cache
+                // entry for /dashboard so the audit list (uncached at fetch time
+                // but cacheable in the client router) shows the new audit on
+                // navigation. Without this, a user clicking back to /dashboard
+                // after an audit completes could see a prefetched HTML payload
+                // from before the audit.
+                revalidatePath('/dashboard');
+              } catch (e) {
                 log('warn', 'revalidate_tag_failed', { requestId: logMeta.requestId, userId: auditRecord.userId, error: String(e) });
               }
             }
@@ -622,40 +632,40 @@ export async function POST(req: NextRequest) {
   // Persists the auto-detected stack metadata so the dashboard can later
   // filter "all my Next.js audits" / "TS audits with criticals" without
   // re-running detectAgents on every row.
-  // PERF: Generate the ID synchronously and fire the insert as a non-blocking
-  // background operation. Previously this awaited the Postgres write before
-  // returning the Response, adding 5-20ms to first-byte latency. The insert
-  // takes single-digit ms; the LLM stream runs 60-180s; by the time makeStream
-  // needs the record (post-stream db.update), the insert is long done. If the
-  // insert fails, makeStream's update fails benignly and logs — matches the
-  // existing error-tolerance contract for createAuditRecord.
-  function createAuditRecord(
+  //
+  // REVERTED from the non-blocking pattern: the post-stream UPDATE has a
+  // `WHERE id = ? AND status = 'running'` clause, so if the insert raced
+  // or errored silently the row would never exist and the audit would
+  // never appear in the dashboard. Reliability wins — the 5-20ms TTFB cost
+  // is acceptable. Audits failing to show up was the user-reported bug.
+  async function createAuditRecord(
     agentId: string,
     agentName: string,
     stack?: { language: string | null; framework: string | null; patterns: string[] },
-  ): { id: string; startedAt: number; userId?: string; organizationId?: string } | undefined {
+  ): Promise<{ id: string; startedAt: number; userId?: string; organizationId?: string } | undefined> {
     if (!userId) return undefined;
     const id = crypto.randomUUID();
     const now = Date.now();
-    // Fire-and-forget the actual insert.
-    void db.insert(auditTable).values({
-      id,
-      userId,
-      organizationId,
-      agentId,
-      agentName,
-      input: data.input.slice(0, MAX_AUDIT_INPUT_CHARS),
-      status: 'running',
-      detectedLanguage:  stack?.language ?? null,
-      detectedFramework: stack?.framework ?? null,
-      // Cap to 20 patterns and ~2KB to keep rows lean.
-      detectedPatterns: stack?.patterns?.length
-        ? JSON.stringify(stack.patterns.slice(0, 20))
-        : null,
-    }).catch((err) => {
+    try {
+      await db.insert(auditTable).values({
+        id,
+        userId,
+        organizationId,
+        agentId,
+        agentName,
+        input: data.input.slice(0, MAX_AUDIT_INPUT_CHARS),
+        status: 'running',
+        detectedLanguage:  stack?.language ?? null,
+        detectedFramework: stack?.framework ?? null,
+        detectedPatterns: stack?.patterns?.length
+          ? JSON.stringify(stack.patterns.slice(0, 20))
+          : null,
+      });
+      return { id, startedAt: now, userId: userId ?? undefined, organizationId: organizationId ?? undefined };
+    } catch (err) {
       log('error', 'audit_record_create_failed', { requestId, error: String(err) });
-    });
-    return { id, startedAt: now, userId: userId ?? undefined, organizationId: organizationId ?? undefined };
+      return undefined;
+    }
   }
 
   if (data.agentType === 'custom') {
@@ -680,7 +690,7 @@ export async function POST(req: NextRequest) {
     // STRUCT-001: Append structured output instruction so Claude calls the tool.
     guardedPrompt += STRUCTURED_OUTPUT_INSTRUCTION;
 
-    const auditRecord = createAuditRecord('custom', 'Custom Agent', {
+    const auditRecord = await createAuditRecord('custom', 'Custom Agent', {
       language: customDetection.language,
       framework: customDetection.framework,
       patterns: customDetection.patterns,
@@ -745,7 +755,7 @@ export async function POST(req: NextRequest) {
   const recs = recommendAgents(data.input, 5, detection);
   const recsHeader = formatRecommendationHeader(recs);
 
-  const auditRecord = createAuditRecord(data.agentType, agent.name, {
+  const auditRecord = await createAuditRecord(data.agentType, agent.name, {
     language: detection.language,
     framework: detection.framework,
     patterns: detection.patterns,
