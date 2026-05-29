@@ -9,7 +9,7 @@
 
 import { extractScore } from '@/lib/extractScore';
 import type { ValidatedFinding } from '@/lib/validateFindings';
-import type { DemotionMetadata } from '@/lib/ai/findingSchema';
+import type { DemotionMetadata, BlastRadiusAnnotation } from '@/lib/ai/findingSchema';
 
 export type Confidence = 'certain' | 'likely' | 'possible';
 export type Classification = 'vulnerability' | 'deficiency' | 'suggestion';
@@ -34,6 +34,8 @@ export interface Finding {
   validated?: boolean;
   /** Set when dismissal-driven learning demoted this finding (see lib/baselines/dismissalDemotion.ts). */
   demotion?: DemotionMetadata;
+  /** Set when the audit included a dependency graph (see lib/agents/blastRadius.ts). */
+  blastRadius?: BlastRadiusAnnotation;
 }
 
 export interface LearningState {
@@ -183,6 +185,7 @@ function toFinding(vf: ValidatedFinding): Finding {
     remediation: vf.remediation,
     validated: vf.validated,
     demotion: vf.demotion,
+    blastRadius: vf.blastRadius,
   };
 }
 

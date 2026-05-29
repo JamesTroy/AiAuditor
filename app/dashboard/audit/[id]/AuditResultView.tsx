@@ -10,7 +10,52 @@ import { parseAuditResult, stripStructuredBlock, type Finding } from '@/lib/pars
 import { detectSnippet } from '@/lib/detectSnippet';
 import { fadeUp, staggerContainer, transitions } from '@/lib/motion/variants';
 import type { AgentFpRate } from '@/app/api/agents/fp-rates/route';
+import type { BlastRadiusTier } from '@/lib/ai/findingSchema';
 import { ExecutiveSummaryCard } from './ExecutiveSummaryCard';
+
+// BLAST-001: When the audit has dependency-graph data, group findings by
+// blast-radius tier so cross-cutting issues surface above local ones.
+// Ordering: shared (4+ callers) > module (1-3 callers) > leaf (0) >
+// findings with no resolvable graph location. Severity stays as the
+// secondary sort within each tier because the upstream list is already
+// severity-desc.
+const TIER_ORDER: BlastRadiusTier[] = ['shared', 'module', 'leaf', 'unknown'];
+
+const TIER_META: Record<BlastRadiusTier, {
+  label: string;
+  hint: string;
+  dotClass: string;
+  badgeClass: string;
+}> = {
+  shared: {
+    label: 'Shared modules',
+    hint: 'Imported by 4+ files in this audit — fixing here ripples to every caller.',
+    dotClass: 'bg-red-500',
+    badgeClass: 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300',
+  },
+  module: {
+    label: 'Module scope',
+    hint: 'Imported by 1–3 files — contained impact, but worth fixing soon.',
+    dotClass: 'bg-amber-500',
+    badgeClass: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300',
+  },
+  leaf: {
+    label: 'Leaf utilities',
+    hint: 'No other file in the bundle imports this — local risk.',
+    dotClass: 'bg-slate-400',
+    badgeClass: 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400',
+  },
+  unknown: {
+    label: 'Other locations',
+    hint: "Couldn't map this finding's file to the dependency graph — treat as unknown blast radius.",
+    dotClass: 'bg-gray-300 dark:bg-zinc-600',
+    badgeClass: 'bg-gray-100 dark:bg-zinc-900 text-gray-500 dark:text-zinc-500',
+  },
+};
+
+function tierOf(f: Finding): BlastRadiusTier {
+  return f.blastRadius?.tier ?? 'unknown';
+}
 
 // Reusable banner animation — fade + slight slide. Used by all three
 // status banners (snippet detected, high-FP, cold-start) so they enter and
@@ -87,6 +132,22 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
   }, [result, highFpLikely, coldStart]);
 
   const snippetDetection = useMemo(() => detectSnippet(input), [input]);
+
+  // BLAST-001: Build a tier-grouped view of findings when blast radius data
+  // is present. Returns null when no finding has a resolved tier — single-
+  // file audits, or audits where every finding's location couldn't be mapped
+  // back to the graph. In that case we render the flat list unchanged.
+  const tieredFindings = useMemo(() => {
+    if (!metrics) return null;
+    const hasBlastData = metrics.filteredFindings.some((f) => f.blastRadius);
+    if (!hasBlastData) return null;
+    const groups = new Map<BlastRadiusTier, Finding[]>();
+    for (const tier of TIER_ORDER) groups.set(tier, []);
+    for (const f of metrics.filteredFindings) groups.get(tierOf(f))!.push(f);
+    return TIER_ORDER
+      .map((tier) => ({ tier, findings: groups.get(tier)! }))
+      .filter((g) => g.findings.length > 0);
+  }, [metrics]);
 
   const fireDismissalEvent = useCallback((
     finding: { severity: string; confidence?: string },
@@ -340,9 +401,28 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
             <span className="text-amber-700 dark:text-amber-400 font-medium">⚠ likely</span><span>= probable — verify before fixing</span>
             <span className="italic">Dismiss = not a real issue in your case (you can restore it)</span>
           </div>
+          {/* Blast-radius cluster summary — visible only when graph data was
+              computed for this audit. Gives PMs/leads a glanceable "impact
+              shape" before they read the individual findings. */}
+          {tieredFindings && tieredFindings.length > 0 && (
+            <div className="px-4 py-2 border-b border-gray-100 dark:border-zinc-800 flex flex-wrap items-center gap-3 text-[11px] text-gray-500 dark:text-zinc-500">
+              <span className="font-medium text-gray-600 dark:text-zinc-400">Blast radius:</span>
+              {tieredFindings.map(({ tier, findings }) => {
+                const meta = TIER_META[tier];
+                return (
+                  <span key={tier} className="inline-flex items-center gap-1.5" title={meta.hint}>
+                    <span className={`inline-block w-1.5 h-1.5 rounded-full ${meta.dotClass}`} />
+                    {findings.length} in {meta.label.toLowerCase()}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
           {/* Findings list — stagger on initial render; AnimatePresence + layout
               for smooth dismissal (the dismissed row fades out and survivors
-              slide up to fill the gap). */}
+              slide up to fill the gap). When blast radius data exists, group
+              by tier with sub-headers; otherwise render flat. */}
           <motion.div
             variants={staggerContainer}
             initial="hidden"
@@ -350,62 +430,29 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
             className="divide-y divide-gray-100 dark:divide-zinc-800 max-h-80 overflow-y-auto"
           >
             <AnimatePresence initial={false}>
-              {metrics.filteredFindings.map((finding: Finding) => {
-                const isDismissed = dismissed.has(finding.id);
-                if (isDismissed && !showDismissed) return null;
-                return (
-                  <motion.div
-                    key={finding.id}
-                    layout
-                    variants={fadeUp}
-                    exit={{ opacity: 0, x: 12, transition: transitions.snappy }}
-                    transition={transitions.springGentle}
-                    className={`flex items-center gap-3 px-4 py-2.5 text-sm ${isDismissed ? 'opacity-40' : ''}`}
-                  >
-                    <span
-                      className={`flex-shrink-0 w-2 h-2 rounded-full ${
-                        finding.severity === 'critical' ? 'bg-red-500' :
-                        finding.severity === 'high' ? 'bg-orange-500' :
-                        finding.severity === 'medium' ? 'bg-amber-500' :
-                        finding.severity === 'low' ? 'bg-slate-400' :
-                        'bg-gray-300 dark:bg-zinc-600'
-                      }`}
+              {tieredFindings
+                ? tieredFindings.map(({ tier, findings }) => (
+                    <FindingsTierSection
+                      key={tier}
+                      tier={tier}
+                      findings={findings}
+                      dismissed={dismissed}
+                      showDismissed={showDismissed}
+                      onToggle={(f, isDismissed) => isDismissed ? restoreFinding(f.id) : dismissFinding(f.id)}
                     />
-                    <span className="flex-1 text-gray-700 dark:text-zinc-300 truncate" title={finding.title}>
-                      {finding.title}
-                    </span>
-                    {finding.confidence && (
-                      <span
-                        className={`flex-shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${
-                          finding.confidence === 'certain' ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400' :
-                          'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400'
-                        }`}
-                        title={
-                          finding.confidence === 'certain' ? 'Confirmed in submitted code — still verify before applying any fix' :
-                          'Probable issue — verify this applies to your full codebase before changing anything'
-                        }
-                      >
-                        {finding.confidence === 'likely' ? '⚠ likely' : finding.confidence}
-                      </span>
-                    )}
-                    {finding.demotion && (
-                      <span
-                        className="flex-shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300"
-                        title={`Demoted from ${finding.demotion.originalSeverity} → ${finding.severity} (and ${finding.demotion.originalConfidence} → ${finding.confidence}) because ${finding.demotion.scope === 'organization' ? 'your team has' : 'you have'} dismissed this pattern ${finding.demotion.netDismissals} time${finding.demotion.netDismissals === 1 ? '' : 's'}. Restore once to undo the learning.`}
-                      >
-                        learned
-                      </span>
-                    )}
-                    <button
-                      onClick={() => isDismissed ? restoreFinding(finding.id) : dismissFinding(finding.id)}
-                      className="flex-shrink-0 text-xs text-gray-400 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 transition-colors focus-ring rounded px-1 min-h-[44px]"
-                      aria-label={isDismissed ? `Restore finding: ${finding.title}` : `Dismiss finding as false positive: ${finding.title}`}
-                    >
-                      {isDismissed ? 'Restore' : 'Dismiss'}
-                    </button>
-                  </motion.div>
-                );
-              })}
+                  ))
+                : metrics.filteredFindings.map((finding: Finding) => {
+                    const isDismissed = dismissed.has(finding.id);
+                    if (isDismissed && !showDismissed) return null;
+                    return (
+                      <FindingRow
+                        key={finding.id}
+                        finding={finding}
+                        isDismissed={isDismissed}
+                        onToggle={() => isDismissed ? restoreFinding(finding.id) : dismissFinding(finding.id)}
+                      />
+                    );
+                  })}
             </AnimatePresence>
           </motion.div>
         </div>
@@ -449,6 +496,126 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
       <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 prose prose-sm dark:prose-invert max-w-prose">
         <SafeMarkdown>{stripStructuredBlock(result)}</SafeMarkdown>
       </div>
+    </>
+  );
+}
+
+// BLAST-001: A single finding row. Extracted so the flat (no graph) and
+// tier-grouped (graph present) render paths share one source of truth for
+// the row markup, badges, and dismiss/restore handler.
+function FindingRow({
+  finding,
+  isDismissed,
+  onToggle,
+}: {
+  finding: Finding;
+  isDismissed: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <motion.div
+      layout
+      variants={fadeUp}
+      exit={{ opacity: 0, x: 12, transition: transitions.snappy }}
+      transition={transitions.springGentle}
+      className={`flex items-center gap-3 px-4 py-2.5 text-sm ${isDismissed ? 'opacity-40' : ''}`}
+    >
+      <span
+        className={`flex-shrink-0 w-2 h-2 rounded-full ${
+          finding.severity === 'critical' ? 'bg-red-500' :
+          finding.severity === 'high' ? 'bg-orange-500' :
+          finding.severity === 'medium' ? 'bg-amber-500' :
+          finding.severity === 'low' ? 'bg-slate-400' :
+          'bg-gray-300 dark:bg-zinc-600'
+        }`}
+      />
+      <span className="flex-1 text-gray-700 dark:text-zinc-300 truncate" title={finding.title}>
+        {finding.title}
+      </span>
+      {finding.confidence && (
+        <span
+          className={`flex-shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${
+            finding.confidence === 'certain' ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400' :
+            'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400'
+          }`}
+          title={
+            finding.confidence === 'certain' ? 'Confirmed in submitted code — still verify before applying any fix' :
+            'Probable issue — verify this applies to your full codebase before changing anything'
+          }
+        >
+          {finding.confidence === 'likely' ? '⚠ likely' : finding.confidence}
+        </span>
+      )}
+      {finding.blastRadius && finding.blastRadius.tier !== 'unknown' && (
+        <span
+          className={`flex-shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${TIER_META[finding.blastRadius.tier].badgeClass}`}
+          title={`${TIER_META[finding.blastRadius.tier].hint} ${finding.blastRadius.importerCount} caller${finding.blastRadius.importerCount === 1 ? '' : 's'} in this audit.`}
+        >
+          {finding.blastRadius.tier === 'leaf'
+            ? 'leaf'
+            : `↗ ${finding.blastRadius.importerCount} caller${finding.blastRadius.importerCount === 1 ? '' : 's'}`}
+        </span>
+      )}
+      {finding.demotion && (
+        <span
+          className="flex-shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300"
+          title={`Demoted from ${finding.demotion.originalSeverity} → ${finding.severity} (and ${finding.demotion.originalConfidence} → ${finding.confidence}) because ${finding.demotion.scope === 'organization' ? 'your team has' : 'you have'} dismissed this pattern ${finding.demotion.netDismissals} time${finding.demotion.netDismissals === 1 ? '' : 's'}. Restore once to undo the learning.`}
+        >
+          learned
+        </span>
+      )}
+      <button
+        onClick={onToggle}
+        className="flex-shrink-0 text-xs text-gray-400 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 transition-colors focus-ring rounded px-1 min-h-[44px]"
+        aria-label={isDismissed ? `Restore finding: ${finding.title}` : `Dismiss finding as false positive: ${finding.title}`}
+      >
+        {isDismissed ? 'Restore' : 'Dismiss'}
+      </button>
+    </motion.div>
+  );
+}
+
+// BLAST-001: One tier's sub-section: header with label + count, then the
+// finding rows. Renders nothing when every finding in the tier is dismissed
+// and showDismissed is false — keeps the visual tidy.
+function FindingsTierSection({
+  tier,
+  findings,
+  dismissed,
+  showDismissed,
+  onToggle,
+}: {
+  tier: BlastRadiusTier;
+  findings: Finding[];
+  dismissed: Set<string>;
+  showDismissed: boolean;
+  onToggle: (finding: Finding, isDismissed: boolean) => void;
+}) {
+  const visible = findings.filter((f) => showDismissed || !dismissed.has(f.id));
+  if (visible.length === 0) return null;
+  const meta = TIER_META[tier];
+  return (
+    <>
+      <div
+        className="flex items-center gap-2 px-4 py-1.5 text-[10px] uppercase tracking-widest text-gray-500 dark:text-zinc-500 bg-gray-50/60 dark:bg-zinc-950/40"
+        title={meta.hint}
+      >
+        <span className={`inline-block w-1.5 h-1.5 rounded-full ${meta.dotClass}`} />
+        <span className="font-medium">{meta.label}</span>
+        <span className="text-gray-400 dark:text-zinc-600">· {findings.length}</span>
+      </div>
+      {findings.map((finding) => {
+        const isDismissed = dismissed.has(finding.id);
+        if (isDismissed && !showDismissed) return null;
+        return (
+          <FindingRow
+            key={finding.id}
+            finding={finding}
+            isDismissed={isDismissed}
+            onToggle={() => onToggle(finding, isDismissed)}
+          />
+        );
+      })}
     </>
   );
 }

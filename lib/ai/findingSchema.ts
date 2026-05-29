@@ -27,6 +27,17 @@ export interface DemotionMetadata {
   scope: 'user' | 'organization';
 }
 
+// Blast-radius tier — how widely a finding's host file is depended on
+// elsewhere in the same audit input. Lets the UI cluster findings into
+// "this is local" vs "this affects N callers." See lib/agents/blastRadius.ts.
+export type BlastRadiusTier = 'leaf' | 'module' | 'shared' | 'unknown';
+
+export interface BlastRadiusAnnotation {
+  tier: BlastRadiusTier;
+  /** Number of files in the bundle that import the finding's file. */
+  importerCount: number;
+}
+
 export interface StructuredFinding {
   id: string;
   severity: FindingSeverity;
@@ -43,6 +54,7 @@ export interface StructuredFinding {
   assumption?: string;
   remediation: string;
   demotion?: DemotionMetadata;
+  blastRadius?: BlastRadiusAnnotation;
 }
 
 export interface StructuredAuditResult {
