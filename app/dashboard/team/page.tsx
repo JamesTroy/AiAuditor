@@ -131,7 +131,24 @@ export default async function TeamOverviewPage({
   const [{ totalResult, allScoredAudits, openCritical, membersWithUsers, perMemberStats }, rawAudits, orgResult] =
     await Promise.all([
       getCachedOrgStats(activeOrgId),
-      db.select().from(audit).where(listWhere).orderBy(desc(audit.createdAt)).limit(PAGE_SIZE + 1),
+      // Explicit column list — same brittleness reason as audit/[id]/page.tsx
+      // and dashboard/page.tsx. `select()` with no args reads every column
+      // declared in the schema and crashes if a migration isn't yet applied.
+      db
+        .select({
+          id:         audit.id,
+          agentId:    audit.agentId,
+          agentName:  audit.agentName,
+          status:     audit.status,
+          score:      audit.score,
+          durationMs: audit.durationMs,
+          createdAt:  audit.createdAt,
+          userId:     audit.userId,
+        })
+        .from(audit)
+        .where(listWhere)
+        .orderBy(desc(audit.createdAt))
+        .limit(PAGE_SIZE + 1),
       db.select({ name: organizationTable.name }).from(organizationTable).where(eq(organizationTable.id, activeOrgId)).limit(1),
     ]);
 

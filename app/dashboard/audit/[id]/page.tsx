@@ -23,8 +23,28 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
 
   if (!session) redirect('/login');
 
-  // Fetch audit without ownership filter, then check access
-  const rows = await db.select().from(audit).where(eq(audit.id, id)).limit(1);
+  // Fetch audit without ownership filter, then check access. Explicit column
+  // list — `select()` with no args reads every column declared in the
+  // schema, which makes the page crash if a migration hasn't been applied
+  // yet (drizzle SELECTs a column the DB doesn't have). Same brittleness
+  // we already worked around in app/dashboard/page.tsx.
+  const rows = await db
+    .select({
+      id:             audit.id,
+      userId:         audit.userId,
+      organizationId: audit.organizationId,
+      agentId:        audit.agentId,
+      agentName:      audit.agentName,
+      input:          audit.input,
+      result:         audit.result,
+      status:         audit.status,
+      score:          audit.score,
+      durationMs:     audit.durationMs,
+      createdAt:      audit.createdAt,
+    })
+    .from(audit)
+    .where(eq(audit.id, id))
+    .limit(1);
   const auditRecord = rows[0];
   if (!auditRecord) notFound();
 
