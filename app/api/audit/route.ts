@@ -20,7 +20,8 @@ import { extractScore, sanityCheckScore, reconcileScore } from '@/lib/extractSco
 import { detectAgents } from '@/lib/detectAgents';
 import { buildConfidenceCalibration } from '@/lib/agents/prompts';
 import { parseDiff, formatDiffContext } from '@/lib/agents/diffAudit';
-import { extractDependencyGraph, formatDependencyGraph } from '@/lib/chunking/dependencyGraph';
+import { extractDependencyGraph, formatDependencyGraph, type DependencyEdge, type DependencyGraph } from '@/lib/chunking/dependencyGraph';
+import { annotateBlastRadius } from '@/lib/agents/blastRadius';
 import { analyzeComplexity, formatComplexityHotspots } from '@/lib/chunking/complexityScore';
 import { analyzeTaint, formatTaintAnalysis } from '@/lib/chunking/taintAnalysis';
 import { preprocessInput } from '@/lib/chunking/preprocessor';
@@ -138,6 +139,7 @@ function makeStream(
   requestSignal?: AbortSignal,
   sourceCode?: string,
   workspaceContext?: string,
+  depGraph?: DependencyGraph | null,
 ): ReadableStream {
   // PERF-NEW-07: Combine client disconnect signal with hard timeout so that
   // abandoned audits stop consuming Anthropic API tokens immediately.
@@ -242,7 +244,38 @@ function makeStream(
               learnedPatternCount: demotion.learnedPatternCount,
               scope: demotion.scope,
             });
-            const postDemotion = demotion.findings;
+            // BLAST-001: Annotate each finding with its host file's blast
+            // radius (leaf/module/shared) using the dependency graph already
+            // computed for the prompt. The UI groups by tier so shared-module
+            // issues surface above leaf-utility ones at equal severity. NULL
+            // graph (single-file audits) → every finding is 'unknown' and the
+            // UI falls back to flat rendering. Wrapped in try so a malformed
+            // graph never breaks the audit save path.
+            let postDemotion = demotion.findings;
+            try {
+              if (depGraph && depGraph.edges.length > 0) {
+                const annotations = annotateBlastRadius(postDemotion, depGraph);
+                postDemotion = postDemotion.map((f, i) => {
+                  const ann = annotations[i];
+                  return ann && ann.tier !== 'unknown' ? { ...f, blastRadius: ann } : f;
+                });
+                const tierCounts = annotations.reduce<Record<string, number>>((acc, a) => {
+                  acc[a.tier] = (acc[a.tier] ?? 0) + 1;
+                  return acc;
+                }, {});
+                log('info', 'blast_radius', {
+                  requestId: logMeta.requestId,
+                  auditId: auditRecord.id,
+                  ...tierCounts,
+                });
+              }
+            } catch (err) {
+              log('warn', 'blast_radius_failed', {
+                requestId: logMeta.requestId,
+                auditId: auditRecord.id,
+                error: String(err),
+              });
+            }
 
             // RULE-010: Reconcile agent score against deterministic formula.
             score = reconcileScore(rawAgentScore, postDemotion, (event, data) =>
@@ -505,7 +538,10 @@ export async function POST(req: NextRequest) {
   // Caches skeleton, file chunks, dependency graph, and complexity analysis
   // so repeated audits of the same input don't recompute these on every request.
   const inputHash = createHash('sha256').update(cleanInput).digest('hex').slice(0, 32);
-  const artifactCacheKey = `artifacts:${inputHash}`;
+  // v2: cache shape extended with depGraphEdges for blast-radius annotation.
+  // Old v1 entries are skipped, not migrated — the cache is a 10-minute
+  // perf cache, not a system of record, so it's fine to let them expire.
+  const artifactCacheKey = `artifacts:v2:${inputHash}`;
   const ARTIFACT_TTL = 600; // 10 minutes
 
   type CachedArtifacts = {
@@ -513,6 +549,10 @@ export async function POST(req: NextRequest) {
     fileChunkPaths: string[];
     fileChunkChars: number[];
     depGraphBlock: string | null;
+    // BLAST-001: Raw edges from extractDependencyGraph, persisted so the
+    // post-demotion blast-radius annotation can reconstruct the in-degree
+    // map without re-parsing chunks. Empty array for single-file audits.
+    depGraphEdges: DependencyEdge[];
     complexityBlock: string | null;
     taintBlock: string | null;
   };
@@ -535,12 +575,20 @@ export async function POST(req: NextRequest) {
       fileChunkPaths: fileChunks.map((f) => f.path),
       fileChunkChars: fileChunks.map((f) => f.chars),
       depGraphBlock,
+      depGraphEdges: depGraph?.edges ?? [],
       complexityBlock,
       taintBlock,
     };
     // Best-effort cache write — never blocks the audit.
     cacheSet(artifactCacheKey, artifacts, ARTIFACT_TTL).catch(() => {});
   }
+
+  // Reconstruct the minimal DependencyGraph the blast-radius annotator
+  // needs. Only `edges` is read by annotateBlastRadius; hot* arrays are
+  // unused there so we leave them empty.
+  const depGraphForBlast: DependencyGraph | null = artifacts.depGraphEdges.length > 0
+    ? { edges: artifacts.depGraphEdges, hotImports: [], hotImporters: [] }
+    : null;
 
   log('info', 'artifact_cache', { requestId, hit: artifactCacheHit, inputHash });
 
@@ -740,7 +788,7 @@ export async function POST(req: NextRequest) {
     // rawWorkspaceContext is declared above at workspace context fetch time.
 
     return new Response(
-      makeStream(guardedPrompt, safeInput, { requestId, ip: anonIp, agentType: 'custom' }, auditRecord, req.signal, data.input, rawWorkspaceContext),
+      makeStream(guardedPrompt, safeInput, { requestId, ip: anonIp, agentType: 'custom' }, auditRecord, req.signal, data.input, rawWorkspaceContext, depGraphForBlast),
       { headers: { ...STREAM_HEADERS, ...rl.headers, 'X-Request-Id': requestId, ...(customRecsHeader ? { 'X-Recommended-Agents': customRecsHeader } : {}) } },
     );
   }
@@ -800,7 +848,7 @@ export async function POST(req: NextRequest) {
     isDiff: diffAnalysis.isDiff,
   });
   return new Response(
-    makeStream(contextPrompt, safeInput, { requestId, ip: anonIp, agentType: data.agentType }, auditRecord, req.signal, data.input, rawWorkspaceContext),
+    makeStream(contextPrompt, safeInput, { requestId, ip: anonIp, agentType: data.agentType }, auditRecord, req.signal, data.input, rawWorkspaceContext, depGraphForBlast),
     { headers: { ...STREAM_HEADERS, ...rl.headers, 'X-Request-Id': requestId, ...(recsHeader ? { 'X-Recommended-Agents': recsHeader } : {}) } },
   );
 }

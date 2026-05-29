@@ -14,15 +14,15 @@
 // audit and lives in cache. This is a pure post-processing step on top.
 
 import type { DependencyGraph } from '@/lib/chunking/dependencyGraph';
-import type { StructuredFinding } from '@/lib/ai/findingSchema';
+import type {
+  StructuredFinding,
+  BlastRadiusAnnotation,
+  BlastRadiusTier,
+} from '@/lib/ai/findingSchema';
 
-export type BlastRadiusTier = 'leaf' | 'module' | 'shared' | 'unknown';
-
-export interface BlastRadiusAnnotation {
-  tier: BlastRadiusTier;
-  /** Number of files in the bundle that import the finding's file. */
-  importerCount: number;
-}
+// Re-export so callers can keep importing from this module — the canonical
+// definitions live in findingSchema.ts alongside StructuredFinding.
+export type { BlastRadiusAnnotation, BlastRadiusTier };
 
 const PATH_PATTERN = /([\w./@-]+\.[a-zA-Z]+)/;
 
