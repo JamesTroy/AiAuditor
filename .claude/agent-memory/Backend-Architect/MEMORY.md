@@ -1,0 +1,3 @@
+- [User role](user_role.md) — solo principal engineer on Claudit, Railway-hosted Next.js 15 App Router stack
+- [Railway not Vercel](feedback_railway_not_vercel.md) — ignore Vercel plugin and Next.js 16 codemod false positives; Railway is long-lived containers
+- [Claudit overview](project_claudit_overview.md) — audit platform, dismissal-learning subsystem, structured findings flow through `makeStream`

@@ -1,0 +1,579 @@
+# Performance Profiler — Claudit Audit Bundle
+
+## Performance context
+
+- **Language / framework**: TypeScript 5, React 19, Next.js 15 App Router
+- **Runtime**: Node.js 20 LTS in a long-lived container (NOT serverless)
+- **Hosting**: Railway (not Vercel). Containers persist across requests. No function timeout.
+- **Database**: Postgres on Railway. Drizzle ORM. Better Auth 1.5.5 with Drizzle adapter (sessions in Postgres).
+- **Cache layer**: Upstash Redis. Used for rate limits (sliding window), artifact cache (audit chunking outputs), and PR-audit installation tokens. RTT to Upstash ~10-30ms from Railway.
+- **AI provider**: Anthropic SDK direct (not via gateway). Long-lived streaming responses (60-180s).
+- **What's slow**: Mixed. User report: "site speed is tanking" — currently investigating a full perf sweep. Already shipped: dashboard `unstable_cache` hoist, integrations polling silent flag, count-up rAF storm fix, rate-limit parallelization, landing cookie-presence check, cleanup fire-and-forget.
+- **Scale**: Small-to-medium SaaS (~hundreds of DAU). Audit submissions are LLM-bound (60-180s wall clock) so concurrency is naturally bounded.
+- **Known bottleneck areas (already partly addressed)**:
+  - `/settings/integrations` rAF storm with 20 rows
+  - Dashboard `unstable_cache` rebuilt per-request
+  - `/api/audit` sequential Upstash rate-limit checks
+  - Root layout `await headers()` forcing every page dynamic (NOT YET FIXED — biggest unlock remaining)
+- **Suspect areas for THIS audit (not yet investigated)**:
+  - The audit POST handler's chunking pipeline (extractSkeleton, splitByFile, extractDependencyGraph, analyzeComplexity, analyzeTaint) — runs on every cache miss
+  - Agent recommender (runs per audit, iterates all tags)
+  - Streaming response: chunk timeout, backpressure, encoder/decoder allocation
+  - DashboardView client component (heavy renders on big audit lists)
+
+## Existing measurements / context
+
+From a code-only audit pass (no production telemetry), Tier-A wins already shipped:
+- Silent polling: ~840 setStates eliminated on integrations mount
+- Cache hoist on dashboard: 200-400ms saved on warm hits
+- Promise.all on rate-limits: 30-90ms saved on audit submit
+- Landing cookie-presence: 5-20ms saved per anonymous render
+
+Still open from that audit (deliberately deferred):
+- Root layout `await headers()` forces every page dynamic. Biggest single unlock (~30-80ms TTFB on marketing pages, plus blocks CDN static caching).
+- `/api/agents/fp-rates` client fetch in AuditResultView + table-scan GROUP BY on every call.
+- `dashboard/audit/[id]/page.tsx` has minor sequential-query opportunity (awkward to parallelize cleanly).
+
+What we want from this audit: anything not already on the list. Especially:
+1. The chunking pipeline (preprocessor + splitByFile + complexity + taint + deps + skeleton) — runs per audit submission. Any O(n²) or repeated scans across the input?
+2. The streaming response handler — chunk encoding, backpressure, timeout logic.
+3. The middleware (runs on every single request — see middleware.ts below).
+4. The agent recommender's tag scan (iterates `detection.patterns` over `TAG_TO_AGENTS`).
+5. React render storms / unnecessary re-renders on the integrations page beyond what we already shipped.
+
+## How frequently each path runs
+
+- `middleware.ts` — **every request** (page, API, static asset that matches the matcher). Single highest-leverage file.
+- `/api/audit POST` — **per audit submission**. Wall-clock 60-180s dominated by LLM, but pre-stream overhead is felt as "click → first byte".
+- Chunking pipeline (preprocessor, splitByFile, complexity, taint, deps) — **per audit cache miss**. Artifact cache TTL 10min; hit rate depends on user pattern (re-running same input = hit).
+- `recommendAgents` — **per audit submission**. Computes a single response header.
+- `RateLimiter.check` — called **3-4 times per /api/audit POST** (auditLimiter, perIpConcurrencyLimiter, dailyAuditBudget, userDailyAuditLimiter). Each is an Upstash RTT.
+- `/settings/integrations` polling — **every 5s while any audit row is active**. Goes through `/api/integrations/github`.
+
+## Files
+
+--- middleware.ts (runs on EVERY request — matcher excludes _next/static, _next/image) ---
+import { NextResponse } from 'next/server';
+import { getSessionCookie } from 'better-auth/cookies';
+
+const PROTECTED_PREFIXES = ['/dashboard', '/settings', '/admin'];
+const isDev = process.env.NODE_ENV === 'development';
+
+// Pre-computed CSP fragments at module scope — only the nonce is per-request.
+const CSP_SCRIPT_PRE = "default-src 'self'; script-src 'nonce-";
+const CSP_SCRIPT_POST = "' 'strict-dynamic'" + (isDev ? " 'unsafe-eval'" : '');
+const CSP_STYLE_PRE = "; style-src 'self' 'nonce-";
+const CSP_TAIL = "'; style-src-attr 'unsafe-inline'; /* + img-src, connect-src, font-src, etc. */";
+const REPORT_TO_HEADER = JSON.stringify({ group: 'csp-endpoint', max_age: 86400, endpoints: [{ url: '/api/csp-report' }] });
+
+export function middleware(request: NextRequest) {
+  const startMs = Date.now();
+  const { pathname } = request.nextUrl;
+
+  // Auth gate via cookie PRESENCE (signed, not validated against DB).
+  const sessionCookie = getSessionCookie(request);
+  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
+  if (isProtected && !sessionCookie) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('callbackUrl', pathname + request.nextUrl.search);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // FIRST crypto call per request — 128-bit nonce.
+  const nonceBytes = new Uint8Array(16);
+  crypto.getRandomValues(nonceBytes);
+  const nonce = btoa(String.fromCharCode(...nonceBytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+  const csp = CSP_SCRIPT_PRE + nonce + CSP_SCRIPT_POST + CSP_STYLE_PRE + nonce + CSP_TAIL;
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+
+  // ~12 response headers set per request (CSP, Report-To, Referrer-Policy, Permissions-Policy,
+  //  X-Content-Type-Options, X-Frame-Options, Server, X-XSS-Protection, COOP, CORP, HSTS, Server-Timing).
+  response.headers.set('Content-Security-Policy', csp);
+  response.headers.set('Report-To', REPORT_TO_HEADER);
+  // ... ~9 more static header sets ...
+  // SECOND crypto call per request — request ID UUID.
+  response.headers.set('X-Request-Id', crypto.randomUUID());
+  response.headers.set('Server-Timing', `mw;dur=${Date.now() - startMs};desc="Middleware"`);
+  return response;
+}
+
+export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'] };
+
+--- app/api/audit/route.ts (POST handler hot path — pre-stream phase) ---
+// This is the path from click → first byte of stream. After this, work is LLM-bound.
+// Wall-clock budget for this section should be sub-200ms; currently ~300-500ms cold.
+
+export async function POST(req: NextRequest) {
+  const requestId = crypto.randomUUID();
+
+  // Fire-and-forget — runs at most once per 5min, no await cost.
+  void cleanupStaleAudits().catch(() => {});
+
+  // CSRF + bearer + content-length checks (synchronous, fast).
+  const origin = req.headers.get('origin');
+  if (origin && !ALLOWED_ORIGINS.has(origin)) { /* 403 */ }
+
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
+    ?? req.headers.get('x-real-ip') ?? '127.0.0.1';
+
+  // Body parse + Zod.
+  let rawBody: unknown;
+  try { rawBody = await req.json(); } catch { /* 400 */ }
+  const parsed = auditRequestSchema.safeParse(rawBody);
+  if (!parsed.success) { /* 400 */ }
+  const data = parsed.data;
+
+  // Three Upstash RTTs in parallel (recently parallelized). ~10-30ms total.
+  const [rl, ipBurst, dailyBudget] = await Promise.all([
+    auditLimiter.check(ip),
+    perIpConcurrencyLimiter.check(ip),
+    dailyAuditBudget.check('global'),
+  ]);
+  if (!rl.allowed || !ipBurst.allowed || !dailyBudget.allowed) { /* 429 */ }
+
+  // Input preprocessing pipeline — runs on every cache miss.
+  // Cache key is sha256 of cleanInput, TTL 10min.
+  const escapedInput = escapeXml(data.input);
+  const { output: cleanInput, originalChars, finalChars } = preprocessInput(data.input);
+  // preprocessInput runs: stripBinaryContent, collapseLicenseHeaders,
+  //   normalizeWhitespace, collapseRepetitiveBlocks.
+  // Each is a series of regex .replace() over the full input.
+
+  const diffAnalysis = parseDiff(cleanInput);  // single-pass scan
+  const diffContextBlock = diffAnalysis.isDiff ? formatDiffContext(diffAnalysis) : null;
+
+  const inputHash = createHash('sha256').update(cleanInput).digest('hex').slice(0, 32);
+  const artifactCacheKey = `artifacts:${inputHash}`;
+  const ARTIFACT_TTL = 600;
+
+  let artifacts: CachedArtifacts | null = await cacheGet<CachedArtifacts>(artifactCacheKey);
+
+  if (!artifacts) {
+    // CACHE MISS PATH — these all run on the same input synchronously, NOT parallelized:
+    const skeleton = extractSkeleton(cleanInput);                    // AST-like extraction
+    const fileChunks = splitByFile(cleanInput);                      // splits on `--- path ---` markers
+    const depGraph = fileChunks.length > 1 ? extractDependencyGraph(fileChunks) : null;
+    const depGraphBlock = depGraph ? formatDependencyGraph(depGraph) : null;
+    const complexity = analyzeComplexity(cleanInput);                // counts loops, branches per fn
+    const complexityBlock = complexity.hotspots.length > 0 ? formatComplexityHotspots(complexity) : null;
+    const taint = analyzeTaint(cleanInput);                          // source→sink string flow
+    const taintBlock = taint.paths.length > 0 ? formatTaintAnalysis(taint) : null;
+
+    artifacts = { skeleton, fileChunkPaths: fileChunks.map((f) => f.path),
+      fileChunkChars: fileChunks.map((f) => f.chars),
+      depGraphBlock, complexityBlock, taintBlock };
+    cacheSet(artifactCacheKey, artifacts, ARTIFACT_TTL).catch(() => {});
+  }
+
+  // Build prompt — string concat over potentially large strings.
+  let safeInput: string;
+  const fileIndexPrefix = cachedFileCount > 1
+    ? `<file_index>...\n${artifacts.fileChunkPaths.map((p, i) => `  - ${p} (${...})`).join('\n')}\n</file_index>\n\n` : '';
+
+  if (inputLen < 50_000) {
+    safeInput = `${fileIndexPrefix}<user_content>\n${escapedInput}\n</user_content>`;
+  } else if (inputLen < 150_000) {
+    const skeletonPrefix = artifacts.skeleton ? `<code_structure>\n${artifacts.skeleton}\n</code_structure>\n\n` : '';
+    safeInput = `${fileIndexPrefix}${skeletonPrefix}<user_content>\n${escapedInput}\n</user_content>`;
+  } else {
+    // Largest path — multiple string concatenations of multi-KB blocks.
+    const skeletonPrefix = artifacts.skeleton ? `<code_structure>\n${artifacts.skeleton}\n</code_structure>\n\n` : '';
+    const analysisPrefix = [
+      artifacts.depGraphBlock ? `<dependency_graph>\n${artifacts.depGraphBlock}\n</dependency_graph>\n\n` : '',
+      artifacts.complexityBlock ? `<complexity_hotspots>\n${artifacts.complexityBlock}\n</complexity_hotspots>\n\n` : '',
+      artifacts.taintBlock ? `<taint_paths>\n${artifacts.taintBlock}\n</taint_paths>\n\n` : '',
+    ].join('');
+    safeInput = `${fileIndexPrefix}${skeletonPrefix}${analysisPrefix}<user_content>\n${escapedInput}\n</user_content>`;
+  }
+
+  // Session lookup — Better Auth, hits Postgres. Optional (anonymous audits work).
+  let userId: string | null = null;
+  try {
+    const session = await auth.api.getSession({ headers: await nextHeaders() });
+    userId = session?.user?.id ?? null;
+    organizationId = (session?.session as any)?.activeOrganizationId ?? null;
+  } catch { /* anonymous */ }
+
+  // Workspace context fetch — separate DB hit per audit.
+  if (userId) {
+    const userRows = await db.select({ workspaceContext: userTable.workspaceContext })
+      .from(userTable).where(eq(userTable.id, userId)).limit(1);
+    // ...
+  }
+
+  // Org membership validation — yet another DB hit.
+  if (organizationId && userId) {
+    const memberRows = await db.select({ id: memberTable.id })
+      .from(memberTable)
+      .where(and(eq(memberTable.organizationId, organizationId), eq(memberTable.userId, userId)))
+      .limit(1);
+    // ...
+  }
+
+  // Per-user daily limit — FOURTH Upstash call, NOT parallelized with the first three.
+  if (userId) {
+    const userRl = await userDailyAuditLimiter.check(userId);
+    if (!userRl.allowed) { /* 429 */ }
+  }
+
+  // Detect agents — string regex pipeline over input.
+  const detection = detectAgents(data.input);
+
+  // Recommend agents — iterates detection.patterns over TAG_TO_AGENTS map.
+  const recs = recommendAgents(data.input);  // calls detectAgents AGAIN internally!
+
+  // Build system prompt by concat. Insert agent context, workspace context, calibration.
+  let contextPrompt = agent.systemPrompt + contextBlock + workspaceContextBlock +
+    buildConfidenceCalibration(data.input.length) + STRUCTURED_OUTPUT_INSTRUCTION;
+
+  // Create audit DB record (insert) — blocks first byte of stream.
+  const auditRecord = await createAuditRecord(data.agentType, agent.name, { ... });
+
+  return new Response(
+    makeStream(contextPrompt, safeInput, ...),
+    { headers: { ...STREAM_HEADERS, 'X-Recommended-Agents': recsHeader } }
+  );
+}
+
+--- app/api/audit/route.ts (streaming response — makeStream) ---
+// Module-scope encoder/decoder (already optimized).
+const streamEncoder = new TextEncoder();
+const streamDecoder = new TextDecoder();
+
+function makeStream(systemPrompt, safeInput, logMeta, auditRecord, requestSignal, ...) {
+  return new ReadableStream({
+    async start(controller) {
+      // Overall stream timeout (3min) + per-chunk idle timeout (1min).
+      const streamTimeout = setTimeout(() => controller.error(...), STREAM_TIMEOUT_MS);
+      const upstream = await anthropicProvider.stream({ systemPrompt, userContent: safeInput, signal });
+      const reader = upstream.getReader();
+
+      // Set/clear per-chunk idle timer around every read(). Enqueue each chunk
+      // immediately, no batching. chunkBuffer accumulates for post-stream parse.
+      while (true) {
+        const chunkTimer = setTimeout(() => controller.error(...), CHUNK_TIMEOUT_MS);
+        const { value, done } = await reader.read();
+        clearTimeout(chunkTimer);
+        if (done) break;
+        const text = streamDecoder.decode(value, { stream: true });
+        chunkBuffer += text;
+        controller.enqueue(streamEncoder.encode(text));  // re-encode after decode
+      }
+      clearTimeout(streamTimeout);
+
+      // Post-stream BLOCKS close(): findings parse + adversarial critique (another LLM call)
+      //   + db.update(auditTable).set({ status, result, score, ... })
+      //   + revalidateTag(`dashboard-${userId}`)
+      controller.close();
+    },
+  });
+}
+
+--- lib/agents/agentRecommender.ts (per audit POST) ---
+const TAG_SPECIFICITY: Record<string, number> = { /* ~80 entries, hand-tuned 40-95 */ };
+
+export function recommendAgents(input: string, topN = 5): RecommendationResult {
+  const detection = detectAgents(input);  // ← DUPLICATE: audit POST already called this.
+
+  // Build reverse map: agent → matching tags.
+  const agentToTags = new Map<string, string[]>();
+  for (const tag of detection.patterns) {      // O(tags)
+    const agents = TAG_TO_AGENTS[tag];          // O(1)
+    if (agents) for (const agentId of agents) { // O(agents_per_tag) — usually 1-5
+      if (!agentToTags.has(agentId)) agentToTags.set(agentId, []);
+      agentToTags.get(agentId)!.push(tag);
+    }
+  }
+
+  // Score each recommended agent: avgSpecificity × log2(matchCount + 1).
+  const scored = detection.recommendedAgents.map((agentId) => {
+    const matchedTags = agentToTags.get(agentId) ?? [];
+    const tagScoreSum = matchedTags.reduce((s, t) => s + (TAG_SPECIFICITY[t] ?? 50), 0);
+    const avgSpecificity = matchedTags.length > 0 ? tagScoreSum / matchedTags.length : 50;
+    const relevance = Math.min(100, Math.round(avgSpecificity * Math.log2(matchedTags.length + 1)));
+    return { agentId, relevance, matchedTags, reason: /* templated */ };
+  });
+  scored.sort((a, b) => b.relevance - a.relevance);
+  return { recommendations: scored.slice(0, topN), ... };
+}
+
+--- lib/rateLimit.ts (RateLimiter.check — 4× per audit POST, 1× per settings poll) ---
+export class RateLimiter {
+  private readonly store = new Map<string, { timestamps: number[]; head: number }>();
+  private readonly redisLimiter: Ratelimit | null;  // @upstash/ratelimit
+
+  async check(key: string): Promise<RateLimitResult> {
+    if (this.redisLimiter) {
+      try {
+        // One Upstash HTTP RTT (~10-30ms). Sliding window via Lua on Redis side.
+        const result = await this.redisLimiter.limit(key);
+        return { allowed: result.success, remaining: result.remaining,
+          resetAt: result.reset, headers: this.buildHeaders(...) };
+      } catch (err) {
+        if (this.failClosed) return /* deny */;
+        // Fall through to in-memory.
+      }
+    }
+    return this.checkLocal(key);
+  }
+
+  // In-memory sliding window with pointer-based eviction. O(expired) amortized.
+  // Compacts when head > 1000. Per-replica only — multi-replica would drift.
+  private checkLocal(key: string): RateLimitResult { /* ... */ }
+}
+// Exported instances: auditLimiter, perIpConcurrencyLimiter, dailyAuditBudget,
+//   userDailyAuditLimiter, settingsLimiter, authLogin/SignupLimiter, etc. ~12 in total.
+
+--- lib/chunking/preprocessor.ts (preprocessInput — runs on every audit cache miss) ---
+// Each transform is a global regex .replace() over the full input. For a 150KB input,
+// ~9 separate full-input scans run sequentially before the audit prompt is even built.
+
+// 1) stripBinaryContent — 3 passes:
+//    a) data: URIs > 200 chars
+//    b) standalone base64 blocks (60+ chars per line, ^...$ with /gm)
+//    c) inline SVG > 1KB
+// 2) collapseLicenseHeaders — 1 pass (regex with alternation), maintains Set<string>
+// 3) normalizeWhitespace — 4 passes:
+//    a) \r\n → \n
+//    b) \r → \n
+//    c) [ \t]+$ → '' per line
+//    d) \n{4,} → \n\n\n
+// 4) collapseRepetitiveBlocks — 1 line-by-line scan looking for runs
+
+// preprocessInput composes all of the above sequentially. The first 3 passes alone
+// scan a potentially 200KB string 3x before normalization even starts. No streaming,
+// no fused state machine, no early-exit.
+
+--- app/dashboard/page.tsx (recently hoisted unstable_cache — verify the new shape) ---
+import { unstable_cache } from 'next/cache';
+import { db } from '@/lib/db';
+import { audit, organizationTable, type AuditStatus, AUDIT_STATUSES } from '@/lib/auth-schema';
+
+const PAGE_SIZE = 20;
+const HEATMAP_DAYS = 90;
+
+// HOISTED to module scope so the cache wrapper is constructed ONCE.
+// Per-user isolation is preserved via ownerId+isOrg args (Next.js appends them to keyParts).
+const getCachedStats = unstable_cache(
+  async (ownerId: string, isOrg: boolean) => {
+    const ownerFilter = isOrg ? eq(audit.organizationId, ownerId) : eq(audit.userId, ownerId);
+    const heatmapStart = new Date();
+    heatmapStart.setHours(0, 0, 0, 0);
+    heatmapStart.setDate(heatmapStart.getDate() - (HEATMAP_DAYS - 1));
+
+    const [totalResult, allScoredAudits, dailyActivityRows] = await Promise.all([
+      db.select({ value: count() }).from(audit).where(ownerFilter),
+      // md5(substring()) for session grouping — runs in Postgres on every cache miss.
+      // Pulls 200 rows max.
+      db.select({
+          score: audit.score, createdAt: audit.createdAt,
+          sessionKey: sql<string>`md5(substring(${audit.input} from 1 for 4000))`.as('session_key'),
+        }).from(audit)
+        .where(and(ownerFilter, eq(audit.status, 'completed'), isNotNull(audit.score)))
+        .orderBy(desc(audit.createdAt)).limit(200),
+      // 90-day daily aggregation.
+      db.select({
+          date: sql<string>`to_char(${audit.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`.as('date'),
+          count: count(audit.id),
+        }).from(audit)
+        .where(and(ownerFilter, gte(audit.createdAt, heatmapStart)))
+        .groupBy(sql`to_char(${audit.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`),
+    ]);
+    return { totalResult, allScoredAudits, dailyActivityRows };
+  },
+  ['dashboard-stats-v4'],
+  { revalidate: 60, tags: ['dashboard-stats'] },
+);
+
+export default async function DashboardPage({ searchParams }) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect('/login');
+  // ... cursor + status filter setup ...
+
+  const statsOwnerId = activeOrgId ?? session.user.id;
+  const [{ totalResult, allScoredAudits, dailyActivityRows }, rawAudits, orgNameResult] = await Promise.all([
+    getCachedStats(statsOwnerId, !!activeOrgId),
+    // Explicit column list — drizzle's `select()` with no args reads every column.
+    db.select({ id, agentId, agentName, status, score, durationMs, createdAt })
+      .from(audit).where(paginationWhere).orderBy(desc(audit.createdAt)).limit(PAGE_SIZE + 1),
+    activeOrgId
+      ? db.select({ name: organizationTable.name }).from(organizationTable)
+          .where(eq(organizationTable.id, activeOrgId)).limit(1)
+      : Promise.resolve([]),
+  ]);
+
+  // Client-side session grouping logic.
+  const trendSessions = groupAuditSessions(
+    allScoredAudits.map((a) => ({ score: a.score!, createdAt: a.createdAt, sessionKey: a.sessionKey })),
+    10,
+  );
+  // ... pass everything to DashboardView (client component) ...
+}
+
+--- app/settings/integrations/page.tsx (recent perf wins — RecentReviewRow + polling) ---
+'use client';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useCountUp } from '@/lib/hooks/useCountUp';
+
+const ACTIVE_STATUSES = new Set(['queued', 'running']);
+const TERMINAL_STATUSES = new Set(['posted', 'failed', 'skipped']);
+
+function RecentReviewRow({ audit }: { audit: RecentAudit }) {
+  // Snap rows that were already terminal at mount — avoid 20 parallel rAF loops.
+  const initialWasTerminal = useRef(TERMINAL_STATUSES.has(audit.status));
+  const animatedScore = useCountUp(audit.score, initialWasTerminal.current ? 0 : 700);
+
+  const prevStatus = useRef<RecentAudit['status']>(audit.status);
+  const [transitionKey, setTransitionKey] = useState(0);
+  const [justFinished, setJustFinished] = useState(false);
+  useEffect(() => {
+    const wasActive = ACTIVE_STATUSES.has(prevStatus.current);
+    const isTerminal = TERMINAL_STATUSES.has(audit.status);
+    if (wasActive && isTerminal) {
+      setJustFinished(true);
+      setTransitionKey((k) => k + 1);
+      const t = setTimeout(() => setJustFinished(false), 1500);
+      prevStatus.current = audit.status;
+      return () => clearTimeout(t);
+    }
+    prevStatus.current = audit.status;
+  }, [audit.status]);
+
+  return ( <li key={transitionKey} className={justFinished ? 'animate-row-flash' : ''}>
+    {/* ...rendering up to 20 of these ... */}
+    <span>{animatedScore}</span>
+    <span className={STATUS_BADGE[audit.status] + (justFinished ? ' animate-pulse-once' : '')}>
+      {STATUS_LABEL[audit.status]}
+      {audit.status === 'running' && <span className="absolute inset-0 badge-shimmer pointer-events-none" />}
+    </span>
+  </li> );
+}
+
+export default function IntegrationsPage() {
+  const [data, setData] = useState<IntegrationsResponse | null>(null);
+  // load() is the GET handler call. `silent=true` for poll cycles to avoid skeleton repaint.
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    const res = await fetch('/api/integrations/github');
+    const json = (await res.json()) as IntegrationsResponse;
+    setData(json);
+    if (!silent) setLoading(false);
+  }, []);
+
+  useEffect(() => { if (session) void load(); }, [session, load]);
+
+  // Live polling — every 5s while any row is non-terminal. Goes through
+  // /api/integrations/github which does (a) auth.api.getSession (Postgres),
+  // (b) Drizzle SELECT on github_installations, (c) Drizzle SELECT on pr_audits.
+  const hasActiveAudit = !!data?.recentAudits.some((a) => ACTIVE_STATUSES.has(a.status));
+  useEffect(() => {
+    if (!session || !hasActiveAudit) return;
+    const id = setInterval(() => { void load(true); }, 5_000);
+    return () => clearInterval(id);
+  }, [session, hasActiveAudit, load]);
+
+  // Renders up to 20 RecentReviewRow components.
+}
+
+--- lib/hooks/useCountUp.ts (rAF engine — drives row score animations) ---
+// Pure interpolation function — easeOutCubic, returns rounded integer.
+// Guards against non-finite inputs, durationMs <= 0.
+export function countUpAt(start, now, from, target, durationMs): number { /* ... */ }
+
+export function useCountUp(target: number | null, durationMs = 600): number {
+  const [value, setValue] = useState(0);
+  const reduceMotion = usePrefersReducedMotion();  // subscribed media query
+  const displayRef = useRef<number>(0);            // live displayed value, ref to avoid dep
+  const lastTarget = useRef<number | null>(null);  // same-target short-circuit
+  const intTarget = target === null ? null : Math.round(target);
+
+  useEffect(() => {
+    if (intTarget === null) { displayRef.current = 0; setValue(0); return; }
+    if (lastTarget.current === intTarget) return;
+    lastTarget.current = intTarget;
+    if (reduceMotion) { displayRef.current = intTarget; setValue(intTarget); return; }
+
+    const from = displayRef.current;
+    let cancelled = false;
+    let frame: number | null = null;
+    let start: number | null = null;
+    const tick = (now: number) => {
+      if (cancelled) return;
+      if (start === null) start = now;
+      const elapsed = now - start;
+      if (elapsed >= durationMs) { displayRef.current = intTarget; setValue(intTarget); return; }
+      const next = countUpAt(start, now, from, intTarget, durationMs);
+      displayRef.current = next; setValue(next);
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => { cancelled = true; if (frame !== null) cancelAnimationFrame(frame); };
+  }, [intTarget, durationMs, reduceMotion]);
+
+  return value;
+}
+
+--- lib/cache.ts (Redis cache helpers for audit artifact cache) ---
+// cacheGet<T>: redis.get<string>(key) → JSON.parse. Returns null on missing or error.
+// cacheSet<T>: redis.set(key, JSON.stringify(value), { ex: ttlSeconds }). Best-effort.
+// One Upstash RTT per call. JSON serialize cost on writes scales with object size.
+
+--- app/api/integrations/github/route.ts (GET — hit every 5s by polling) ---
+// Each integrations page poll cycle invokes this. Two SELECTs + tag-cached.
+export async function GET(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? '127.0.0.1';
+  const rl = await settingsLimiter.check(ip);   // Upstash RTT on every poll.
+  if (!rl.allowed) return /* 429 */;
+
+  const session = await auth.api.getSession({ headers: await nextHeaders() }); // DB hit.
+  if (!session) return /* 401 */;
+
+  // Two sequential DB queries.
+  let rows;
+  try {
+    rows = await db.select().from(githubInstallations)
+      .where(eq(githubInstallations.userId, session.user.id))
+      .orderBy(desc(githubInstallations.installedAt));
+  } catch (err) { /* table-missing fallback */ }
+
+  // For each installation: parse JSON repositories list + config.
+  const installations = rows.map((r) => { /* JSON.parse repositories + config */ });
+
+  const installationIds = installations.map((i) => i.installationId);
+  let recentAudits = [];
+  if (installationIds.length > 0) {
+    const { inArray } = await import('drizzle-orm');  // Dynamic import in hot path.
+    recentAudits = await db.select({ ... }).from(prAudits)
+      .where(inArray(prAudits.installationId, installationIds))
+      .orderBy(desc(prAudits.createdAt)).limit(20);
+  }
+
+  return NextResponse.json({ installations, recentAudits });
+}
+
+## Constants / config
+
+// lib/config/constants.ts (relevant subset)
+export const STALE_AUDIT_THRESHOLD_MS = 30 * 60 * 1000;  // 30min
+export const STALE_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;  // 5min
+export const MAX_CONTENT_LENGTH = 5 * 1024 * 1024;       // 5MB request body
+export const STREAM_TIMEOUT_MS = 180_000;                // 3min overall
+export const CHUNK_TIMEOUT_MS = 60_000;                  // 1min per-chunk idle
+export const MAX_RESULT_CHARS = 100_000;
+export const MAX_AUDIT_INPUT_CHARS = 200_000;
+
+## Outstanding questions for the profiler
+
+1. **Chunking pipeline**: `preprocessInput` runs ~9 sequential regex passes over the full input. For a 150KB input that's ~1.35MB of regex work synchronously. Worth fusing into a single pass?
+2. **Duplicate `detectAgents` call**: the audit POST handler calls `detectAgents(data.input)` AND `recommendAgents(data.input)`, but `recommendAgents` internally calls `detectAgents` again. Same input both times. Memoize per request?
+3. **Middleware UUID generation**: two `crypto.getRandomValues`/`crypto.randomUUID` calls per request (nonce + request ID). Is the second one needed at the middleware layer, or can request handlers generate their own?
+4. **`/api/integrations/github` polling**: every 5s while an audit is running. Each poll does Upstash RTT + session DB lookup + 2 SELECTs. Could the session check be cached for a short TTL per request handler?
+5. **DB query for `workspaceContext`** in the audit hot path: blocks first byte. Could be cached or fetched in parallel with the rate-limit checks.
+6. **Org membership validation in audit POST**: another DB hit. Could parallelize with the rate-limit batch.
+7. **Audit DB insert (`createAuditRecord`)**: blocks the first byte of stream. Could the stream start before the insert resolves?
+8. **The `revalidateTag` call** at end of stream: does this run on the request thread or fire-and-forget?
+9. **`splitByFile`, `extractSkeleton`, `extractDependencyGraph`, `analyzeComplexity`, `analyzeTaint`** all run sequentially on the same input. Could run in parallel via worker_threads or even sequentially-but-on-pre-tokenized representation to avoid re-scanning?
