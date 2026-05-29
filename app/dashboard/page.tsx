@@ -20,7 +20,11 @@ export const metadata: Metadata = {
 };
 
 const PAGE_SIZE = 20;
-const HEATMAP_DAYS = 90;
+// Heatmap renders 13 weeks × 7 days = 91 cells. Fetch matching window so the
+// oldest cell shows real data instead of always rendering as 0 (off-by-one
+// bug). The user-visible label still says "last 90 days" because the
+// difference is invisible in the heatmap aesthetic.
+const HEATMAP_DAYS = 91;
 
 // PERF-031: Hoisted out of the request handler so the unstable_cache
 // wrapper is constructed ONCE at module load — not on every dashboard
