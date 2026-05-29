@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSession, authClient } from '@/lib/auth-client';
@@ -33,9 +33,21 @@ interface WebhookConfig {
   createdAt: string;
 }
 
+// Notices surfaced when other settings pages bounce here (e.g. team
+// settings when the user has no active org). Mapping to user-readable
+// text — codes are kept short so the URL stays clean.
+const NOTICE_LABELS: Record<string, string> = {
+  'no-team':           "You don't have a team yet. Team Settings will appear here once you create or join one.",
+  'removed-from-team': 'You were removed from that team. Reach out to the team owner if this was a mistake.',
+};
+
 export default function SettingsPage() {
   const { data: session, isPending } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const noticeCode = searchParams.get('notice');
+  const noticeText = noticeCode ? NOTICE_LABELS[noticeCode] : null;
+  const [dismissedNotice, setDismissedNotice] = useState(false);
   const [name, setName] = useState('');
   const [profileStatus, setProfileStatus] = useState<FormStatus>('idle');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -285,6 +297,24 @@ export default function SettingsPage() {
             Manage your profile, security, and account preferences.
           </p>
         </motion.div>
+
+        {/* Notice surfaced when another settings route bounces here
+            (e.g. /settings/team without an active org). */}
+        {noticeText && !dismissedNotice && (
+          <motion.div
+            variants={fadeUp}
+            role="status"
+            className="mb-6 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300 text-sm flex items-start justify-between gap-3"
+          >
+            <span>{noticeText}</span>
+            <button
+              onClick={() => setDismissedNotice(true)}
+              className="text-xs hover:underline shrink-0"
+            >
+              Dismiss
+            </button>
+          </motion.div>
+        )}
 
         {/* Profile */}
         <motion.section variants={fadeUp} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">

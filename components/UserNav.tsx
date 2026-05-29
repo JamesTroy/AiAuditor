@@ -124,6 +124,11 @@ export default function UserNav() {
     .slice(0, 2)
     .toUpperCase() ?? '?';
 
+  // Only show the Team Settings entry when the user actually has an active
+  // organization. Previously the link was shown to everyone and silently
+  // bounced solo users to /dashboard from the server-side route guard.
+  const hasActiveOrg = !!activeOrgId;
+
   return (
     <div ref={menuRef} className="relative">
       <motion.button
@@ -215,14 +220,16 @@ export default function UserNav() {
           >
             Dashboard
           </Link>
-          <Link
-            href="/settings/team"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="block px-4 py-2 text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800"
-          >
-            Team Settings
-          </Link>
+          {hasActiveOrg && (
+            <Link
+              href="/settings/team"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2 text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800"
+            >
+              Team Settings
+            </Link>
+          )}
           <Link
             href="/settings"
             role="menuitem"

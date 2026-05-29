@@ -43,7 +43,13 @@ export default async function TeamSettingsPage({
   const activeOrgId =
     (session.session as Record<string, unknown>)?.activeOrganizationId as string | null ?? null;
 
-  if (!activeOrgId) redirect('/dashboard');
+  // No active org → can't show team settings. Send to /settings with a
+  // notice flag instead of a silent bounce to /dashboard. The previous
+  // bounce was the source of the "team settings button leads to dashboard"
+  // bug report — users clicked the menu item and disappeared with no
+  // explanation. The UserNav now hides the link when there's no org, but
+  // this guard catches direct URL hits + stale tabs.
+  if (!activeOrgId) redirect('/settings?notice=no-team');
 
   // Join members with users to get name/email/image for the members list.
   const [orgRows, memberRows] = await Promise.all([
@@ -68,10 +74,13 @@ export default async function TeamSettingsPage({
   ]);
 
   const org = orgRows[0];
-  if (!org) redirect('/dashboard');
+  // Active org id in session points to a deleted org → recover by sending to
+  // settings with the same notice. Same reasoning as the !activeOrgId branch.
+  if (!org) redirect('/settings?notice=no-team');
 
   const callerMember = memberRows.find((m) => m.userId === session.user.id);
-  if (!callerMember) redirect('/dashboard');
+  // User was removed from the org while still having activeOrganizationId set.
+  if (!callerMember) redirect('/settings?notice=removed-from-team');
 
   const isOwner = callerMember.role === 'owner';
   const isAdmin = callerMember.role === 'admin' || isOwner;
