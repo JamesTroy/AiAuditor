@@ -20,6 +20,7 @@ const PUBLIC_LINKS = [
 const AUTH_LINKS = [
   { href: '/dashboard', label: 'Dashboard', title: 'View your audit history and scores' },
   { href: '/audit', label: 'Audit', title: 'Run a new audit' },
+  { href: '/settings/integrations', label: 'GitHub', title: 'GitHub PR reviews and integrations' },
 ] as const;
 
 export default function Navbar() {
