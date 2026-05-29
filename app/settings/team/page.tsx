@@ -13,18 +13,19 @@ import {
   AuditDefaultsSection,
   NotificationsSection,
   DangerZoneSection,
-  BillingSection,
 } from '@/components/team/TeamSections';
 
 export const metadata: Metadata = {
   title: 'Team Settings',
-  description: 'Manage your organization profile, members, billing, and preferences.',
+  description: 'Manage your organization profile, members, and preferences.',
 };
 
+// Billing & plan removed — everything is free during early access. The
+// BillingSection component is still exported for future re-enable, just
+// not wired into the nav or render.
 const NAV = [
   { id: 'profile', label: 'Org profile' },
   { id: 'members', label: 'Members' },
-  { id: 'billing', label: 'Billing & plan' },
   { id: 'apikeys', label: 'API keys' },
   { id: 'audit', label: 'Audit defaults' },
   { id: 'notifications', label: 'Notifications' },
@@ -86,7 +87,10 @@ export default async function TeamSettingsPage({
   const isAdmin = callerMember.role === 'admin' || isOwner;
 
   const params = await searchParams;
-  const section = (params.section ?? 'profile') as SectionId;
+  // 'billing' was a valid section before payment tiers were removed —
+  // fold stale ?section=billing bookmarks back to profile silently.
+  const rawSection = params.section ?? 'profile';
+  const section = (rawSection === 'billing' ? 'profile' : rawSection) as SectionId;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -154,7 +158,6 @@ export default async function TeamSettingsPage({
                 isOwner={isOwner}
               />
             )}
-            {section === 'billing' && <BillingSection org={org} memberCount={memberRows.length} />}
             {section === 'apikeys' && <ApiKeysSection orgId={activeOrgId} isAdmin={isAdmin} />}
             {section === 'audit' && <AuditDefaultsSection org={org} isAdmin={isAdmin} />}
             {section === 'notifications' && <NotificationsSection orgId={activeOrgId} userId={session.user.id} />}
