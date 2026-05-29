@@ -212,6 +212,11 @@ export const findingDismissals = pgTable('finding_dismissals', {
   auditId:    text('auditId').notNull().references(() => audit.id, { onDelete: 'cascade' }),
   findingId:  text('findingId').notNull(),
   userId:     text('userId').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  // Org scope for dismissal-driven learning. NULL when the audit was solo.
+  // Written at insert time from the source audit's organizationId so that
+  // dismissal pooling can be done with a single indexed lookup instead of
+  // a join through audit on every audit completion.
+  organizationId: text('organizationId').references(() => organizationTable.id, { onDelete: 'cascade' }),
   action:     text('action', { enum: ['dismiss', 'restore'] }).notNull(),
   severity:   text('severity', { enum: ['critical', 'high', 'medium', 'low', 'informational'] }).notNull(),
   confidence: text('confidence', { enum: ['certain', 'likely', 'possible'] }),
@@ -228,6 +233,7 @@ export const findingDismissals = pgTable('finding_dismissals', {
   index('idx_fd_createdAt').on(t.createdAt),
   // Fast aggregate for dismissal-learning queries.
   index('idx_fd_user_hash').on(t.userId, t.findingHash),
+  index('idx_fd_org_hash').on(t.organizationId, t.findingHash),
 ]);
 
 // ─── Scheduled audits ────────────────────────────────────────────

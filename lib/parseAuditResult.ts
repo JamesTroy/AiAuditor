@@ -9,6 +9,7 @@
 
 import { extractScore } from '@/lib/extractScore';
 import type { ValidatedFinding } from '@/lib/validateFindings';
+import type { DemotionMetadata } from '@/lib/ai/findingSchema';
 
 export type Confidence = 'certain' | 'likely' | 'possible';
 export type Classification = 'vulnerability' | 'deficiency' | 'suggestion';
@@ -31,6 +32,17 @@ export interface Finding {
   remediation?: string;
   /** True when code_snippet was mechanically verified against source code. */
   validated?: boolean;
+  /** Set when dismissal-driven learning demoted this finding (see lib/baselines/dismissalDemotion.ts). */
+  demotion?: DemotionMetadata;
+}
+
+export interface LearningState {
+  /** How many findings in this audit were demoted by past dismissals. */
+  demotedCount: number;
+  /** Distinct patterns the scope (user or org) has learned to demote. */
+  learnedPatternCount: number;
+  /** Which scope produced the demotion counts — drives badge wording. */
+  scope: 'user' | 'organization';
 }
 
 export interface AuditMetrics {
@@ -47,6 +59,8 @@ export interface AuditMetrics {
   };
   totalFindings: number;
   filteredTotal: number;
+  /** LEARN-001: Dismissal-driven demotion summary, if any was applied. */
+  learningState?: LearningState;
 }
 
 // Match: **[SEVERITY]** [CONFIDENCE] [CLASSIFICATION] Title
@@ -94,6 +108,29 @@ export interface ParseOptions {
 // Returns null if no structured findings block is present (pre-STRUCT audits).
 const STRUCT_START = '<!-- STRUCTURED_FINDINGS_START -->';
 const STRUCT_END = '<!-- STRUCTURED_FINDINGS_END -->';
+const LEARNING_START = '<!-- LEARNING_STATE_START -->';
+const LEARNING_END = '<!-- LEARNING_STATE_END -->';
+
+function extractLearningState(text: string): LearningState | undefined {
+  const startIdx = text.indexOf(LEARNING_START);
+  if (startIdx === -1) return undefined;
+  const jsonStart = startIdx + LEARNING_START.length;
+  const endIdx = text.indexOf(LEARNING_END, jsonStart);
+  if (endIdx === -1) return undefined;
+  try {
+    const parsed = JSON.parse(text.slice(jsonStart, endIdx).trim());
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      typeof parsed.demotedCount === 'number' &&
+      typeof parsed.learnedPatternCount === 'number' &&
+      (parsed.scope === 'user' || parsed.scope === 'organization')
+    ) {
+      return parsed as LearningState;
+    }
+  } catch { /* fall through */ }
+  return undefined;
+}
 
 function extractStructuredFindings(text: string): ValidatedFinding[] | null {
   const startIdx = text.indexOf(STRUCT_START);
@@ -111,13 +148,20 @@ function extractStructuredFindings(text: string): ValidatedFinding[] | null {
   }
 }
 
-/** Strip the structured findings block from markdown before display. */
+/** Strip the structured findings + learning-state blocks from markdown before display. */
 export function stripStructuredBlock(text: string): string {
-  const startIdx = text.indexOf(STRUCT_START);
-  if (startIdx === -1) return text;
-  const endIdx = text.indexOf(STRUCT_END);
-  if (endIdx === -1) return text;
-  return text.slice(0, startIdx).trimEnd() + text.slice(endIdx + STRUCT_END.length);
+  let out = text;
+  const structStart = out.indexOf(STRUCT_START);
+  const structEnd = out.indexOf(STRUCT_END);
+  if (structStart !== -1 && structEnd !== -1) {
+    out = out.slice(0, structStart).trimEnd() + out.slice(structEnd + STRUCT_END.length);
+  }
+  const learnStart = out.indexOf(LEARNING_START);
+  const learnEnd = out.indexOf(LEARNING_END);
+  if (learnStart !== -1 && learnEnd !== -1) {
+    out = out.slice(0, learnStart).trimEnd() + out.slice(learnEnd + LEARNING_END.length);
+  }
+  return out;
 }
 
 /** Convert a ValidatedFinding to the Finding interface. */
@@ -138,6 +182,7 @@ function toFinding(vf: ValidatedFinding): Finding {
     assumption: vf.assumption,
     remediation: vf.remediation,
     validated: vf.validated,
+    demotion: vf.demotion,
   };
 }
 
@@ -145,16 +190,19 @@ export function parseAuditResult(markdown: string, options: ParseOptions = {}): 
   // STRUCT-001: Try structured findings first — mechanically validated,
   // richer fields, no regex ambiguity. Falls back to regex for old audits.
   const structuredFindings = extractStructuredFindings(markdown);
+  const learningState = extractLearningState(markdown);
 
-  // Strip the structured block before score extraction (it's not markdown).
+  // Strip the structured + learning blocks before score extraction (they're not markdown).
   const cleanMarkdown = stripStructuredBlock(markdown);
 
   if (structuredFindings && structuredFindings.length > 0) {
-    return parseFromStructured(structuredFindings, cleanMarkdown, options);
+    const result = parseFromStructured(structuredFindings, cleanMarkdown, options);
+    return { ...result, learningState };
   }
 
   // Legacy regex-based parsing for pre-STRUCT audits.
-  return parseFromMarkdown(cleanMarkdown, options);
+  const result = parseFromMarkdown(cleanMarkdown, options);
+  return { ...result, learningState };
 }
 
 /** Parse metrics from validated structured findings. */

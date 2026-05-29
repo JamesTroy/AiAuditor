@@ -72,6 +72,13 @@ export interface SuppressionDiffResult {
  * Convenience: given findings + a userId, return the survivors after
  * dismissal-learned suppression. Pure post-processing — does not mutate
  * the dismissal store.
+ *
+ * @deprecated Prefer `applyDismissalDemotions` from
+ * `lib/baselines/dismissalDemotion.ts` — it demotes severity/confidence
+ * instead of hard-suppressing, so users still see the finding and can
+ * judge it themselves. Kept as a fallback for the
+ * `/api/findings/learned-suppressions` endpoint and will be removed once
+ * the demotion path has shipped clean for one release.
  */
 export async function applyDismissalSuppressions(opts: {
   findings: StructuredFinding[];

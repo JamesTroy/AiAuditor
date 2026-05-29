@@ -293,6 +293,18 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
               )}
             </div>
             <div className="flex items-center gap-2 text-xs">
+              {metrics.learningState && metrics.learningState.learnedPatternCount > 0 && (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300 border border-violet-100 dark:border-violet-900/40"
+                  title={`Claudit auto-demoted ${metrics.learningState.demotedCount} finding${metrics.learningState.demotedCount === 1 ? '' : 's'} in this audit based on ${metrics.learningState.scope === 'organization' ? "your team's" : 'your'} past dismissals. Each demoted finding shows its original severity in its details.`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
+                  Learned {metrics.learningState.learnedPatternCount} pattern{metrics.learningState.learnedPatternCount === 1 ? '' : 's'}
+                  {metrics.learningState.demotedCount > 0 && (
+                    <span className="text-violet-500 dark:text-violet-400/80">· {metrics.learningState.demotedCount} demoted here</span>
+                  )}
+                </span>
+              )}
               {dismissedCount > 0 && (
                 <button
                   onClick={() => setShowDismissed(!showDismissed)}
@@ -367,6 +379,14 @@ export default function AuditResultView({ result, agentName, agentId, input, aud
                         }
                       >
                         {finding.confidence === 'likely' ? '⚠ likely' : finding.confidence}
+                      </span>
+                    )}
+                    {finding.demotion && (
+                      <span
+                        className="flex-shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300"
+                        title={`Demoted from ${finding.demotion.originalSeverity} → ${finding.severity} (and ${finding.demotion.originalConfidence} → ${finding.confidence}) because ${finding.demotion.scope === 'organization' ? 'your team has' : 'you have'} dismissed this pattern ${finding.demotion.netDismissals} time${finding.demotion.netDismissals === 1 ? '' : 's'}. Restore once to undo the learning.`}
+                      >
+                        learned
                       </span>
                     )}
                     <button
