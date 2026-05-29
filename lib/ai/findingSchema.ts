@@ -7,10 +7,30 @@ import type Anthropic from '@anthropic-ai/sdk';
 
 // ── TypeScript interfaces ──────────────────────────────────────────
 
+export type FindingSeverity = 'critical' | 'high' | 'medium' | 'low' | 'informational';
+export type FindingConfidence = 'certain' | 'likely' | 'possible';
+
+// Server-side metadata attached when a finding has been auto-demoted by
+// dismissal-driven learning. Absent on normal findings. Never produced by
+// the model — added in the audit pipeline after critique. See
+// lib/baselines/dismissalDemotion.ts.
+export interface DemotionMetadata {
+  /** Net dismissals (dismiss − restore) that triggered the demotion. */
+  netDismissals: number;
+  /** Original severity emitted by the model, before demotion. */
+  originalSeverity: FindingSeverity;
+  /** Original confidence emitted by the model, before demotion. */
+  originalConfidence: FindingConfidence;
+  /** 'soft' = ≥3 net dismissals (one step down), 'strong' = ≥5 (two steps down). */
+  bucket: 'soft' | 'strong';
+  /** Whether the count was pooled across the org or only the user. */
+  scope: 'user' | 'organization';
+}
+
 export interface StructuredFinding {
   id: string;
-  severity: 'critical' | 'high' | 'medium' | 'low' | 'informational';
-  confidence: 'certain' | 'likely' | 'possible';
+  severity: FindingSeverity;
+  confidence: FindingConfidence;
   classification: 'vulnerability' | 'deficiency' | 'suggestion';
   title: string;
   location?: string;
@@ -22,6 +42,7 @@ export interface StructuredFinding {
   sanitization_checked?: string;
   assumption?: string;
   remediation: string;
+  demotion?: DemotionMetadata;
 }
 
 export interface StructuredAuditResult {

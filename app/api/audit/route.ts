@@ -37,6 +37,7 @@ import { escapeXml } from '@/lib/escapeXml';
 import { STRUCTURED_OUTPUT_INSTRUCTION } from '@/lib/ai/findingSchema';
 import { validateFindings, validationStats } from '@/lib/validateFindings';
 import { critiqueFindings } from '@/lib/ai/adversarialCritic';
+import { applyDismissalDemotions } from '@/lib/baselines/dismissalDemotion';
 import type { ToolCapture } from '@/lib/ai/provider';
 
 // STALE-001: Mark 'running' audits older than 30 min as 'failed'.
@@ -225,14 +226,32 @@ function makeStream(
             });
             const postCritique = critique.findings;
 
+            // LEARN-001: Apply dismissal-driven demotion before score
+            // reconciliation so demoted severities feed the deterministic
+            // score formula. Findings stay visible with `demotion` metadata
+            // — the user sees what was demoted and why.
+            const demotion = await applyDismissalDemotions({
+              findings: postCritique,
+              userId: auditRecord.userId,
+              organizationId: auditRecord.organizationId ?? null,
+            });
+            log('info', 'finding_demotion', {
+              requestId: logMeta.requestId,
+              auditId: auditRecord.id,
+              demotedCount: demotion.demotedCount,
+              learnedPatternCount: demotion.learnedPatternCount,
+              scope: demotion.scope,
+            });
+            const postDemotion = demotion.findings;
+
             // RULE-010: Reconcile agent score against deterministic formula.
-            score = reconcileScore(rawAgentScore, postCritique, (event, data) =>
+            score = reconcileScore(rawAgentScore, postDemotion, (event, data) =>
               log('warn', event, { requestId: logMeta.requestId, auditId: auditRecord.id, ...data }),
             );
 
             // WORKFLOW-4: Prioritize findings.
-            const prioritized = prioritizeFindings(postCritique);
-            const findingsJson = JSON.stringify(postCritique);
+            const prioritized = prioritizeFindings(postDemotion);
+            const findingsJson = JSON.stringify(postDemotion);
             const prioritizedJson = JSON.stringify({
               tierCounts: prioritized.tierCounts,
               findings: prioritized.findings.map((f) => ({
@@ -242,9 +261,18 @@ function makeStream(
                 validated: f.validated, location: f.location,
               })),
             });
+            // LEARN-001: Persist the learned-pattern count alongside the
+            // findings so the UI badge can render "Claudit learned N
+            // patterns" without a second DB roundtrip.
+            const learningJson = JSON.stringify({
+              demotedCount: demotion.demotedCount,
+              learnedPatternCount: demotion.learnedPatternCount,
+              scope: demotion.scope,
+            });
             resultToStore = fullResult
               + `\n\n<!-- STRUCTURED_FINDINGS_START -->\n${findingsJson}\n<!-- STRUCTURED_FINDINGS_END -->`
-              + `\n\n<!-- PRIORITIZED_FINDINGS_START -->\n${prioritizedJson}\n<!-- PRIORITIZED_FINDINGS_END -->`;
+              + `\n\n<!-- PRIORITIZED_FINDINGS_START -->\n${prioritizedJson}\n<!-- PRIORITIZED_FINDINGS_END -->`
+              + `\n\n<!-- LEARNING_STATE_START -->\n${learningJson}\n<!-- LEARNING_STATE_END -->`;
           }
 
           try {

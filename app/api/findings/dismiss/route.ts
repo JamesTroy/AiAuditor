@@ -61,9 +61,16 @@ export async function POST(req: NextRequest) {
   }
 
   // Validate the audit exists and is owned by the caller — prevents writing
-  // dismissal rows against other users' audits (IDOR).
+  // dismissal rows against other users' audits (IDOR). We also fetch
+  // organizationId so the dismissal row carries the same scope as the audit,
+  // letting dismissal-driven demotion (lib/baselines/dismissalDemotion.ts)
+  // pool signal across teammates with a single indexed lookup.
   const [auditRow] = await db
-    .select({ id: auditTable.id, userId: auditTable.userId })
+    .select({
+      id: auditTable.id,
+      userId: auditTable.userId,
+      organizationId: auditTable.organizationId,
+    })
     .from(auditTable)
     .where(and(eq(auditTable.id, parsed.data.auditId), eq(auditTable.userId, session.user.id)))
     .limit(1);
@@ -79,6 +86,7 @@ export async function POST(req: NextRequest) {
     auditId: parsed.data.auditId,
     findingId: finding.id,
     userId: session.user.id,
+    organizationId: auditRow.organizationId ?? null,
     action: parsed.data.action,
     severity: finding.severity,
     confidence: finding.confidence,
