@@ -502,15 +502,21 @@ export default function IntegrationsPage() {
                 Claudit reviews every pull request as it&apos;s opened or updated. High-confidence issues become inline comments; a pass/fail check shows at the top of the PR.
               </p>
             </div>
-            <a
-              href="/api/integrations/github/install"
-              className="shrink-0 inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-xl px-4 py-2 min-h-[40px] text-sm transition-colors focus-ring"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12 0a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.1c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.7-1.3-1.7-1.1-.8.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2.9-.3 2-.4 3-.4s2.1.1 3 .4c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 0z" />
-              </svg>
-              Install on GitHub
-            </a>
+            {/* Only show the primary install CTA when nothing is connected yet.
+                Users who already have an install see "Add another installation"
+                as a small link below the list (rare use case: installing on a
+                second GitHub account or org). */}
+            {data && data.installations.length === 0 && (
+              <a
+                href="/api/integrations/github/install"
+                className="shrink-0 inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-xl px-4 py-2 min-h-[40px] text-sm transition-colors focus-ring"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 0a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.1c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.7-1.3-1.7-1.1-.8.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2.9-.3 2-.4 3-.4s2.1.1 3 .4c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 0z" />
+                </svg>
+                Install on GitHub
+              </a>
+            )}
           </div>
 
           {/* Migration-missing hint —
@@ -699,6 +705,20 @@ export default function IntegrationsPage() {
                   </li>
                 ))}
               </ul>
+            )}
+            {/* Secondary path for users who want to install on another GitHub
+                account or org. Kept subtle so it doesn't compete with the
+                actual install card content above. */}
+            {data && data.installations.length > 0 && (
+              <div className="mt-4 text-xs text-gray-400 dark:text-zinc-600 text-center">
+                Need to install on another GitHub account or org?{' '}
+                <a
+                  href="/api/integrations/github/install"
+                  className="text-violet-600 dark:text-violet-400 hover:underline"
+                >
+                  Add another installation
+                </a>
+              </div>
             )}
           </div>
         </motion.section>
