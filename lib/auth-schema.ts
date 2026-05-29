@@ -160,6 +160,11 @@ export const audit = pgTable('audit', {
   detectedLanguage:  text('detectedLanguage'),
   detectedFramework: text('detectedFramework'),
   detectedPatterns:  text('detectedPatterns'),       // JSON array (string)
+  // Cached executive summary (JSON-encoded ExecutiveSummary). Generated
+  // lazily on first view via POST /api/audit/[id]/exec-summary. NULL until
+  // a stakeholder asks for the plain-English summary.
+  executiveSummary: text('executiveSummary'),
+  executiveSummaryGeneratedAt: timestamp('executiveSummaryGeneratedAt', { withTimezone: true }),
   createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

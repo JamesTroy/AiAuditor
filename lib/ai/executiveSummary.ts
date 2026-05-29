@@ -26,25 +26,40 @@ how urgent. Output exactly this JSON shape and nothing else:
 {
   "headline": "<one sentence overall assessment>",
   "topRisks": [
-    "<bullet 1, business-framed>",
-    "<bullet 2>",
-    "<bullet 3 (max 5 bullets total)>"
+    "<top risk 1, business-framed>",
+    "<top risk 2>",
+    "<top risk 3 — max 3 bullets>"
   ],
+  "productionImpact": "<2-3 sentences: concrete failure modes if these ship unfixed>",
+  "fixEffort": "<1-2 sentences: rough effort estimate in plain English (hours / a day / a sprint / weeks) with a one-phrase rationale>",
   "recommendedAction": "<one sentence: what should happen next, by whom>"
 }
 
 Rules:
 - "headline" must answer: is this code ready to ship?
-- Each bullet in "topRisks" should be ONE sentence, present tense, no jargon.
-- "recommendedAction" should suggest a concrete next step (e.g., "Block the
-  release until the two critical findings on auth are fixed", "Schedule a
-  one-hour review with the backend lead before next sprint").
-- If there are zero critical or high findings, "topRisks" can be empty and
-  "headline" should say so directly.`;
+- "topRisks" lists at most 3 entries, the most consequential first. Each
+  bullet is ONE sentence, present tense, no jargon. If there are no
+  critical/high findings, return [].
+- "productionImpact" should be concrete: who feels it (users / oncall /
+  finance / legal / etc.), what they feel (downtime, data leak, billing
+  error, audit-finding fines, etc.), and roughly when (immediately on
+  exploitation, slowly over time, only under specific load).
+- "fixEffort" should pick one of: "hours", "a day", "a couple of days",
+  "a sprint", "weeks". Add a half-sentence reason like "fixes are
+  localised to one file" or "needs a schema migration and backfill".
+- "recommendedAction" should suggest a concrete next step (e.g., "Block
+  the release until the two critical findings on auth are fixed",
+  "Schedule a one-hour review with the backend lead before next sprint").
+- If there are zero findings at all, "headline" should say so directly,
+  "topRisks" = [], "productionImpact" = "No expected impact.",
+  "fixEffort" = "Nothing to fix.", "recommendedAction" = the smallest
+  useful next step.`;
 
 export interface ExecutiveSummary {
   headline: string;
   topRisks: string[];
+  productionImpact: string;
+  fixEffort: string;
   recommendedAction: string;
 }
 
@@ -80,6 +95,8 @@ export async function generateExecutiveSummary(
     return {
       headline: `Score ${input.score}/100. No findings of concern were raised.`,
       topRisks: [],
+      productionImpact: 'No expected impact.',
+      fixEffort: 'Nothing to fix.',
       recommendedAction: 'No action required from this audit. Continue normal review.',
     };
   }
@@ -111,8 +128,16 @@ export async function generateExecutiveSummary(
           ? parsed.headline.slice(0, 500)
           : 'Audit completed.',
       topRisks: Array.isArray(parsed.topRisks)
-        ? parsed.topRisks.filter((r): r is string => typeof r === 'string').slice(0, 5)
+        ? parsed.topRisks.filter((r): r is string => typeof r === 'string').slice(0, 3)
         : [],
+      productionImpact:
+        typeof parsed.productionImpact === 'string'
+          ? parsed.productionImpact.slice(0, 700)
+          : '',
+      fixEffort:
+        typeof parsed.fixEffort === 'string'
+          ? parsed.fixEffort.slice(0, 400)
+          : '',
       recommendedAction:
         typeof parsed.recommendedAction === 'string'
           ? parsed.recommendedAction.slice(0, 500)
@@ -123,6 +148,8 @@ export async function generateExecutiveSummary(
     return {
       headline: text.slice(0, 300),
       topRisks: [],
+      productionImpact: '',
+      fixEffort: '',
       recommendedAction: '',
     };
   }
